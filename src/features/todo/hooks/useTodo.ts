@@ -17,10 +17,10 @@ export const useTodos = () => {
   });
 };
 
-export const useTodosByEventId = (eventId: number | null) => {
+export const useTodosByEventId = (eventId: string | null) => {
   return useQuery({
     queryKey: ["todos", "event", eventId],
-    queryFn: () => getTodosByEventIdApi(eventId as number),
+    queryFn: () => getTodosByEventIdApi(eventId as string),
     enabled: typeof eventId === "number",
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -86,7 +86,7 @@ export const useDeleteTodo = () => {
       id,
     }: {
       id: number;
-      eventId?: number | null;
+      eventId?: string | null;
     }) => deleteTodoApi(id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["todo", variables.id] });

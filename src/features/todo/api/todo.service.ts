@@ -8,9 +8,9 @@ export const getTodosApi = async () => {
   return response.data?.data ?? response.data;
 };
 
-export const getTodosByEventIdApi = async (eventId: number) => {
+export const getTodosByEventIdApi = async (eventId: string) => {
   const response = await api.get(`/todo/event/${eventId}`);
-  console.log(`getTodosByEventIdApi response for eventId ${eventId}:`, response.data , response.data?.data);
+  console.log(`getTodosByEventIdApi response for eventId ${eventId}:`, response.data, response.data?.data);
   return response.data?.data ?? response.data;
 };
 
