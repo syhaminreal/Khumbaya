@@ -10,12 +10,13 @@ export const getTodosApi = async () => {
 
 export const getTodosByEventIdApi = async (eventId: number) => {
   const response = await api.get(`/todo/event/${eventId}`);
+  console.log(`getTodosByEventIdApi response for eventId ${eventId}:`, response.data , response.data?.data);
   return response.data?.data ?? response.data;
 };
 
 export const getTodoByIdApi = async (id: number) => {
   const response = await api.get(`/todo/${id}`);
-  return response.data?.data ?? response.data;
+  return response.data ?? response.data?.data;
 };
 
 export const createTodoApi = async (payload: CreateTodoPayload) => {

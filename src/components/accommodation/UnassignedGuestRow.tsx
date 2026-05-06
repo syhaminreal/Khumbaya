@@ -6,10 +6,12 @@ export function UnassignedGuestRow({
   guest,
   onAssignRoom,
   onDetailsPress,
+  isGuestView
 }: {
   guest: GuestWithRoom;
   onAssignRoom: (guest: GuestWithRoom) => void;
   onDetailsPress: (guest: GuestWithRoom) => void;
+  isGuestView: boolean;
 }) {
   const username = guest.user?.username || "Unknown Guest";
   const category = guest.category?.trim();
@@ -37,14 +39,16 @@ export function UnassignedGuestRow({
         ) : null}
       </View>
 
-      <TouchableOpacity
-        onPress={() => onAssignRoom(guest)}
-        className="flex-row items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Ionicons name="add-circle-outline" size={13} color="#ee2b8c" />
-        <Text className="font-jakarta-bold text-[10px] text-primary">Assign</Text>
-      </TouchableOpacity>
+      {!isGuestView && (
+        <TouchableOpacity
+          onPress={() => onAssignRoom(guest)}
+          className="flex-row items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="add-circle-outline" size={13} color="#ee2b8c" />
+          <Text className="font-jakarta-bold text-[10px] text-primary">Assign</Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }

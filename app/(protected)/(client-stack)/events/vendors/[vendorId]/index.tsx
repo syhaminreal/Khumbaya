@@ -15,8 +15,8 @@ const VendorDetailScreen = () => {
     isError,
   } = useGetBusinessById(resolvedVendorId);
 
-  const vendor = vendorData?.business_information;
-  const services = vendorData?.vendor_services_information ?? [];
+  const vendor = vendorData?.businessInformation;
+  const services = vendorData?.vendorServicesinformation ?? [];
 
   return (
     <SafeAreaView className="flex-1 bg-background-light">
@@ -71,7 +71,7 @@ const VendorDetailScreen = () => {
 
             <View className="space-y-2">
               <Text className="text-xl font-bold text-slate-900">
-                {vendor.business_name ?? "Unnamed Vendor"}
+                {vendor.businessName ?? "Unnamed Vendor"}
               </Text>
               <Text className="text-sm text-slate-500">
                 {vendor.category ?? "Category unavailable"}
@@ -98,16 +98,16 @@ const VendorDetailScreen = () => {
                   Contact
                 </Text>
                 <Text className="mt-2 text-sm text-slate-600">
-                  {vendor.contact_person_name ?? "Contact person not available"}
+                  {vendor.contactPersonname ?? "Contact person not available"}
                 </Text>
                 <Text className="text-sm text-slate-600">
-                  {vendor.contact_phone ??
-                    vendor.whatsapp_number ??
+                  {vendor.contactPhone ??
+                    vendor.whatsappNumber ??
                     "Phone not available"}
                 </Text>
                 <Text className="text-sm text-slate-600">
-                  {vendor.website_url
-                    ? `Website: ${vendor.website_url}`
+                  {vendor.websiteUrl
+                    ? `Website: ${vendor.websiteUrl}`
                     : "Website not available"}
                 </Text>
               </View>
@@ -118,18 +118,18 @@ const VendorDetailScreen = () => {
                 </Text>
                 <Text className="mt-2 text-sm text-slate-600">
                   Price from:{" "}
-                  {vendor.price_starting_from
-                    ? `₹${vendor.price_starting_from}`
+                  {vendor.priceStartingFrom
+                    ? `₹${vendor.priceStartingFrom}`
                     : "Unavailable"}
                 </Text>
                 <Text className="text-sm text-slate-600">
                   Experience:{" "}
-                  {vendor.years_of_experience
-                    ? `${vendor.years_of_experience} years`
+                  {vendor.yearsOfExperience
+                    ? `${vendor.yearsOfExperience} years`
                     : "Unavailable"}
                 </Text>
                 <Text className="text-sm text-slate-600">
-                  Verified: {vendor.is_verified ? "Yes" : "No"}
+                  Verified: {vendor.isVerified ? "Yes" : "No"}
                 </Text>
               </View>
 
@@ -144,15 +144,15 @@ const VendorDetailScreen = () => {
                       className="rounded-2xl bg-white p-3 shadow-sm shadow-slate-100 space-y-1"
                     >
                       <Text className="text-sm font-semibold text-slate-900">
-                        {service.artist_type ?? "Service"}
+                        {service.artistType ?? "Service"}
                       </Text>
                       <Text className="text-sm text-slate-600">
-                        {service.styles_specialized ?? "Details unavailable"}
+                        {service.stylesSpecialized ?? "Details unavailable"}
                       </Text>
                       <Text className="text-sm text-slate-600">
                         Advance:{" "}
-                        {service.advance_amount
-                          ? `₹${service.advance_amount}`
+                        {service.advanceAmount
+                          ? `₹${service.advanceAmount}`
                           : "Unavailable"}
                       </Text>
                     </View>

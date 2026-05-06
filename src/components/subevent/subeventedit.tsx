@@ -2,7 +2,6 @@ import { DateTimeRangePicker } from "@/src/components/ui/DateTimeRangePicker";
 import { Text } from "@/src/components/ui/Text";
 import type { Event } from "@/src/constants/event";
 import {
-  // useDeleteEvent,
   useEventById,
   useUpdateEvent,
 } from "@/src/features/events/hooks/use-event";

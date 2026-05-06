@@ -17,6 +17,7 @@ export default function SubEventLayout() {
         options={{ title: "Edit Sub Event" }}
       />
       <Stack.Screen name="index" options={{ title: "Sub Event" }} />
+      <Stack.Screen name="subevent-create" options={{ title: "Create new Sub Event" }} />
     </Stack>
   );
 }

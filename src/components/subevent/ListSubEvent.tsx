@@ -1,6 +1,7 @@
 import SubEventCard from "@/src/components/event/subevent/CardSubevent";
 import { SubEvent } from "@/src/constants/event";
 import { useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
+import { useEventStore } from "@/src/features/events/store/useEventStore";
 import { sortByDateTime } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -32,8 +33,11 @@ type ListItem =
 
 export default function ListSubEvent() {
   const router = useRouter();
-
+  const { isGuest } = useLocalSearchParams<{ isGuest?: string }>();
+  const isGuestView = isGuest === "true";
   const { eventId } = useLocalSearchParams();
+  const eventDraft = useEventStore((event)=>event.eventDraft)
+  console.log('The parent event for the list of the sub event in t⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵he ui is '  , eventDraft)
   const {
     data: subEventsResponse,
     isLoading,
@@ -110,26 +114,26 @@ export default function ListSubEvent() {
             return (
               <SubEventCard
                 item={item.item}
-                eventId={eventId as string}
+                event={eventDraft!}
               />
             );
           }}
         />
       )}
-
-      <TouchableOpacity
-        onPress={() => {
-          router.push({
-            pathname:
-              "./subevent-create",
-            params: { eventId: eventId as string },
-          });
-        }}
-        className="absolute bottom-6 right-6 flex-row items-center gap-2 bg-primary px-5 py-3 rounded-full shadow-2xl"
-      >
-        <Ionicons name="add-circle" size={20} color="white" />
-        <Text className="text-white font-bold tracking-wide">Add Activity</Text>
-      </TouchableOpacity>
+{/* TODO:Review ai generated code */}
+      {!isGuestView && (
+        <TouchableOpacity
+          onPress={() => {
+            router.push({
+              pathname: "./subevent-create",
+            });
+          }}
+          className="absolute bottom-6 right-6 flex-row items-center gap-2 bg-primary px-5 py-3 rounded-full shadow-2xl"
+        >
+          <Ionicons name="add-circle" size={20} color="white" />
+          <Text className="text-white font-bold tracking-wide">Add Activity</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

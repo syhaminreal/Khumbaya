@@ -121,7 +121,8 @@ const CateringCard = ({
 
 export default function CateringListScreen() {
   const router = useRouter();
-  const { eventId } = useLocalSearchParams();
+  const { eventId, isGuest } = useLocalSearchParams();
+  const isGuestView = isGuest === "true";
 
   const [page, setPage] = useState(1);
 
@@ -135,16 +136,25 @@ export default function CateringListScreen() {
   });
 
   const handleAddClick = () => {
-    router.push(
-      `/(protected)/(client-stack)/events/${eventId}/(organizer)/catering/add`
-    );
+    if (!eventId || isGuestView) return;
+    router.push({
+      pathname:
+        "../catering/add",
+      params: { eventId: String(eventId) },
+    });
   };
 
   const handleCateringPress = (cateringId: number) => {
-    router.push(
-      `/(protected)/(client-stack)/events/${eventId}/(organizer)/catering/${cateringId}`
-    );
+    if (!eventId) return;
+    router.push({
+      pathname:
+        "../catering/[cateringId]",
+      params: { eventId: String(eventId), cateringId: String(cateringId) },
+    });
   };
+
+    
+  
 
   if (isLoading && !cateringData) {
     return (
@@ -211,8 +221,7 @@ export default function CateringListScreen() {
               <CateringCard
                 key={catering.id}
                 catering={catering}
-                onPress={() => handleCateringPress(catering.id)}
-              />
+                onPress={() => (!isGuestView) ?  handleCateringPress(catering.id) : null}/>
             ))
           ) : (
             <View className="items-center justify-center py-12">
@@ -228,13 +237,15 @@ export default function CateringListScreen() {
               <Text className="text-center text-muted-light text-sm mt-2">
                 Add your first catering plan to get started
               </Text>
-              <TouchableOpacity
-                onPress={handleAddClick}
-                className="mt-6 bg-primary px-6 py-3 rounded-md"
-                style={shadowStyle}
-              >
-                <Text className="text-white font-bold">Create First Plan</Text>
-              </TouchableOpacity>
+              {!isGuestView && (
+                <TouchableOpacity
+                  onPress={handleAddClick}
+                  className="mt-6 bg-primary px-6 py-3 rounded-md"
+                  style={shadowStyle}
+                >
+                  <Text className="text-white font-bold">Create First Plan</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 

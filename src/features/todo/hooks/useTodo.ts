@@ -24,7 +24,7 @@ export const useTodosByEventId = (eventId: number | null) => {
     enabled: typeof eventId === "number",
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    select: (data) => data.items,
+    select: (data) => data,
   });
 };
 

@@ -6,14 +6,15 @@ import {
   useGuestDetailStore,
 } from "@/src/features/guests/store/useGuestDetailStore";
 import { FamilyGroup, GuestDetailInterface } from "@/src/features/guests/types";
+import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { mapToMemberRsvp, MemberRsvpCardProp } from "@/src/utils/type/rsvp";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GuestFamilyMember() {
-  const router = useRouter();
+  const { push } = useThrottledRouter();
   const { eventId, family } = useLocalSearchParams<{
     eventId: string;
     family?: string;
@@ -65,10 +66,10 @@ export default function GuestFamilyMember() {
 
     if (!guest) return;
     setGuestDetail(guest);
-    router.push({
-      pathname:
-        `/(protected)/(client-stack)/events/${eventId}/(organizer)/guests/[userId]/guest-details` as any ,
-      params: { userId: JSON.stringify(guest.user.id) },
+    console.log('Opening the guest with the guest detail ', guest)
+    push({
+      pathname: "./[guestDetailId]",
+      params: { guestDetailId: guest.eventGuest.id },
     });
   };
 

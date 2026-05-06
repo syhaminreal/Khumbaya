@@ -5,10 +5,10 @@ export function useThrottledRouter(delay = 800) {
   const canNavigate = useRef(true);
 
   const push = useCallback(
-    (href: string) => {
+    (...args: Parameters<typeof router.push>) => {
       if (!canNavigate.current) return;
       canNavigate.current = false;
-      router.push(href as any);
+      router.push(...args);
       setTimeout(() => {
         canNavigate.current = true;
       }, delay);
@@ -17,10 +17,10 @@ export function useThrottledRouter(delay = 800) {
   );
 
   const replace = useCallback(
-    (href: string) => {
+    (...args: Parameters<typeof router.replace>) => {
       if (!canNavigate.current) return;
       canNavigate.current = false;
-      router.replace(href as any);
+      router.replace(...args);
       setTimeout(() => {
         canNavigate.current = true;
       }, delay);

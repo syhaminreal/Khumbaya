@@ -4,7 +4,7 @@ import { TouchableOpacity } from "react-native";
 
 const headerBackButton = () => (
   <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 8 }}>
-    <Ionicons name="arrow-back" size={24} color="#111827" />
+    <Ionicons name="chevron-back" size={24} color="#ee2b8c" />
   </TouchableOpacity>
 );
 

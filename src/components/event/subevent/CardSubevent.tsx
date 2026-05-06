@@ -1,12 +1,13 @@
-import { SubEvent } from "@/src/constants/event";
+import { Event, SubEvent } from "@/src/constants/event";
+import { useSubeventDraftStore } from "@/src/features/events/store/useEventStore";
+import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { formatDate, formatTimeRange, shadowStyle } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { Image, Pressable, Text, View } from "react-native";
 
 type SubEventCardProps = {
   item: SubEvent;
-  eventId: string;
+  event: Event;
 };
 
 const getDerivedStatus = (item: SubEvent) => {
@@ -72,9 +73,10 @@ const PILL_HEIGHT = 52;
 
 export default function SubEventCard({
   item,
-  eventId,
+  event,
 }: SubEventCardProps) {
-  const router = useRouter();
+  const { push } = useThrottledRouter();
+  const { setSubEventDraft } = useSubeventDraftStore();
   const derivedStatus = getDerivedStatus(item);
   const statusMeta = getStatusMeta(derivedStatus);
   const timeRange = formatTimeRange(item.startDateTime, item.endDateTime);
@@ -102,11 +104,11 @@ export default function SubEventCard({
       <Pressable
         style={shadowStyle}
         className={`flex-1 bg-white rounded-xl p-4 ${statusMeta.cardClassName}`}
-        onPress={() => {
-          router.push({
-            pathname:
-              "/(protected)/(client-stack)/events/[eventId]/(organizer)/(subevent)/[subEventId]/sub-event-detail",
-            params: { eventId, subEventId: String(item.id) },
+          onPress={() => {
+          setSubEventDraft({ event: item, parentEvent: event  });
+          push({
+            pathname: "/(protected)/(client-stack)/events/[eventId]/(organizer)",
+            params: { eventId: String(item.id), isSubEvent: "true" },
           });
         }}
       >

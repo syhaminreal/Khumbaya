@@ -9,12 +9,14 @@ interface QuickServiceButtonProps {
   icon?: string;
   color: string;
   route: RelativePathString;
+  isGuest?: boolean;
   className?: string;
 }
 export default function NavigateComponent({
   id,
   name,
   icon,
+  isGuest=false,
   color,
   className,
   route,
@@ -23,7 +25,13 @@ export default function NavigateComponent({
   return (
     <TouchableOpacity
       className={` flex items-center gap-2 px-4 py-3 bg-white  justify-center dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 h-[100px] ${className}`}
-      onPress={() => push(route)}
+      onPress={() => push({
+        pathname: route,
+        params: {
+          isGuest:  isGuest ? "true" : "false",
+      
+        },
+      })}
       activeOpacity={0.8}
       style={{ width: "47%" }}
     >

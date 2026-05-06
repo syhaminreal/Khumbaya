@@ -1,10 +1,11 @@
+import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { router as expoRouter, Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Pressable, TouchableOpacity } from "react-native";
 
 const headerBackButton = () => (
   <TouchableOpacity
-    onPress={() => expoRouter.back()}
+    onPress={() => router.back()}
     style={{ paddingRight: 8 }}
   >
     <Ionicons name="arrow-back" size={24} color="#111827" />
@@ -12,6 +13,7 @@ const headerBackButton = () => (
 );
 
 const headerAddButton = (eventId?: string) => {
+  const {push}  = useThrottledRouter() ; 
   return (
     <Pressable
       className="p-2"
@@ -19,10 +21,9 @@ const headerAddButton = (eventId?: string) => {
         if (!eventId) {
           return;
         }
-        expoRouter.push({
+        push({
           pathname:
-            "/(protected)/(client-stack)/events/[eventId]/(organizer)/catering/add",
-          params: { eventId },
+            "../catering/add",
         });
       }}
     >
@@ -32,10 +33,11 @@ const headerAddButton = (eventId?: string) => {
 };
 
 export default function CateringManagementLayout() {
-  const params = useLocalSearchParams<{ eventId?: string | string[] }>();
+  const params = useLocalSearchParams<{ eventId?: string | string[]  , isGuestView?: string }>();
   const eventId = Array.isArray(params.eventId)
     ? params.eventId[0]
     : params.eventId;
+  const isGuestView = params.isGuestView === "true";
 
   return (
     <Stack
@@ -54,7 +56,7 @@ export default function CateringManagementLayout() {
         name="index"
         options={{
           title: "Catering Management",
-          headerRight: () => headerAddButton(eventId),
+          headerRight: () => isGuestView ? null : headerAddButton(eventId),
         }}
       />
       <Stack.Screen name="add" options={{ title: "Add Catering" }} />

@@ -45,6 +45,22 @@ export default function BudgetLayout() {
         name="[categoryId]/[expenseId]/add-payment"
         options={{ title: "Add Payment" }}
       />
+      <Stack.Screen
+        name="addBudgetItem"
+        options={{ title: "Add Budget Item" }}
+      />
+      <Stack.Screen
+        name="edit-budget-category"
+        options={{ title: "Edit Category" }}
+      />
+      <Stack.Screen
+        name="edit-payment"
+        options={{ title: "Edit Payment" }}
+      />
+      <Stack.Screen
+        name="edit-expense"
+        options={{ title: "Edit Expense" }}
+      />
     </Stack>
   );
 }
