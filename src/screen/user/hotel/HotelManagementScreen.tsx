@@ -193,6 +193,18 @@ export default function HotelManagementScreen() {
     ...categoryStats,
   ];
 
+  const tabs = [
+    { 
+      label: "Assign Guests", 
+      value: "assign" as const, 
+      count: unassignedGuests.length 
+    },
+    { 
+      label: "Room List",
+       value: "roomList" as const, 
+       count: roomCardList.length },
+  ] as const;
+
   function navigateToDetails(guest: GuestWithRoom) {
     const formattedGuest = {
       id: guest.user.id,
@@ -344,12 +356,7 @@ export default function HotelManagementScreen() {
 
       {/* ── Tab Bar ── */}
       <View className="flex-row p-1 mb-3 mt-3 gap-2 bg-background-tertiary !rounded-md mx-4">
-        {(
-          [
-            { label: "Assign Guests", value: "assign" as const, count: unassignedGuests.length },
-            { label: "Room List", value: "roomList" as const, count: roomCardList.length },
-          ] as const
-        ).map((tab) => (
+        {tabs.map((tab) => (
           <Pressable
             key={tab.value}
             onPress={() => setActiveTab(tab.value)}
@@ -407,6 +414,7 @@ export default function HotelManagementScreen() {
                 setNewRoom("");
               }}
               onDetailsPress={navigateToDetails}
+              isGuestView={isGuestView}
             />
           )}
           contentContainerStyle={{
