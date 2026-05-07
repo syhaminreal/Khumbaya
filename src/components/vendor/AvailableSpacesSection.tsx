@@ -1,5 +1,5 @@
 import { Text } from "@/src/components/ui/Text";
-import { VenueAttribute } from "@/src/constants/business";
+import { VenueAttribute } from "@/src/features/business";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Image, Pressable, ScrollView, View } from "react-native";
@@ -24,12 +24,12 @@ function getVenueBadgeLabel(venueType: string | null, index: number) {
 type AmenityItem = { key: keyof VenueAttribute; label: string; icon: string };
 
 const AMENITIES: AmenityItem[] = [
-  { key: "has_catering", label: "Catering", icon: "restaurant" },
+  { key: "hasCatering", label: "Catering", icon: "restaurant" },
   { key: "parking", label: "Parking", icon: "local-parking" },
-  { key: "valet_available", label: "Valet", icon: "directions-car" },
-  { key: "has_av_equipment", label: "AV Equipment", icon: "tv" },
-  { key: "alcohol_allowed", label: "Alcohol", icon: "local-bar" },
-  { key: "is_outDoor", label: "Outdoor", icon: "park" },
+  { key: "valetAvailable", label: "Valet", icon: "directions-car" },
+  { key: "hasAvequipment", label: "AV Equipment", icon: "tv" },
+  { key: "alcoholAllowed", label: "Alcohol", icon: "local-bar" },
+  { key: "isOutDoor", label: "Outdoor", icon: "park" },
 ];
 
 export function AvailableSpacesSection({
@@ -58,12 +58,12 @@ export function AvailableSpacesSection({
       ) : (
         venues.map((venue, index) => {
           const image = portfolio[index] ?? coverFallback ?? FALLBACK_HEADER;
-          const badge = getVenueBadgeLabel(venue.venue_type, index);
+          const badge = getVenueBadgeLabel(venue.venueType, index);
           const activeAmenities = AMENITIES.filter((a) => venue[a.key] === true);
 
           return (
             <Pressable
-              key={venue.venue_id}
+              key={venue.venueId}
               className="mx-4 mb-5 rounded-md overflow-hidden bg-white"
               onPress={() => setSelectedVenue({ venue, image })}
             >
@@ -79,12 +79,12 @@ export function AvailableSpacesSection({
                 </View>
                 <View className="absolute top-3 right-3 bg-black/40 px-3 py-1 rounded-full">
                   <Text className="text-white text-[10px] font-semibold uppercase tracking-wide">
-                    {venue.is_outDoor ? "Outdoor" : "Indoor"}
+                    {venue.isOutDoor ? "Outdoor" : "Indoor"}
                   </Text>
                 </View>
                 <View className="absolute bottom-3 left-4 right-4">
                   <Text className="text-white text-lg font-semibold leading-tight">
-                    {venue.venue_type ?? "Venue Space"}
+                    {venue.venueType ?? "Venue Space"}
                   </Text>
                   <View className="flex-row gap-4 mt-1">
                     {venue.capacity != null && (
@@ -93,16 +93,16 @@ export function AvailableSpacesSection({
                         <Text className="text-white/80 text-xs">{venue.capacity} guests</Text>
                       </View>
                     )}
-                    {venue.area_sqft != null && (
+                    {venue.areaSqft != null && (
                       <View className="flex-row items-center gap-1">
                         <MaterialIcons name="straighten" size={13} color="rgba(255,255,255,0.8)" />
-                        <Text className="text-white/80 text-xs">{venue.area_sqft} sqft</Text>
+                        <Text className="text-white/80 text-xs">{venue.areaSqft} sqft</Text>
                       </View>
                     )}
-                    {venue.price_per_hour != null && (
+                    {venue.pricePerhour != null && (
                       <View className="flex-row items-center gap-1">
                         <MaterialIcons name="attach-money" size={13} color="rgba(255,255,255,0.8)" />
-                        <Text className="text-white/80 text-xs">₹{venue.price_per_hour}/hr</Text>
+                        <Text className="text-white/80 text-xs">₹{venue.pricePerhour}/hr</Text>
                       </View>
                     )}
                   </View>
