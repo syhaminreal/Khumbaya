@@ -2,11 +2,11 @@ import api from "@/src/api/axios";
 import { User } from "@/src/store/AuthStore";
 import z from "zod";
 
-import { 
-  AssignedVehicle, 
-  EventVehicle, 
-  SelectTransportation, 
-  VEHICLE_WITH_ASSIGNMENT 
+import {
+  AssignedVehicle,
+  EventVehicle,
+  SelectTransportation,
+  VEHICLE_WITH_ASSIGNMENT
 } from "../type";
 
 export const dateSchema = z.union([
@@ -55,7 +55,7 @@ export const createVehicle = async (eventId: string, params: CreateVehicle) => {
 
 export const getEventVehicles: (eventId: string) => Promise<EventVehicle[]> = async (eventId: string) => {
   const response = await api.get(`vehicle/event/${eventId}`);
- 
+
   return response.data.data ?? response.data;
 }
 
@@ -80,7 +80,8 @@ export const assign_vehicle = async (params: AssignVehiclePayload) => {
   return response.data.data ?? response.data;
 }
 
-export const get_vehicle_assignment: (vehicleId: string) => Promise<VEHICLE_WITH_ASSIGNMENT> = async(vehicleId:string )=>{
+export const get_vehicle_assignment: (vehicleId: string) => Promise<VEHICLE_WITH_ASSIGNMENT> = async (vehicleId: string) => {
   const response = await api.get(`vehicle/assign/${vehicleId}`);
+  console.log(`This is the assigned vehicle d🦓🦓🦓🦓🦓🦓🦓🦓ata `, response.data.data ?? response.data);
   return response.data.data ?? response.data;
 }

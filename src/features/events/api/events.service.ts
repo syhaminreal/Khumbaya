@@ -209,7 +209,7 @@ export const getEventGuest = async (id: number) => {
   const response = await api.get(`/event/${id}/guests`);
   return response.data;
 };
-export const getEventById = async (id: number) => {
+export const getEventById = async (id: number): Promise<Event> => {
   const response = await api.get(`/event/${id}`);
   return response.data.data;
 };
@@ -234,7 +234,7 @@ export const getSubEventOfEvent = async (eventId: number) => {
 };
 
 export const makeEventMember = async (
-  eventId: number,
+  eventId: number | string,
   data: MakeEventMemberType
 ) => {
   const response = await api.post(`/event/${eventId}/member`, data);
@@ -245,7 +245,7 @@ export const getEventCategory = async () => {
   return responce;
 
 }
-export const getEventOwners = async (eventId: number) => {
+export const getEventOwners = async (eventId: string) => {
   const response = await api.get(`/event/${eventId}/users`);
   return response.data.data;
 };

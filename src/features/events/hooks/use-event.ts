@@ -237,7 +237,7 @@ export const useMakeEventMember = (eventId: number) => {
     },
   });
 };
-export const useGetEventOwner = (eventId: number) => {
+export const useGetEventOwner = (eventId: string) => {
   return useQuery({
     queryKey: ["event-owner", eventId],
     queryFn: async () => {

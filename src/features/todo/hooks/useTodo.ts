@@ -17,22 +17,22 @@ export const useTodos = () => {
   });
 };
 
-export const useTodosByEventId = (eventId: string | null) => {
+export const useTodosByEventId = (eventId: string) => {
   return useQuery({
     queryKey: ["todos", "event", eventId],
-    queryFn: () => getTodosByEventIdApi(eventId as string),
-    enabled: typeof eventId === "number",
+    queryFn: () => getTodosByEventIdApi(eventId),
+    enabled: !isNaN(Number(eventId)),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     select: (data) => data,
   });
 };
 
-export const useTodoById = (id: number | null) => {
+export const useTodoById = (id: string | null) => {
   return useQuery({
     queryKey: ["todo", id],
-    queryFn: () => getTodoByIdApi(id as number),
-    enabled: typeof id === "number",
+    queryFn: () => getTodoByIdApi(id as string),
+    enabled: id != null,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -60,9 +60,9 @@ export const useUpdateTodo = () => {
       id,
       payload,
     }: {
-      id: number;
+      id: string | number;
       payload: Partial<TodoColumn>;
-      eventId?: number | null;
+      eventId?: number | null | string;
     }) => updateTodoApi(id, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["todo", variables.id] });
@@ -86,7 +86,7 @@ export const useDeleteTodo = () => {
       id,
     }: {
       id: number;
-      eventId?: string | null;
+      eventId?: string | null | number;
     }) => deleteTodoApi(id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["todo", variables.id] });
@@ -111,23 +111,22 @@ export const useBulkUpdateTodoStatus = () => {
     onMutate: async (updates) => {
       await queryClient.cancelQueries({ queryKey: ["todos"] });
 
-      const previousTodos = queryClient.getQueryData(["todos"]);
+      const snapShot = queryClient.getQueryData<TodoColumn[]>(["todos"]);
 
       queryClient.setQueryData(["todos"], (old: any) => {
         if (!old) return old;
-        const list = Array.isArray(old) ? old : (old as any).data;
-        const newList = list.map((t: TodoColumn) => {
+        const newList = old.map((t: TodoColumn) => {
           const update = updates.find((u) => u.todoId === t.id);
           return update ? { ...t, isDone: update.isDone, status: update.status } : t;
         });
         return Array.isArray(old) ? newList : { ...old, data: newList };
       });
 
-      return { previousTodos };
+      return { snapShot };
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousTodos) {
-        queryClient.setQueryData(["todos"], context.previousTodos);
+      if (context?.snapShot) {
+        queryClient.setQueryData(["todos"], context.snapShot);
       }
     },
     onSettled: () => {

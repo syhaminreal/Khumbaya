@@ -12,6 +12,20 @@ interface SubEventStore {
   clearSubEventDraft: () => void;
 }
 
+
+//TODO: only get the sub event id and the name store
+interface SubEventListStore {
+  subEventList: Event[] | null;
+  setSubEventList: (subEventList:Event[]) => void;
+  clearSubEventList: () => void;
+}
+
+export const useSubEventListStore = create<SubEventListStore>((set) => ({
+  subEventList: null,
+  setSubEventList: (subEventList) => set({ subEventList }),
+  clearSubEventList: () => set({ subEventList: null }),
+}));
+
 export const useEventStore = create<EventStore>((set) => ({
   eventDraft: null,
   setEventDraft: (event) => set({ eventDraft: event }),

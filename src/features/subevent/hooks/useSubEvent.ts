@@ -5,10 +5,9 @@ import {
   deleteSubEventApi,
   getSubEventById,
   getSubEventsApi,
-  getSubEventTemplatesApi,
   SubEvent,
   updateSubEventApi,
-  UpdateSubEventPayload,
+  UpdateSubEventPayload
 } from "../api/subEvent.service";
 
 export interface SubEventQueryOptions {
@@ -46,17 +45,6 @@ export const useSubEventById = (subEventId: number) => {
 /**
  * Hook to get all sub-event templates
  */
-export const useSubEventTemplates = ({
-  enabled = true,
-}: SubEventQueryOptions = {}) => {
-  return useQuery({
-    queryKey: ["subevent-templates"],
-    queryFn: getSubEventTemplatesApi,
-    enabled,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-  });
-};
 
 /**
  * Hook to create a new sub-event
@@ -145,10 +133,6 @@ export const useCreateSubEventOptimistic = () => {
         role: "Organizer",
         status: "upcoming",
         time: "",
-        eventId: newSubEvent.eventId,
-        templateId: newSubEvent.templateId,
-        activities: newSubEvent.activities,
-        createdAt: new Date().toISOString(),
       };
 
       queryClient.setQueryData<SubEvent[]>(

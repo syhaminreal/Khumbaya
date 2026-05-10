@@ -14,6 +14,7 @@ export interface Invitation {
   status: string | null;
   notes: string | null;
   category: string;
+  unInvitedSubevent: number[];
   isArrivalPickupRequired: boolean | null;
   isDeparturePickupRequired: boolean | null;
   organizerNote: string | null;

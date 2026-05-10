@@ -14,7 +14,7 @@ export const getTodosByEventIdApi = async (eventId: string) => {
   return response.data?.data ?? response.data;
 };
 
-export const getTodoByIdApi = async (id: number) => {
+export const getTodoByIdApi = async (id: string) => {
   const response = await api.get(`/todo/${id}`);
   return response.data ?? response.data?.data;
 };
@@ -29,7 +29,7 @@ export const deleteTodoApi = async (id: number) => {
 }
 
 export const updateTodoApi = async (
-  id: number,
+  id: string | number,
   payload: Partial<TodoColumn>
 ) => {
   const response = await api.patch(`/todo/${id}`, payload);
