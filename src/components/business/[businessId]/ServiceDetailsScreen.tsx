@@ -60,23 +60,23 @@ export default function ServiceDetailsSection({
   onEdit?: () => void;
 }) {
   const allRows: InfoRowItem[] = [
-    { icon: "person", label: "Artist Type", value: service.artist_type },
-    { icon: "palette", label: "Styles Specialized", value: service.styles_specialized },
-    { icon: "event-available", label: "Max Bookings / Day", value: service.max_bookings_per_day },
+    { icon: "person", label: "Artist Type", value: service.artistType },
+    { icon: "palette", label: "Styles Specialized", value: service.stylesSpecialized },
+    { icon: "event-available", label: "Max Bookings / Day", value: service.maxBookingsPerDay },
     {
       icon: "payments",
       label: "Advance Amount",
-      value: service.advance_amount != null ? `₹${service.advance_amount.toLocaleString()}` : null,
+      value: service.advanceAmount != null ? `₹${service.advanceAmount.toLocaleString()}` : null,
     },
     {
       icon: "flight-takeoff",
       label: "Travel Charges",
-      value: service.travel_charges != null ? `₹${service.travel_charges.toLocaleString()}` : null,
+      value: service.travelCharges != null ? `₹${service.travelCharges.toLocaleString()}` : null,
     },
     {
       icon: "shopping-bag",
       label: "Minimum Order",
-      value: service.min_order != null ? `₹${service.min_order.toLocaleString()}` : null,
+      value: service.minOrder != null ? `₹${service.minOrder.toLocaleString()}` : null,
     },
   ];
   const infoRows = allRows.filter(
@@ -84,10 +84,10 @@ export default function ServiceDetailsSection({
   );
 
   const boolFlags = [
-    { label: "Uses Own Material", value: service.uses_own_material },
-    { label: "Available for Destination", value: service.available_for_destination },
-    { label: "Customization Available", value: service.customization_available },
-    { label: "Serves Veg", value: service.serves_veg },
+    { label: "Uses Own Material", value: service.usesOwnMaterial },
+    { label: "Available for Destination", value: service.availableForDestination },
+    { label: "Customization Available", value: service.customizationAvailable },
+    { label: "Serves Veg", value: service.servicesVeg },
   ];
 
   return (
@@ -115,11 +115,11 @@ export default function ServiceDetailsSection({
         <InfoRow key={r.label} icon={r.icon} label={r.label} value={r.value} />
       ))}
 
-      {service.portfolio_link != null && (
+      {service.portfolioLink != null && (
         <InfoRow
           icon="link"
           label="Portfolio"
-          value={service.portfolio_link}
+          value={service.portfolioLink}
         />
       )}
 

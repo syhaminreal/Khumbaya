@@ -35,10 +35,12 @@ type EditableEndpoint = "from" | "to" | null;
 
 export default function ManageVehicleScreen() {
   const router = useRouter();
-  const { eventId, vehicleId } = useLocalSearchParams<{
+  const { eventId, vehicleId, isGuest } = useLocalSearchParams<{
     eventId?: string
     vehicleId?: string
+    isGuest?: string
   }>();
+  const isGuestView = isGuest === "true";
 
   const [activeTab, setActiveTab] = React.useState<"timeline" | "assign">("assign");
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -84,6 +86,18 @@ export default function ManageVehicleScreen() {
   const timelineAssignments = React.useMemo<LogisticsTimelineItem[]>(() => {
     return assignedVehicles || [];
   }, [assignedVehicles]);
+
+  if (isGuestView) {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center px-6" edges={["top", "bottom"]}>
+        <MaterialIcons name="construction" size={44} color="#ee2b8c" />
+        <Text className="mt-4 text-lg font-jakarta-bold text-gray-900">Coming soon</Text>
+        <Text className="mt-2 text-sm text-gray-500 text-center">
+          Guest access to logistics details is on the way.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   const getAssignmentStatus = (assignment: LogisticsTimelineItem) => {
     const now = new Date();

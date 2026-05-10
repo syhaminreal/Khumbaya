@@ -1,11 +1,11 @@
 import { AssignRoomModal } from "@/src/components/accommodation/AssignModel";
 import { RoomCardItem } from "@/src/components/accommodation/RoomCardItem";
-import { StatPill } from "@/src/components/accommodation/StatPill";
 import { UnassignedGuestRow } from "@/src/components/accommodation/UnassignedGuestRow";
 import { Text } from "@/src/components/ui/Text";
 import { useSubmitRsvpResponse } from "@/src/features/events/hooks/use-event";
 import { useGetGuestRoom } from "@/src/features/guests/api/use-guests";
 import { GuestWithRoom, RoomData } from "@/src/features/hotel/types/hotel.types";
+import { cn } from "@/src/utils/cn";
 import { shadowStyle } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Pressable,
   RefreshControl,
   TextInput,
   TouchableOpacity,
@@ -59,7 +60,8 @@ const STATUS_CONFIG = {
 
 export default function HotelManagementScreen() {
   const router = useRouter();
-  const { eventId } = useLocalSearchParams<{ eventId: string }>();
+  const { eventId, isGuest } = useLocalSearchParams<{ eventId: string; isGuest?: string }>();
+  const isGuestView = isGuest === "true";
   const numericEventId = eventId ? Number(eventId) : null;
 
   const { mutate: submitRsvpResponse, isPending } = useSubmitRsvpResponse(Number(eventId));
@@ -85,12 +87,16 @@ export default function HotelManagementScreen() {
 
   const [newRoom, setNewRoom] = useState("");
 
+  const [activeTab, setActiveTab] = useState<"assign" | "roomList">("assign");
+
   const {
     data: guestRooms = [],
     isLoading,
     isRefetching,
     refetch,
   } = useGetGuestRoom(numericEventId);
+
+
 
   const normalizedGuests = useMemo(() => {
     if (!Array.isArray(guestRooms)) return [];
@@ -182,19 +188,22 @@ export default function HotelManagementScreen() {
     [filteredGuests]
   );
 
-  const totalGuests = normalizedGuests.length;
-  const totalAssigned = normalizedGuests.filter((g) => !!g.room).length;
-  const totalRooms = new Set(
-    normalizedGuests.map((g) => g.room?.trim()).filter((r): r is string => !!r)
-  ).size;
-  const totalCheckedIn = normalizedGuests.filter(
-    (g) => g.hasCheckedIn && !g.hasCheckedOut
-  ).length;
-
   const categoryPickerOptions = [
     { value: "all", label: "All Guests", count: normalizedGuests.length },
     ...categoryStats,
   ];
+
+  const tabs = [
+    { 
+      label: "Assign Guests", 
+      value: "assign" as const, 
+      count: unassignedGuests.length 
+    },
+    { 
+      label: "Room List",
+       value: "roomList" as const, 
+       count: roomCardList.length },
+  ] as const;
 
   function navigateToDetails(guest: GuestWithRoom) {
     const formattedGuest = {
@@ -345,24 +354,44 @@ export default function HotelManagementScreen() {
         }}
       />
 
-      {/* ── Stats Bar ── */}
-      <View
-        className="mx-4 mb-3 bg-white rounded-md border border-gray-100 py-4 px-2"
-      >
-        <View className="flex-row">
-          <StatPill icon="business-outline" value={totalRooms} label="Rooms" color="#6366f1" />
-          <View className="w-px bg-gray-100 my-1" />
-          <StatPill icon="people-outline" value={totalGuests} label="Guests" color="#ee2b8c" />
-          <View className="w-px bg-gray-100 my-1" />
-          <StatPill
-            icon="checkmark-circle-outline"
-            value={totalAssigned}
-            label="Assigned"
-            color="#10b981"
-          />
-          <View className="w-px bg-gray-100 my-1" />
-          <StatPill icon="bed-outline" value={totalCheckedIn} label="Checked In" color="#f59e0b" />
-        </View>
+      {/* ── Tab Bar ── */}
+      <View className="flex-row p-1 mb-3 mt-3 gap-2 bg-background-tertiary !rounded-md mx-4">
+        {tabs.map((tab) => (
+          <Pressable
+            key={tab.value}
+            onPress={() => setActiveTab(tab.value)}
+            className={cn(
+              "flex-1 py-2 rounded-md items-center flex-row justify-center gap-1.5 ",
+              activeTab === tab.value ? "bg-white" : ""
+            )}
+          >
+            <Text
+              className={cn(
+                "text-md font-jakarta-semibold p-1 ",
+                activeTab === tab.value ? "text-primary" : "text-gray-500"
+              )}
+            >
+              {tab.label}
+            </Text>
+            {tab.count > 0 && (
+              <View
+                className={cn(
+                  "px-1.5 py-0.5 rounded-full",
+                  activeTab === tab.value ? "bg-primary/15" : "bg-gray-200"
+                )}
+              >
+                <Text
+                  className={cn(
+                    "font-jakarta-bold text-[9px]",
+                    activeTab === tab.value ? "text-primary" : "text-gray-400"
+                  )}
+                >
+                  {tab.count}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        ))}
       </View>
 
       {/* ── Content ── */}
@@ -373,6 +402,58 @@ export default function HotelManagementScreen() {
           </View>
           <Text className="font-jakarta-semibold text-sm text-gray-500">Loading rooms…</Text>
         </View>
+      ) : activeTab === "assign" ? (
+        <FlatList
+          data={unassignedGuests}
+          keyExtractor={(item, idx) => `${item.user?.id ?? "guest"}-${idx}`}
+          renderItem={({ item: guest }) => (
+            <UnassignedGuestRow
+              guest={guest}
+              isGuestView={isGuestView}
+              onAssignRoom={(selectedGuest) => {
+                setRoomAssignmentModal({ visible: true, guest: selectedGuest });
+                setNewRoom("");
+              }}
+              onDetailsPress={navigateToDetails}
+              isGuestView={isGuestView}
+            />
+          )}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingBottom: 120,
+            paddingTop: 4,
+            gap: 10,
+          }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor="#ee2b8c"
+              colors={["#ee2b8c"]}
+            />
+          }
+          ListHeaderComponent={
+            unassignedGuests.length > 0 ? (
+              <Text className="font-jakarta-bold text-[11px] text-gray-400 uppercase tracking-widest mb-1">
+                Unassigned · {unassignedGuests.length}
+              </Text>
+            ) : null
+          }
+          ListEmptyComponent={
+            <View className="items-center pt-20 gap-4">
+              <View className="w-20 h-20 rounded-3xl bg-gray-100 items-center justify-center">
+                <Ionicons name="checkmark-circle-outline" size={36} color="#10b981" />
+              </View>
+              <View className="items-center gap-1">
+                <Text className="font-jakarta-bold text-md text-gray-500">All guests assigned!</Text>
+                <Text className="font-jakarta text-xs text-gray-400 text-center px-8">
+                  Every guest has been assigned a room.
+                </Text>
+              </View>
+            </View>
+          }
+        />
       ) : (
         <FlatList
           data={roomCardList}
@@ -383,7 +464,8 @@ export default function HotelManagementScreen() {
               isPending={isPending}
               activeCheckoutUserId={activeCheckoutUserId}
               onManage={handleManageRoom}
-              onCheckout={(guest) => handleGuestStatusToggle(guest, "check-out")}
+              onCheckout={(guest) =>  handleGuestStatusToggle(guest, "check-out")}
+              isGuestView={isGuestView}
             />
           )}
           contentContainerStyle={{
@@ -408,30 +490,6 @@ export default function HotelManagementScreen() {
               </Text>
             ) : null
           }
-          ListFooterComponent={
-            unassignedGuests.length > 0 ? (
-              <View className="mt-5 gap-2">
-                <View className="flex-row items-center gap-2 mb-1">
-                  <View className="h-px flex-1 bg-gray-200" />
-                  <Text className="font-jakarta-bold text-[11px] text-amber-600 uppercase tracking-widest">
-                    Unassigned · {unassignedGuests.length}
-                  </Text>
-                  <View className="h-px flex-1 bg-gray-200" />
-                </View>
-                {unassignedGuests.map((guest, idx) => (
-                  <UnassignedGuestRow
-                    key={`${guest.user?.id ?? "guest"}-${idx}`}
-                    guest={guest}
-                    onAssignRoom={(selectedGuest) => {
-                      setRoomAssignmentModal({ visible: true, guest: selectedGuest });
-                      setNewRoom("");
-                    }}
-                    onDetailsPress={navigateToDetails}
-                  />
-                ))}
-              </View>
-            ) : null
-          }
           ListEmptyComponent={
             <View className="items-center pt-20 gap-4">
               <View className="w-20 h-20 rounded-3xl bg-gray-100 items-center justify-center">
@@ -450,9 +508,6 @@ export default function HotelManagementScreen() {
         />
       )}
 
-      {/* ══════════════════════════════════════════════
-          Modal: Room Check-In Management
-      ══════════════════════════════════════════════ */}
       <Modal
         visible={roomCheckInModal.visible}
         transparent

@@ -1,5 +1,5 @@
 import { Text } from "@/src/components/ui/Text";
-import { VenueAttribute } from "@/src/constants/business";
+import { VenueAttribute } from "@/src/features/business";
 import { shadowStyle } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { TouchableOpacity, View } from "react-native";
@@ -28,12 +28,12 @@ function VenueCard({ venue, onEdit }: { venue: VenueAttribute; onEdit: () => voi
     label: string;
     active: boolean;
   }> = [
-      { icon: "restaurant", label: "Catering", active: venue.has_catering },
-      { icon: "tv", label: "AV Equipment", active: venue.has_av_equipment },
-      { icon: "wb-sunny", label: "Outdoor", active: venue.is_outDoor },
+      { icon: "restaurant", label: "Catering", active: venue.hasCatering },
+      { icon: "tv", label: "AV Equipment", active: venue.hasAvequipment },
+      { icon: "wb-sunny", label: "Outdoor", active: venue.isOutDoor },
       { icon: "local-parking", label: "Parking", active: venue.parking },
-      { icon: "directions-car", label: "Valet", active: venue.valet_available },
-      { icon: "local-bar", label: "Alcohol Allowed", active: venue.alcohol_allowed },
+      { icon: "directions-car", label: "Valet", active: venue.valetAvailable },
+      { icon: "local-bar", label: "Alcohol Allowed", active: venue.alcoholAllowed },
     ];
   const activeAmenities = amenities.filter((a) => a.active);
 
@@ -49,7 +49,7 @@ function VenueCard({ venue, onEdit }: { venue: VenueAttribute; onEdit: () => voi
           </View>
           <View>
             <Text variant="h1" className="text-sm text-[#181114]">
-              {venue.venue_name ?? "Venue"}
+              {venue.venueName ?? "Venue"}
             </Text>
             {venue.capacity != null && (
               <Text className="text-[10px] text-[#594048]">
@@ -59,10 +59,10 @@ function VenueCard({ venue, onEdit }: { venue: VenueAttribute; onEdit: () => voi
           </View>
         </View>
         <View className="flex-row items-center gap-2">
-          {venue.price_per_hour != null && (
+          {venue.pricePerhour != null && (
             <View className="items-end">
               <Text variant="h1" className="text-primary text-base">
-                ₹{venue.price_per_hour.toLocaleString()}
+                ₹{venue.pricePerhour.toLocaleString()}
               </Text>
               <Text className="text-[10px] text-gray-400">per hour</Text>
             </View>
@@ -78,11 +78,11 @@ function VenueCard({ venue, onEdit }: { venue: VenueAttribute; onEdit: () => voi
       </View>
 
       <View className="flex-row gap-2 mb-3">
-        {venue.area_sqft != null && (
+        {venue.areaSqft != null && (
           <View className="flex-1 bg-gray-50 rounded-xl p-2.5 items-center">
             <MaterialIcons name="straighten" size={16} color="#594048" />
             <Text variant="h1" className="text-xs  text-[#181114] mt-1">
-              {venue.area_sqft.toLocaleString()} sqft
+              {venue.areaSqft.toLocaleString()} sqft
             </Text>
             <Text className="text-[9px] text-gray-400">Area</Text>
           </View>
@@ -91,7 +91,7 @@ function VenueCard({ venue, onEdit }: { venue: VenueAttribute; onEdit: () => voi
         <View className="flex-1 bg-gray-50 rounded-xl p-2.5 items-center">
           <MaterialIcons name="hotel" size={16} color="#594048" />
           <Text variant="h1" className="text-xs text-[#181114] mt-1">
-            {venue.rooms_available != null ? venue.rooms_available : "—"}
+            {venue.roomsAvailable != null ? venue.roomsAvailable : "—"}
           </Text>
           <Text className="text-[9px] text-gray-400">Rooms</Text>
         </View>
@@ -100,7 +100,7 @@ function VenueCard({ venue, onEdit }: { venue: VenueAttribute; onEdit: () => voi
         <View className="flex-1 bg-gray-50 rounded-xl p-2.5 items-center">
           <MaterialIcons name="schedule" size={16} color="#594048" />
           <Text variant="h1" className="text-xs text-[#181114] mt-1">
-            {venue.min_booking_hours != null ? `${venue.min_booking_hours}h` : "4h"} - {venue.max_booking_hours != null ? `${venue.max_booking_hours}h` : "24h"}
+            {venue.minBookinghours != null ? `${venue.minBookinghours}h` : "4h"} - {venue.maxBookinghours != null ? `${venue.maxBookinghours}h` : "24h"}
           </Text>
           <Text className="text-[9px] text-gray-400">Booking Hrs</Text>
         </View>
@@ -109,7 +109,7 @@ function VenueCard({ venue, onEdit }: { venue: VenueAttribute; onEdit: () => voi
         <View className="flex-1 bg-gray-50 rounded-xl p-2.5 items-center">
           <MaterialIcons name="volume-up" size={16} color="#594048" />
           <Text variant="h1" className="text-xs text-[#181114] mt-1">
-            {venue.sound_limit_db != null ? `${venue.sound_limit_db} dB` : "N/A"}
+            {venue.soundLimitdb != null ? `${venue.soundLimitdb} dB` : "N/A"}
           </Text>
           <Text className="text-[9px] text-gray-400">Sound Limit</Text>
         </View>

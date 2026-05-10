@@ -1,69 +1,41 @@
-import EventHighlightTimeline from "@/src/components/event/EventHighlightTimeline";
 import FamilyRsvpCard from "@/src/components/event/FamilyRsvpCard";
-import ServiceGrid from "@/src/components/event/ServiceGrid";
+import NavigateComponent from "@/src/components/event/NavigateComponent";
 import { Text } from "@/src/components/ui/Text";
 import {
   useEventById,
-  useEventResponseWithUser,
-  useSubEventsOfEvent,
+  useEventResponseWithUser
 } from "@/src/features/events/hooks/use-event";
 import { GuestDetailInterface } from "@/src/features/guests/types";
 import { useRsvpStore } from "@/src/store/useRsvpStore";
-import { EventService } from "@/src/types";
-import { formatDate } from "@/src/utils/helper";
+import { shadowStyle } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { RelativePathString, useLocalSearchParams, useRouter } from "expo-router";
+import { useRef } from "react";
 import {
   ActivityIndicator,
-  Image,
+  Animated,
   ScrollView,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import EventDetailHero from "../View/EventDetailHero";
 
 // this will be replaced by the timelines or we will be creating the highlight (major subevent api)
-
-const DEFAULT_SERVICES: EventService[] = [
-  { id: "lodging", label: "Lodging", icon: "bed-outline" },
-  { id: "transport", label: "Transport", icon: "car-outline" },
-  { id: "meals", label: "Meals", icon: "restaurant-outline" },
+const manageActions = [
+  { id: "subevents", name: "Sub Events", icon: "layers-outline", color: "#F97316", route: "./(subevent)" as RelativePathString, params: { isGuest: "true" } },
+  { id: "checklist", name: "Checklist", icon: "checkmark-circle-outline", color: "#EC4899", route: "./tasklist" as RelativePathString, params: { isGuest: "true" } },
+  { id: "catering", name: "Catering", icon: "restaurant", color: "#F43F5E", route: "./catering" as RelativePathString, params: { isGuest: "true" } },
+  { id: "hotel-management", name: "Hotel Management", icon: "bed-outline", color: "#F59E0B", route: "./hotel" as RelativePathString, params: { isGuest: "true" } },
+  { id: "logistics", name: "logistics", icon: "cube-outline", color: "#10B981", route: "./(logistics)" as RelativePathString, params: { isGuest: "true" } },
 ];
 
-const Section = ({
-  title,
-  action,
-  onAction,
-  children,
-}: {
-  title: string;
-  action?: string;
-  onAction?: () => void;
-  children: React.ReactNode;
-}) => (
-  <View className="px-5 py-5">
-    <View className="flex-row items-center justify-between mb-3">
-      <Text variant="h2" className="text-xl">
-        {title}
-      </Text>
-      {action && onAction && (
-        <TouchableOpacity onPress={onAction} activeOpacity={0.7}>
-          <Text variant="caption" className="text-primary">
-            {action}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-    {children}
-  </View>
-);
+
 
 export default function GuestEventDetails() {
   const router = useRouter();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
-  const { data: subEvents, isLoading: subEventsLoading } = useSubEventsOfEvent(
-    Number(eventId)
-  );
+
   const setDraft = useRsvpStore((s) => s.setDraft);
   const clearDraft = useRsvpStore((s) => s.clearDraft);
 
@@ -71,15 +43,12 @@ export default function GuestEventDetails() {
   const { data: eventResponse, isLoading: responseLoading } =
     useEventResponseWithUser(Number(eventId));
 
+
+  const scrollY = useRef(new Animated.Value(0)).current;
   const isFamily = eventResponse?.isFamily ?? false;
   const responses = (eventResponse?.responses ?? []) as Array<GuestDetailInterface>;
 
-  /**
-   * Individual invite: the single guest record for the logged-in user.
-   * responses[0] is the only entry when isFamily === false.
-   */
   const myGuestRecord = !isFamily ? (responses[0]?.eventGuest ?? null) : null;
-  console.log("This is the data in the has rsvp in the data   ", myGuestRecord);
   const hasRsvped = isFamily ? true : myGuestRecord !== null;
 
   const familyMembers = responses.map((r) => ({
@@ -94,6 +63,17 @@ export default function GuestEventDetails() {
 
   const familyName = responses[0]?.user?.relation ?? "Your Family";
 
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [120, 160],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+  const headerTranslate = scrollY.interpolate({
+    inputRange: [120, 160],
+    outputRange: [6, 0],
+    extrapolate: "clamp",
+  });
+  const insets = useSafeAreaInsets();
   const familyDraftMembers = responses.map((r) => ({
     user: {
       id: r.user.id,
@@ -108,7 +88,7 @@ export default function GuestEventDetails() {
     eventGuest: r.eventGuest ?? null,
   }));
 
-  if (isLoading || subEventsLoading || responseLoading) {
+  if (isLoading || responseLoading) {
     return (
       <SafeAreaView
         className="flex-1 bg-background-light items-center justify-center"
@@ -141,57 +121,86 @@ export default function GuestEventDetails() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light" edges={["top"]}>
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 88,
+          backgroundColor: "#ffffff",
+          ...shadowStyle,
+          opacity: headerOpacity,
+          zIndex: 10,
+        }}
+      />
+      <Animated.Text
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: insets.top + 12,
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          opacity: headerOpacity,
+          transform: [{ translateY: headerTranslate }],
+          fontWeight: "800",
+          fontSize: 16,
+          color: "#111827",
+          zIndex: 11,
+        }}
+      >
+        {eventDetails.title}
+      </Animated.Text>
+      {/* //Left Icon  */}
+      <View
+        style={{
+          position: "absolute",
+          left: 16,
+          top: insets.top + 8,
+          zIndex: 20
+          ,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          activeOpacity={0.8}
+          className="bg-white rounded-full p-2 shadow"
+        >
+          <Ionicons name="chevron-back" size={22} color="#ee2b8c" />
+        </TouchableOpacity>
+      </View>
+      {/* //Rright Icon  */}
+      <View
+        style={{
+          position: "absolute",
+          right: 16,
+          top: insets.top + 8,
+          zIndex: 20
+          ,
+        }}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-10"
       >
-        <View className="items-center pb-2 px-5">
-          <View className="w-32 h-32 rounded-full overflow-hidden border-4 border-pink-100">
-            {eventDetails?.imageUrl ? (
-              <Image
-                source={{ uri: eventDetails.imageUrl }}
-                className="w-full h-full"
-                resizeMode="cover"
-              />
-            ) : (
-              <View className="w-full h-full bg-pink-50" />
-            )}
-          </View>
-
-          <Text variant="h1" className="text-center mt-4 text-lg">
-            {eventDetails?.title}
-          </Text>
-
-          <View className="flex-row items-center gap-1.5 mt-2">
-            <Ionicons name="calendar-outline" size={14} color="#ee2b8c" />
-            <Text variant="caption" className="text-primary">
-              {formatDate(eventDetails?.startDateTime)}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center gap-1.5 mt-1">
-            <Ionicons name="location-outline" size={14} color="#6b7280" />
-            <Text variant="caption">{eventDetails?.location}</Text>
+        <EventDetailHero
+          imageUrl={eventDetails.imageUrl}
+          status={eventDetails.status}
+          title={eventDetails.title}
+          startDateTime={eventDetails.startDateTime}
+          endDateTime={eventDetails.endDateTime}
+          location={eventDetails.location}
+        />
+        <View className="mt-6 px-4 pb-4">
+          <Text className="text-lg font-bold mb-3">Manage Event</Text>
+          <View className="flex-row flex-wrap gap-3 justify-center">
+            {manageActions.map((action) => (
+              <NavigateComponent key={action.id} {...action} isGuest={true} />
+            ))}
           </View>
         </View>
-
-        {/* ── Highlights ── */}
-        <Section
-          title="Event Highlights"
-          action="View Full Itinerary"
-          onAction={() => {}}
-        >
-          <EventHighlightTimeline highlights={subEvents} />
-        </Section>
-
-        {/* ── Services ── */}
-        <Section title="Services Offered">
-          <ServiceGrid
-            services={DEFAULT_SERVICES}
-            onServicePress={(service) => handleServicePress(service.id)}
-          />
-        </Section>
-
         {/* ── RSVP section ── */}
         <View className="px-5 py-5">
           {isFamily ? (
@@ -252,9 +261,8 @@ export default function GuestEventDetails() {
             <View className="bg-white rounded-md p-6 border border-slate-100 shadow-sm gap-4">
               <View className="flex-row items-center gap-3">
                 <View
-                  className={`w-10 h-10 rounded-full items-center justify-center ${
-                    hasRsvped ? "bg-green-100" : "bg-pink-100"
-                  }`}
+                  className={`w-10 h-10 rounded-full items-center justify-center ${hasRsvped ? "bg-green-100" : "bg-pink-100"
+                    }`}
                 >
                   <Ionicons
                     name={hasRsvped ? "checkmark-circle" : "mail"}
@@ -295,16 +303,16 @@ export default function GuestEventDetails() {
                   responses[0]?.eventGuest?.notes ||
                   responses[0]?.eventGuest?.arrivalInfo ||
                   responses[0]?.eventGuest?.departureInfo) && (
-                  <TouchableOpacity
-                    className="flex-1 py-3.5 rounded-md items-center justify-center bg-slate-50 border border-slate-200 active:bg-slate-100 active:scale-[0.98]"
-                    activeOpacity={0.8}
-                    onPress={handleIndividualRsvp}
-                  >
-                    <Text className="text-slate-600 font-bold text-sm">
-                      View Data
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                    <TouchableOpacity
+                      className="flex-1 py-3.5 rounded-md items-center justify-center bg-slate-50 border border-slate-200 active:bg-slate-100 active:scale-[0.98]"
+                      activeOpacity={0.8}
+                      onPress={handleIndividualRsvp}
+                    >
+                      <Text className="text-slate-600 font-bold text-sm">
+                        View Data
+                      </Text>
+                    </TouchableOpacity>
+                  )}
               </View>
             </View>
           )}

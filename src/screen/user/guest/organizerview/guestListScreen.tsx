@@ -17,9 +17,10 @@ import {
   type GuestDetailInterface,
   groupInvitationsByFamily,
 } from "@/src/features/guests/types";
+import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { cn } from "@/src/utils/cn";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { RelativePathString, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -35,7 +36,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 type GuestFilterTab = "accepted" | "pending" | "draft";
 
 export default function GuestListScreen() {
-  const router = useRouter();
+
+  const { push } = useThrottledRouter();
   const params = useLocalSearchParams();
   const eventId = Number(params.eventId);
   const setGuestDetail = useGuestDetailStore((state) => state.setGuestDetail);
@@ -235,24 +237,26 @@ export default function GuestListScreen() {
 
   const openAddGuestScreen = useCallback(() => {
     if (!eventId) return;
-    router.push(
-      `/(protected)/(client-stack)/events/${eventId}/(organizer)/addguest`
+    push(
+      `./guests/addguest`
     );
-  }, [eventId, router]);
+  }, [eventId]);
 
   const openContactPickerScreen = useCallback(() => {
     if (!eventId) return;
-    router.push(
-      `/(protected)/(client-stack)/events/${eventId}/(organizer)/contactpicker`
+    push(
+      `./contactpicker` as RelativePathString
     );
-  }, [eventId, router]);
+  }, [eventId]);
 
   const onPressGuestCard = (guest: GuestDetailInterface) => {
     setGuestDetail(guest);
-    router.push({
+    //TODO: Draft the detail of the guest instead of using the params in this 
+    console.log('This plave is hit to route the use🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀r ',)
+    push({
       pathname:
-        `/(protected)/(client-stack)/events/${eventId}/(organizer)/guests/${guest.user.id}/guest-details` as any,
-      params: { guest: JSON.stringify(guest) },
+        `./guests/[guestDetailId]`,
+      params: { guestDetailId: guest.user.id },
     });
   };
 
@@ -319,10 +323,8 @@ export default function GuestListScreen() {
 
   const onPressFamilyCard = (familyData: FamilyGroup) => {
     setFamilyGuest(familyData);
-    router.push({
-      pathname:
-        `/(protected)/(client-stack)/events/${eventId}/(organizer)/guests/familymember` as any,
-      params: { family: JSON.stringify(familyData) },
+    push({
+      pathname: "./guests/familymember",
     });
   };
 

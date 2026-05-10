@@ -1,5 +1,5 @@
 import { Text } from "@/src/components/ui/Text";
-import { VenueAttribute } from "@/src/constants/business";
+import { VenueAttribute } from "@/src/features/business";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image, Modal, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,22 +7,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 type AmenityItem = { key: keyof VenueAttribute; label: string; icon: string };
 
 const AMENITIES: AmenityItem[] = [
-  { key: "has_catering", label: "Catering", icon: "restaurant" },
+  { key: "hasCatering", label: "Catering", icon: "restaurant" },
   { key: "parking", label: "Parking", icon: "local-parking" },
-  { key: "valet_available", label: "Valet", icon: "directions-car" },
-  { key: "has_av_equipment", label: "AV Equipment", icon: "tv" },
-  { key: "alcohol_allowed", label: "Alcohol Allowed", icon: "local-bar" },
-  { key: "is_outDoor", label: "Outdoor Space", icon: "park" },
+  { key: "valetAvailable", label: "Valet", icon: "directions-car" },
+  { key: "hasAvequipment", label: "AV Equipment", icon: "tv" },
+  { key: "alcoholAllowed", label: "Alcohol Allowed", icon: "local-bar" },
+  { key: "isOutDoor", label: "Outdoor Space", icon: "park" },
 ];
 
 const INFO_ROWS = (venue: VenueAttribute) => [
   { icon: "group", label: "Max Capacity", value: venue.capacity ? `${venue.capacity} guests` : "—" },
-  { icon: "straighten", label: "Total Area", value: venue.area_sqft ? `${venue.area_sqft} sqft` : "—" },
-  { icon: "attach-money", label: "Price / Hour", value: venue.price_per_hour ? `₹${venue.price_per_hour.toLocaleString()}` : "On Request" },
-  { icon: "schedule", label: "Min Booking", value: venue.min_booking_hours ? `${venue.min_booking_hours} hrs` : "Flexible" },
-  { icon: "timelapse", label: "Max Booking", value: venue.max_booking_hours ? `${venue.max_booking_hours} hrs` : "Flexible" },
-  { icon: "hotel", label: "Rooms Available", value: venue.rooms_available ? `${venue.rooms_available} rooms` : "N/A" },
-  { icon: "volume-up", label: "Sound Limit", value: venue.sound_limit_db ? `${venue.sound_limit_db} dB` : "No Limit" },
+  { icon: "straighten", label: "Total Area", value: venue.areaSqft ? `${venue.areaSqft} sqft` : "—" },
+  { icon: "attach-money", label: "Price / Hour", value: venue.pricePerhour ? `₹${venue.pricePerhour.toLocaleString()}` : "On Request" },
+  { icon: "schedule", label: "Min Booking", value: venue.minBookinghours ? `${venue.minBookinghours} hrs` : "Flexible" },
+  { icon: "timelapse", label: "Max Booking", value: venue.maxBookinghours ? `${venue.maxBookinghours} hrs` : "Flexible" },
+  { icon: "hotel", label: "Rooms Available", value: venue.roomsAvailable ? `${venue.roomsAvailable} rooms` : "N/A" },
+  { icon: "volume-up", label: "Sound Limit", value: venue.soundLimitdb ? `${venue.soundLimitdb} dB` : "No Limit" },
 ];
 
 export function VenueDetailModal({
@@ -53,7 +53,7 @@ export function VenueDetailModal({
           </Pressable>
           <View className="absolute bottom-4 left-4 bg-primary px-3 py-1 rounded-full">
             <Text className="text-white text-[10px] tracking-widest uppercase">
-              {venue.is_outDoor ? "Outdoor" : "Indoor"} · {venue.venue_type ?? "Venue"}
+              {venue.isOutDoor ? "Outdoor" : "Indoor"} · {venue.venueName ?? "Venue"}
             </Text>
           </View>
         </View>
@@ -61,9 +61,9 @@ export function VenueDetailModal({
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
           {/* Title */}
           <View className="px-5 pt-5 pb-4 bg-white">
-            <Text className="text-2xl text-[#181114]">{venue.venue_type ?? "Venue Space"}</Text>
+            <Text className="text-2xl text-[#181114]">{venue.venueType ?? "Venue Space"}</Text>
             <Text className="text-sm text-gray-400 mt-1">
-              {venue.is_outDoor ? "Outdoor" : "Indoor"} · Venue #{venue.venue_id}
+              {venue.isOutDoor ? "Outdoor" : "Indoor"} · Venue #{venue.venueId}
             </Text>
           </View>
 
@@ -112,9 +112,9 @@ export function VenueDetailModal({
             </View>
             <View className="flex-row gap-4">
               {[
-                { label: "Min Hours", value: `${venue.min_booking_hours ?? "—"} hrs` },
-                { label: "Max Hours", value: `${venue.max_booking_hours ?? "—"} hrs` },
-                { label: "Per Hour", value: venue.price_per_hour ? `₹${venue.price_per_hour}` : "—" },
+                { label: "Min Hours", value: `${venue.minBookinghours ?? "—"} hrs` },
+                { label: "Max Hours", value: `${venue.maxBookinghours ?? "—"} hrs` },
+                { label: "Per Hour", value: venue.pricePerhour ? `₹${venue.pricePerhour}` : "—" },
               ].map((item) => (
                 <View key={item.label} className="flex-1 bg-white/10 rounded-md p-3">
                   <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }} className="uppercase tracking-widest mb-1">

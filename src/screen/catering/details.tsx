@@ -181,7 +181,7 @@ export default function CateringDetailsScreen() {
   const handleAddMenu = () => {
     router.push({
       pathname:
-        "/(protected)/(client-stack)/events/[eventId]/(organizer)/catering/[cateringId]/add-menu",
+        "./[cateringId]/add-menu",
       params: { eventId, cateringId },
     });
   };

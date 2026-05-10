@@ -1,4 +1,3 @@
-import { DatePicker } from "@/components/nativewindui/DatePicker/DatePicker.android";
 import { CountryOption, CountryPickerModal } from "@/src/components/ui/CountryPhone";
 import { COUNTRY_DATA } from "@/src/constants/countrydata";
 import { AddFamilyMemberPayload } from "@/src/features/family/api/family.service";
@@ -7,13 +6,18 @@ import {
   useUpdateFamilyMember,
 } from "@/src/features/family/hooks/use-family";
 import { useFindUserWithPhone } from "@/src/features/user/api/use-user";
+import { formatDate, parseDate } from "@/src/utils/helper";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
   Pressable,
   TextInput,
   TouchableOpacity,
@@ -52,6 +56,7 @@ export default function AddFamilyMemberForm({
 
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRY_DATA[0]);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [showDobPicker, setShowDobPicker] = useState(false);
 
   const {
     control,
@@ -71,7 +76,7 @@ export default function AddFamilyMemberForm({
   });
 
   const [dobDate, setDobDate] = React.useState<Date>(
-    initialData?.dob ? new Date(initialData.dob) : new Date()
+    initialData?.dob ? parseDate(initialData.dob) : new Date()
   );
 
   const watchedPhone = watch("phone") ?? "";
@@ -115,6 +120,14 @@ export default function AddFamilyMemberForm({
   }, [initialData?.phone]);
 
   React.useEffect(() => {
+    if (initialData?.dob) {
+      const nextDob = parseDate(initialData.dob);
+      setDobDate(nextDob);
+      setValue("dob", nextDob);
+    }
+  }, [initialData?.dob, setValue]);
+
+  React.useEffect(() => {
     if (!isEditMode && isMatchedUser && foundUser) {
       setValue("username", foundUser?.username || "", { shouldValidate: true });
       if (foundUser.email) {
@@ -132,6 +145,22 @@ export default function AddFamilyMemberForm({
       Alert.alert("Error", message);
     }
   }, [findUserError, isFindUserError]);
+
+  const handleDobChange = (
+    event: DateTimePickerEvent,
+    date?: Date
+  ) => {
+    if (event.type === "dismissed") {
+      setShowDobPicker(false);
+      return;
+    }
+
+    if (!date) return;
+
+    setDobDate(date);
+    setValue("dob", date, { shouldValidate: true, shouldDirty: true });
+    setShowDobPicker(false);
+  };
 
   const onSubmit = (values: AddFamilyMemberPayload) => {
     if (!familyId) {
@@ -348,26 +377,31 @@ export default function AddFamilyMemberForm({
 
       {/* DOB */}
       <View className="mb-3">
-        <Controller
-          control={control}
-          name="dob"
-          rules={isEditMode ? {} : { required: "DOB is required" }}
-          render={({ field: { value } }) => (
-            <DatePicker
-              mode="date"
-              value={dobDate}
-              materialDateLabel="Date of Birth"
-              materialDateLabelClassName="text-xs font-jakarta-bold uppercase tracking-wide text-text-tertiary mb-1.5 ml-1 text-left"
-              onChange={(event: any, date?: Date) => {
-                if (date) {
-                  setDobDate(date);
-                  setValue("dob", date);
-                }
-              }}
-              maximumDate={new Date()}
-            />
-          )}
-        />
+        <Text className="text-xs font-jakarta-bold uppercase tracking-wide text-text-tertiary mb-1.5 ml-1">
+          Date of Birth
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => setShowDobPicker(true)}
+          disabled={isPending}
+          className={`w-full flex-row items-center justify-between rounded-sm border bg-background px-4 py-3 ${errors.dob ? "border-red-500" : "border-border"}`}
+        >
+          <Text className="text-sm text-text-primary">
+            {dobDate ? formatDate(dobDate.toISOString()) : "Select date of birth"}
+          </Text>
+          <MaterialIcons name="calendar-today" size={18} color="#9ca3af" />
+        </TouchableOpacity>
+
+        {showDobPicker && (
+          <DateTimePicker
+            value={dobDate}
+            mode="date"
+            is24Hour={false}
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={handleDobChange}
+            maximumDate={new Date()}
+          />
+        )}
         {errors.dob && (
           <Text className="text-xs text-red-500 mt-1 ml-1">
             {errors.dob.message}

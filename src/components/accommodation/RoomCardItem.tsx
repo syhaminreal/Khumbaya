@@ -22,11 +22,13 @@ export function RoomCardItem({
   item,
   isPending,
   activeCheckoutUserId,
-  onManage,
+  onManage, 
+  isGuestView,
   onCheckout,
 }: {
   item: RoomData;
   isPending: boolean;
+  isGuestView: boolean;
   activeCheckoutUserId: number | null;
   onManage: (item: RoomData) => void;
   onCheckout: (guest: GuestWithRoom) => void;
@@ -156,7 +158,7 @@ export function RoomCardItem({
             : "bg-outline-variant border border-dashed border-outline"
             }`}
         >
-          {isOccupied ? (
+          {isOccupied && !isGuestView ? (
             <>
               {/* Initials bubble — tertiary theme */}
               <View className="w-7 h-7 rounded-full bg-success-100 border border-success-200 items-center justify-center mr-2">

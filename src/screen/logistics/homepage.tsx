@@ -1,4 +1,6 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useThrottledRouter } from '@/src/hooks/useThrottledRouter';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { Navigation, Plus, Truck } from 'lucide-react-native';
 import { ActivityIndicator, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,8 +32,9 @@ const toAvailabilityText = (value?: Date | null | string) => {
 
 
 const LogisticsHomepage = () => {
-  const router = useRouter();
-  const { eventId } = useLocalSearchParams();
+  const {push} =useThrottledRouter();
+  const { eventId, isGuest } = useLocalSearchParams();
+  const isGuestView = isGuest === "true";
   const { data: vehicles = [], isLoading: isVehiclesLoading } = useGetVehicle(String(eventId ?? ''));
 
   const fleetCards = vehicles.map((vehicle: EventVehicle, index: number) => {
@@ -51,12 +54,13 @@ const LogisticsHomepage = () => {
 
 
   const handleAddVehicle = () => {
-    router.push(`/(protected)/(client-stack)/events/${eventId}/(organizer)/(logistics)/add-logistics`);
+    if (isGuestView) return;
+    push(`./add-logistics`);
   };
 
   const handleManageVehicle = (busId: string) => {
-    router.push({
-      pathname: '/(protected)/(client-stack)/events/[eventId]/(organizer)/(logistics)/manage',
+   push({
+      pathname: './manage',
       params: {
         eventId: String(eventId),
         vehicleId: busId,
@@ -64,6 +68,18 @@ const LogisticsHomepage = () => {
     });
 
   };
+  
+  if (isGuestView) {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center px-6" edges={["top", "bottom"]}>
+        <MaterialIcons name="construction" size={44} color="#ee2b8c" />
+        <Text className="mt-4 text-lg font-jakarta-bold text-gray-900">Coming soon</Text>
+        <Text className="mt-2 text-sm text-gray-500 text-center">
+          Guest access to Logistics management is on the way.
+        </Text>
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView
       className='flex-1'
@@ -75,13 +91,15 @@ const LogisticsHomepage = () => {
         {/* Custom Top Bar */}
         <View className="px-6 pb-2 pt-4 flex-row justify-between items-center bg-white">
           <Text className="text-2xl font-jakarta-bold text-gray-900">Logistics</Text>
-          <TouchableOpacity
-            onPress={handleAddVehicle}
-            className="bg-primary px-4 py-2 rounded-xl flex-row items-center shadow-lg shadow-pink-200"
-          >
-            <Plus size={18} color="white" />
-            <Text className="text-white font-jakarta-bold text-sm ml-1">Add</Text>
-          </TouchableOpacity>
+          {!isGuestView && (
+            <TouchableOpacity
+              onPress={handleAddVehicle}
+              className="bg-primary px-4 py-2 rounded-xl flex-row items-center shadow-lg shadow-pink-200"
+            >
+              <Plus size={18} color="white" />
+              <Text className="text-white font-jakarta-bold text-sm ml-1">Add</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <ScrollView

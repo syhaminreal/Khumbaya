@@ -1,7 +1,10 @@
-import { DatePicker } from "@/components/nativewindui/DatePicker";
 import AvatarPicker from "@/src/components/ui/AvatarPicker";
 import { useUpdateUserMe } from "@/src/features/user/api/use-user";
 import { useAuthStore } from "@/src/store/AuthStore";
+import { formatDate, parseDate } from "@/src/utils/helper";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -47,6 +50,7 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const [loading, setLoading] = useState(true);
+  const [showDobPicker, setShowDobPicker] = useState(false);
 
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -85,7 +89,7 @@ export default function EditProfileScreen() {
         city: user.city || "",
         address: user.address || "",
         zip: user.zip || "",
-        dob: user.dob ? new Date(user.dob).toISOString() : "",
+        dob: user.dob ? user.dob.toISOString() : "",
       });
       setLoading(false);
     } else if (!isProfileLoading && !user) {
@@ -130,7 +134,7 @@ export default function EditProfileScreen() {
         address: form.address.trim() || undefined,
         zip: form.zip.trim() || undefined,
         dob: form.dob.trim() || undefined,
-        familyId: user?.familyId,
+        familyId: user?.familyId ?? undefined,
       };
 
       const updatedUser = await updateUserMeMutation.mutateAsync(payload);
@@ -173,6 +177,22 @@ export default function EditProfileScreen() {
       aspect: [1, 1],
       quality: 0.85,
     });
+  };
+
+  const openDobPicker = () => {
+    setShowDobPicker(true);
+  };
+
+  const onDobChange = (event: DateTimePickerEvent, pickedDate?: Date) => {
+    if (event.type === "dismissed") {
+      setShowDobPicker(false);
+      return;
+    }
+
+    if (!pickedDate) return;
+
+    set("dob", pickedDate.toISOString());
+    setShowDobPicker(false);
   };
 
   const isSaving = saveState === "saving";
@@ -266,15 +286,26 @@ export default function EditProfileScreen() {
             <Text className="text-sm font-semibold text-gray-700 mb-2">
               Date of Birth
             </Text>
-            <DatePicker
-              value={form.dob ? new Date(form.dob) : new Date()}
-              onChange={(_event, date) => {
-                if (date) {
-                  set("dob", date.toISOString());
-                }
-              }}
-              mode="date"
-            />
+            <TouchableOpacity
+              onPress={openDobPicker}
+              className="bg-white rounded-md px-4 py-3.5 border border-gray-200"
+              activeOpacity={0.8}
+            >
+              <Text className="text-sm text-gray-900">
+                {form.dob ? formatDate(form.dob) : "Select your date of birth"}
+              </Text>
+            </TouchableOpacity>
+
+            {showDobPicker && (
+              <DateTimePicker
+                value={form.dob ? parseDate(form.dob) : new Date()}
+                mode="date"
+                is24Hour={false}
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={onDobChange}
+                maximumDate={new Date()}
+              />
+            )}
           </View>
 
           {/* Location Details */}

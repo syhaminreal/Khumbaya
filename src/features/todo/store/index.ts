@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { TodoColumn} from "../type/index";
+import { TodoColumn } from "../type/index";
 
 interface TodoDraftStoreInterface {
   todoDraft: TodoColumn | null;
@@ -17,11 +17,13 @@ interface TodoListStoreInterface {
   todos: TodoColumn[];
   setTodos: (todos: TodoColumn[]) => void;
   toggleTodoStatus: (id: number) => void;
+  clearTodos: () => void;
 }
 
 export const useTodoListStore = create<TodoListStoreInterface>((set) => ({
   todos: [],
   setTodos: (todos) => set({ todos }),
+  clearTodos: () => set({ todos: [] }),
   toggleTodoStatus: (id) =>
     set((state) => ({
       todos: state.todos.map((t) =>

@@ -1,10 +1,12 @@
-import { DatePicker } from "@/components/nativewindui/DatePicker";
 import { Text } from "@/src/components/ui/Text";
 import {
   usePaymentById,
   usePaymentMutation,
   useUpdatePaymentMutation,
 } from "@/src/features/budget/hooks/use-budget";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -60,6 +62,7 @@ export default function AddPaymentScreen({
   });
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { mutate: createPayment, isPending } = usePaymentMutation(
     Number(expenseId),
@@ -99,6 +102,22 @@ export default function AddPaymentScreen({
 
   const formatDateToISO = (date: Date) => {
     return date.toISOString().split("T")[0];
+  };
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    date?: Date
+  ) => {
+    if (event.type === "dismissed") {
+      setShowDatePicker(false);
+      return;
+    }
+
+    if (!date || isPending) return;
+
+    setSelectedDate(date);
+    setValue("paidOn", date);
+    setShowDatePicker(false);
   };
 
   const handleSavePayment = (data: PaymentFormData) => {
@@ -230,7 +249,7 @@ export default function AddPaymentScreen({
               />
             </View>
 
-            {/* Paid On - DatePicker */}
+            {/* Paid On - Native Date Picker */}
             <View className="mb-5">
               <Text variant="h2" className="text-[#181114] mb-2 text-sm">
                 Paid On
@@ -239,18 +258,33 @@ export default function AddPaymentScreen({
                 control={control}
                 name="paidOn"
                 rules={{ required: "Payment date is required" }}
-                render={({ field: { value } }) => (
-                  <DatePicker
-                    mode="date"
-                    value={selectedDate}
-                    materialDateLabel="Payment Date"
-                    onChange={(event: any, date?: Date) => {
-                      if (date && !isPending) {
-                        setSelectedDate(date);
-                        setValue("paidOn", date);
-                      }
-                    }}
-                  />
+                render={() => (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(true)}
+                      disabled={isPending}
+                      className="flex-row items-center justify-between px-4 py-3 bg-gray-50 rounded-md border border-gray-100"
+                      activeOpacity={0.8}
+                    >
+                      <Text className="text-[#181114] text-sm">
+                        {selectedDate.toLocaleDateString()}
+                      </Text>
+                      <Text className="text-xs text-gray-500">
+                        Tap to change
+                      </Text>
+                    </TouchableOpacity>
+
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={selectedDate}
+                        mode="date"
+                        is24Hour={false}
+                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                        onChange={handleDateChange}
+                        maximumDate={new Date()}
+                      />
+                    )}
+                  </>
                 )}
               />
             </View>

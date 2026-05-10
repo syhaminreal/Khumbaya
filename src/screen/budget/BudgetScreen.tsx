@@ -43,22 +43,13 @@ export default function EventBudgetScreen() {
     { enabled: hasBudget }
   );
 
+  const { push } = useThrottledRouter();
   const handleAddPress = () => {
-    router.push(
-      `/(protected)/(client-stack)/events/${eventId}/(organizer)/addBudgetItem`
-    );
+    push({
+      pathname: "../budget/addBudgetItem",
+    });
   };
 
-  const { push } = useThrottledRouter();
-
-  // const handleEditBudget = () => {
-  //   let totalBudgetValue = 0;
-  //   if (!budgetLoading && budgetData) {
-  //     totalBudgetValue = budgetData.summary?.totalBudget || 0;
-  //   }
-  //   setBudgetInput(totalBudgetValue.toString());
-  //   setEditBudgetVisible(true);
-  // };
 
   const handleSaveBudget = async () => {
     const newBudget = parseFloat(budgetInput);
@@ -113,9 +104,9 @@ export default function EventBudgetScreen() {
           headerRight: () => (
             <TouchableOpacity
               onPress={() =>
-                push(
-                  "/(protected)/(client-stack)/events/[eventId]/(organizer)/edit-event"
-                )
+                push({
+                  pathname: "../edit-event",
+                })
               }
               className="pr-4"
               activeOpacity={0.7}
@@ -139,7 +130,7 @@ export default function EventBudgetScreen() {
           <View className="flex-1 items-center justify-center px-6">
             <Pressable
               className="bg-white rounded-3xl p-6 w-full"
-              onPress={() => {}}
+              onPress={() => { }}
             >
               <Text
                 className="text-[#181114] text-lg font-bold mb-4"
@@ -296,7 +287,10 @@ export default function EventBudgetScreen() {
                 spend={cat.spent}
                 onPress={() => {
                   router.push(
-                    `/(protected)/(client-stack)/events/${eventId}/(organizer)/budget/${cat.id}`
+                    {
+                      pathname: `../budget/[categoryId]`,
+                      params: { categoryId: cat.id }
+                    }
                   );
                 }}
               />

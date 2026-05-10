@@ -146,7 +146,7 @@ export default function FamilyRsvpManagementScreen() {
       },
       familyMembers: draftFamilyMembers,
     });
-    router.push(`/(protected)/(client-stack)/events/${eventId}/(guest)/guest-details`);
+    router.push(`/(protected)/(client-stack)/events/${eventId}/(guest)/[guestDetail]`);
   };
 
   return (
