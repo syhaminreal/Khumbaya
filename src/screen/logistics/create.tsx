@@ -2,17 +2,17 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-    Alert,
-    Image,
-    Pressable,
-    StatusBar,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Pressable,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -74,10 +74,14 @@ const FormSection = ({ title, subtitle, children, icon, iconColor = "#ee2b8c", i
 );
 
 // ─── Main Screen ───────────────────────────────────────────────────────────────
+// Make this the editable and the create both 
 
 export default function CreateLogisticsScreen() {
+  
   const router = useRouter();
-  const { eventId } = useLocalSearchParams();
+  
+  const { eventId , isEdit } = useLocalSearchParams();
+  const isEditMode =useMemo(() => isEdit === "true", [isEdit]);
   const createVehicleMutation = useCreateVehicle(String(eventId ?? ""));
 
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRY_DATA[0]);
@@ -115,7 +119,7 @@ export default function CreateLogisticsScreen() {
     const cleanedDriverName = values.driverName?.trim() ?? "";
     const cleanedPhone = values.driverPhone?.trim() ?? "";
     const fullDriverNumber = cleanedPhone
-      ? `+${selectedCountry.dialCode}${cleanedPhone}`
+      ? `+${selectedCountry.dialCode}-${cleanedPhone}`
       : undefined;
 
     try {

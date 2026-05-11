@@ -12,6 +12,7 @@ interface EventDetailHeroProps {
   startDateTime?: string;
   endDateTime?: string;
   location?: string;
+  venue?: string;
   days?: number;
   hours?: number;
   minutes?: number;
@@ -24,10 +25,11 @@ const EventDetailHero = ({
   imageUrl,
   status = "upcoming",
   title = "Event Details",
-  date = "â€”",
-   startDateTime,
+  date = "—",
+  startDateTime,
   endDateTime,
-  location = "â€”",
+  location = "—",
+  venue,
   days = 0,
   hours = 0,
   minutes = 0,
@@ -36,10 +38,11 @@ const EventDetailHero = ({
     imageUrl: imageUrl || FALLBACK_IMAGE,
     status,
     title,
-    date, 
+    date,
     startDateTime,
     endDateTime,
     location,
+    venue,
     days,
     hours,
     minutes,
@@ -75,7 +78,7 @@ const EventDetailHero = ({
                   {/* {event.date} */}
                    {event.startDateTime
                     ?  formatDate(event.startDateTime)
-                    : "â€”"}
+                    : "—"}
                   {event.endDateTime
                     ? ` - ${formatDate(event.endDateTime)}`
                     : ""}
@@ -87,6 +90,14 @@ const EventDetailHero = ({
                   {event.location}
                 </Text>
               </View>
+              {event.venue && (
+                <View className="flex flex-row gap-3">
+                  <Ionicons name="business" size={18} color="white" />
+                  <Text className="text-sm font-medium text-white">
+                    {event.venue}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>

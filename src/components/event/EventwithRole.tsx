@@ -1,4 +1,3 @@
-import Card from "@/src/components/ui/Card";
 import { Event, EventRole } from "@/src/constants/event";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { _entering, _exiting, _layoutAnimation, shadowStyle } from "@/src/utils/helper";
@@ -81,15 +80,17 @@ export const Event_WITH_ROLE = ({
             </View>
           </View>
           <View>
-            <View className="flex-row items-center mt-2">
-              <Ionicons name="location" size={14} color="#6B7280" />
-              <Text
-                className="font-jakarta text-[13px] text-text-tertiary ml-1"
-                numberOfLines={1}
-              >
-                {event.location}
-              </Text>
-            </View>
+            {event.location !== "" && (
+              <View className="flex-row items-center mt-2">
+                <Ionicons name="location" size={14} color="#6B7280" />
+                <Text
+                  className="font-jakarta text-[13px] text-text-tertiary ml-1"
+                  numberOfLines={1}
+                >
+                  {event.location}
+                </Text>
+              </View>
+            )}
             <View className="flex-row items-center mt-1">
               <Ionicons name="calendar" size={14} color={"#ee2b8c"} />
               <Text className="font-jakarta-semibold text-[13px] text-primary ml-1">
@@ -97,7 +98,7 @@ export const Event_WITH_ROLE = ({
               </Text>
             </View>
           </View>
-        </View>
+          </View>
       </Pressable>
       {
         isRequest && !asGuest && (
@@ -148,6 +149,6 @@ export const Event_WITH_ROLE = ({
           </View>
         )
       }
-    </Animated.View >
+    </Animated.View>
   );
 };

@@ -12,6 +12,7 @@ export interface CREATEEVENT {
   theme?: string;
   parentId?: number;
   location?: string;
+  venue?: string;
   role?: string;
   imageUrl?: string;
   rsvpDeadline?: string;
@@ -31,6 +32,7 @@ export interface EVENT {
   theme?: string;
   parentId?: number;
   location?: string;
+  venue?: string | null;
   role?: string;
   status?: string;
   organizer?: number;
@@ -149,12 +151,16 @@ export const getUpcomingEventsApi = async ({
       };
 
       const startDateTime = mergedItem.startDateTime || mergedItem.startDate;
+      const location = mergedItem.location ?? "Location TBA";
+      const venue = mergedItem.venue ?? "";
 
       return {
         ...mergedItem,
         id: String(mergedItem.id),
         date: formatDate(startDateTime),
         time: formatTime(startDateTime),
+        location,
+        venue,
         role: mergedItem.role || "Guest",
         dressCode: mergedItem.dressCode ?? mergedItem.dress_code ?? null,
       } as Event;

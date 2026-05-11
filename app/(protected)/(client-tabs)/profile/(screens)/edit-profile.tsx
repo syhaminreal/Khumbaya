@@ -100,7 +100,7 @@ export default function EditProfileScreen() {
     if (!isProfileLoading && user) {
       setForm({
         name: user.username || "",
-        email: user.email || "",
+        email: user.email.includes("@khumbaya.com") ? "" : user.email,
         phone: user.phone || "",
         bio: user.bio || "",
         foodPreference: user.foodPreference || "",
@@ -109,12 +109,7 @@ export default function EditProfileScreen() {
         city: user.city || "",
         address: user.address || "",
         zip: user.zip || "",
-          dob:
-          typeof user.dob === "string"
-            ? user.dob
-            : user.dob
-              ? user.dob.toISOString()
-              : "",
+        dob: user.dob ? formatDate(user.dob.toString()) : "",
       });
       if (user.phone) {
         setSelectedCountry(resolveCountryFromPhone(user.phone));
@@ -199,12 +194,6 @@ export default function EditProfileScreen() {
       );
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
   };
 
   const openDobPicker = () => {

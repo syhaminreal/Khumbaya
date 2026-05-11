@@ -200,6 +200,7 @@ const manageActions = [
           startDateTime={eventDetails.startDateTime}
           endDateTime={eventDetails.endDateTime}
           location={eventDetails.location}
+          venue={eventDetails.venue}
         />
         <View className="mt-6 px-4 pb-4">
           <Text className="text-lg font-bold mb-3">Manage Event</Text>

@@ -49,7 +49,6 @@ export default function CreateSubEventScreen() {
         description: "",
         type: "Other",
         role: "Organizer",
-        location: "TBD",
         imageUrl: "",
       });
 

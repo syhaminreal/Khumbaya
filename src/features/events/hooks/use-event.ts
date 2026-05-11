@@ -32,11 +32,6 @@ export const useCreateEvent = () => {
       const previousUpcomingEvents = queryClient.getQueryData<Event[]>([
         "events/upcoming",
       ]);
-      
-      
-
-  
-
     },
     
     onSuccess: async (_data, variables) => {
@@ -126,13 +121,17 @@ export const useAcceptRsvpInvitation = () => {
   });
 };
 
-export const useEventById = (eventId: number) => {
+export const useEventById = (
+  eventId: number,
+  { enabled = true }: EventQueryOptions = {}
+) => {
   return useQuery({
     queryKey: ["event", eventId],
     queryFn: async () => {
       const events = await getEventById(eventId);
       return events;
     },
+    enabled: enabled && !!eventId,
   });
 };
 

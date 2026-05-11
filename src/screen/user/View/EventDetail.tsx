@@ -1,7 +1,10 @@
 import NavigateComponent from "@/src/components/event/NavigateComponent";
 import Row from "@/src/components/ui/RowComponent";
 import { Event } from "@/src/constants/event";
-import { useGetEventWithRole } from "@/src/features/events/hooks/use-event";
+import {
+  useEventById,
+  useGetEventWithRole,
+} from "@/src/features/events/hooks/use-event";
 import { useEventStore, useSubeventDraftStore } from "@/src/features/events/store/useEventStore";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +32,9 @@ const EventDetail = () => {
   //If the sub event then see the draft from the sub event draft else see the main event draft
 
   const isSubEventView = isSubEvent === "true";
+  const { data: fullEvent } = useEventById(Number(eventId), {
+    enabled: !isSubEventView && !!eventId,
+  });
   const foundEvent = found?.find(
     (e: Event) => String(e.id) === String(eventId)
   );
@@ -44,11 +50,11 @@ const EventDetail = () => {
 
   const event = isSubEventView
     ? (subEventDraft as Event)
-    : foundEvent ?? {
+    : fullEvent ?? foundEvent ?? {
       id: eventId ?? "0",
       title: "Event Details",
       location: "—",
-      venue: "—",
+      venue: "",
       imageUrl: "",
       role: "Organizer" as const,
       status: "upcoming" as const,
@@ -104,7 +110,6 @@ const EventDetail = () => {
           left: 0,
           right: 0,
           height: 88,
-          backgroundColor: "#ffffff",
           ...shadowStyle,
           opacity: headerOpacity,
           zIndex: 10,
@@ -180,12 +185,12 @@ const EventDetail = () => {
           startDateTime={event.startDateTime}
           endDateTime={event.endDateTime}
           location={event.location}
-          venue ={event.venue}
+          venue={event.venue}
         />
 
         {isSubEventView && parentEvent && (
           <View className="mt-4 px-4">
-            <TouchableOpacity
+            {/* <TouchableOpacity
               onPress={() =>
                 router.push({
                   pathname: "/(protected)/(client-stack)/events/[eventId]/(organizer)",
@@ -204,7 +209,7 @@ const EventDetail = () => {
                 </Text>
               </View>
               <Ionicons name="arrow-forward" size={20} color="#ee2b8c" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         )}
 
