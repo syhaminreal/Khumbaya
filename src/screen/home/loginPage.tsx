@@ -5,12 +5,13 @@ import { COUNTRY_DATA } from "@/src/constants/countrydata";
 import { usefindUserMutation, useLogin, useResetPasswordMutation } from "@/src/features/user/api/use-user";
 import type { User } from "@/src/store/AuthStore";
 import { useAuthStore } from "@/src/store/AuthStore";
+import { _entering, _exiting, _layoutAnimation } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Animated,
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -19,19 +20,20 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 type AuthStep = "phone" | "login" | "resetPassword";
-type FoundUser = Pick<User, "id" | "phone" | "isActivated" > | null;
+type FoundUser = Pick<User, "id" | "phone" | "isActivated"> | null;
 type LoginFormValues = {
   phone: string;
   password: string;
   confirmPassword: string;
 };
-
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export default function LoginPage() {
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRY_DATA[0]);
   const [pickerVisible, setPickerVisible] = useState(false);
- const { setAuth } = useAuthStore() ; 
+  const { setAuth } = useAuthStore();
   const { control, handleSubmit, watch, setValue } = useForm<LoginFormValues>({
     defaultValues: {
       phone: "",
@@ -46,9 +48,8 @@ export default function LoginPage() {
   const phone = watch("phone");
   const password = watch("password");
   const confirmPassword = watch("confirmPassword");
-  const findUserMutation =  usefindUserMutation();
-
-  const loginMutation =  useLogin();
+  const { mutate: findUserMutate, isPending: findingUser } = usefindUserMutation();
+  const { mutate, isPending } = useLogin();
 
   const resetPasswordMutation = useResetPasswordMutation();
   const [showPassword, setShowPassword] = useState(false);
@@ -65,7 +66,7 @@ export default function LoginPage() {
   const digits = phone.replace(/\D/g, "");
   const fullPhone = `+${selectedCountry.dialCode}-${digits}`;
   const isValidPhone = /^\d{7,15}$/.test(digits);
-  
+
   const passwordsMatch = confirmPassword === password && confirmPassword.length > 0;
 
   const canSubmit = useMemo(() => {
@@ -73,73 +74,75 @@ export default function LoginPage() {
     if (step === "login") return isValidPhone && !loading;
     return passwordsMatch;
   }, [step, isValidPhone, passwordsMatch, loading]);
-  
+
 
   const buttonLabel =
     step === "phone" ? "Next" : step === "resetPassword" ? "Set Password" : "Sign In";
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
-const handleNext = useCallback(async (values: LoginFormValues) => {
+  const handleNext = useCallback(async (values: LoginFormValues) => {
     if (!canSubmit) return;
     setError(null);
     if (step === "phone") {
-      
-      findUserMutation.mutate(fullPhone, {
+
+      findUserMutate(fullPhone, {
         onSuccess: (data) => {
           if (data) {
-           setFoundUser(data);
+            setFoundUser(data);
             setStep(data.isActivated ? "login" : "resetPassword");
-          
+
           }
         },
-        onError: (error:any) => {
+        onError: (error: any) => {
           console.error("Error finding user:", error);
-            setError(error.response?.data?.message || "Error Getting the user with the phone number ");
+          setError(error.response?.data?.message || "Error Getting the user with the phone number ");
         },
         onSettled: () => {
-         
+
         }
       });
     }
     if (step === "login") {
-      console.log('The phone number that is being passed in te function are ',fullPhone);
-      loginMutation.mutate({
-        phone:fullPhone, 
-        password:values.password
-      } , {
-        onSuccess:(data)=>{
+      console.log('The phone number that is being passed in te function are ', fullPhone);
+      mutate({
+        phone: fullPhone,
+        password: values.password
+      }, {
+        onSuccess: (data) => {
           setAuth(data.token, data.user);
         },
-        onError:(error:any)=>{
-            console.error("Error logging in:", error);
-            setError(error.response?.data?.message || "Error While logging in ");
+        onError: (error: any) => {
+          console.error("Error logging in:", error);
+          setError(error.response?.data?.message || "Error While logging in ");
         },
-        onSettled:()=>{
+        onSettled: () => {
           setLoading(false);
-    }},)
+        }
+      },)
 
     }
 
     if (step === "resetPassword") {
       setLoading(true);
-      resetPasswordMutation.mutate({userId:foundUser!.id , newPassword:password} , {
-        onSuccess:(data)=>{
-    
+      resetPasswordMutation.mutate({ userId: foundUser!.id, newPassword: password }, {
+        onSuccess: (data) => {
+
           setAuth(data.token, data.user);
         },
-        onError:(error:any)=>{
-            console.error("Error Resetting password:", error);
-            setError(error.response?.data?.message || "Error While resetting the password ");
+        onError: (error: any) => {
+          console.error("Error Resetting password:", error);
+          setError(error.response?.data?.message || "Error While resetting the password ");
 
         },
-        onSettled:()=>{
+        onSettled: () => {
           setLoading(false);
         },
-  
-    });
-  }},[canSubmit, step, fullPhone, foundUser]);
 
- 
+      });
+    }
+  }, [canSubmit, step, fullPhone, foundUser]);
+
+
   return (
     <KeyboardAvoidingView
       className="flex-1"
@@ -161,9 +164,10 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
         enableAutomaticScroll
         extraScrollHeight={40}
       >
-        <View className="flex-1 bg-gray-100">
-        <LoginHero/>
-  
+        <Animated.View className="flex-1 bg-gray-100"
+          layout={_layoutAnimation}>
+          <LoginHero />
+
           {/* Form */}
           <View className="px-6 pb-8 pt-6">
             <View className="mb-6 items-center">
@@ -174,15 +178,20 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                 {step === "phone"
                   ? "Get Started with Your Account"
                   : step === "resetPassword"
-                  ? "Set a new password to reactivate your account"
-                  : "Welcome back! Enter your password"}
+                    ? "Set a new password to reactivate your account"
+                    : "Welcome back! Enter your password"}
               </Text>
             </View>
 
             <View className="gap-5">
 
               {/* ── Phone field ── */}
-              <View>
+              <Animated.View
+                entering={_entering}
+                exiting={_exiting}
+                layout={_layoutAnimation}
+
+              >
                 <Text className="mb-1 ml-1 text-xs font-semibold uppercase tracking-wider text-text-light">
                   Phone number
                 </Text>
@@ -237,11 +246,14 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                     </Pressable>
                   )}
                 </View>
-              </View>
+              </Animated.View>
 
               {/* ── Password field (step: login | resetPassword) ── */}
               {step !== "phone" && (
-                <View>
+                <Animated.View
+                  entering={_entering}
+                  exiting={_exiting}
+                  layout={_layoutAnimation}>
                   <Text className="mb-1 ml-1 text-xs font-semibold uppercase tracking-wider text-text-light">
                     {step === "resetPassword" ? "New Password" : "Password"}
                   </Text>
@@ -258,7 +270,7 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                           secureTextEntry={!showPassword}
                           className="h-14 rounded-md border border-gray-200 bg-white px-4 text-base text-text-light"
                         />
-                      )}/>
+                      )} />
                     <Pressable
                       onPress={() => setShowPassword((p) => !p)}
                       className="absolute right-0 h-full items-center justify-center px-3"
@@ -270,17 +282,21 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                       />
                     </Pressable>
                   </View>
-                {password.length === 0 && (
-                  <Text className="ml-1 mt-1 text-xs text-red-500">
-                    Password must not be empty
-                  </Text>
-                )}
-                </View>
+                  {password.length === 0 && (
+                    <Text className="ml-1 mt-1 text-xs text-red-500">
+                      Password must not be empty
+                    </Text>
+                  )}
+                </Animated.View>
               )}
 
               {/* ── Confirm password (resetPassword only) ── */}
               {step === "resetPassword" && (
-                <View>
+                <Animated.View
+                  entering={_entering}
+                  exiting={_exiting}
+                  layout={_layoutAnimation}
+                >
                   <Text className="mb-1 ml-1 text-xs font-semibold uppercase tracking-wider text-text-light">
                     Confirm Password
                   </Text>
@@ -315,16 +331,19 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                       Passwords do not match
                     </Text>
                   )}
-                </View>
+                </Animated.View>
               )}
 
               {/* ── Deactivated account notice ── */}
               {step === "resetPassword" && (
-                <View className="rounded-lg bg-amber-50 p-3">
+                <Animated.View className="rounded-lg bg-amber-50 p-3"
+                  entering={_entering}
+                  exiting={_exiting}
+                >
                   <Text className="text-center text-sm text-amber-700">
                     Your account is deactivated. Set a new password to reactivate it.
                   </Text>
-                </View>
+                </Animated.View>
               )}
 
               {/* ── Error banner ── */}
@@ -335,22 +354,35 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
               )}
 
               {/* ── Primary button ── */}
-              <Pressable
+              <AnimatedPressable
+                layout={_layoutAnimation}
                 onPress={handleSubmit(handleNext)}
                 disabled={!canSubmit}
                 className={`h-14 flex-row items-center justify-center gap-2 rounded-md bg-primary shadow-md shadow-primary/20 ${!canSubmit ? "opacity-60" : ""}`}
               >
-                {loading ? (
-                  <Animated.View className="h-5 w-5 rounded-full border-2 border-white border-t-transparent" />
+                {loading && isPending && findingUser ? (
+                  <Animated.View
+                    entering={FadeIn.springify(500).damping(8)}
+                    exiting={FadeOut.springify(500).damping(8)}
+                    layout={_layoutAnimation}
+
+                  >
+                    <Animated.View className="h-5 w-5 rounded-full border-2 border-white border-t-transparent" />
+                    <ActivityIndicator />
+                  </Animated.View>
+
                 ) : (
                   <>
                     <Text className="font-bold text-white">{buttonLabel}</Text>
                     <MaterialIcons name="arrow-forward" size={18} color="white" />
                   </>
                 )}
-              </Pressable>
+              </AnimatedPressable>
 
-              <View className="items-center pt-1">
+              <Animated.View className="items-center pt-1"
+                entering={_entering}
+                layout={_layoutAnimation}
+                exiting={_exiting}>
                 <Link href="/(onboarding)/user-signup" asChild>
                   <Pressable>
                     <Text className="text-sm text-muted-light">
@@ -359,11 +391,15 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                     </Text>
                   </Pressable>
                 </Link>
-              </View>
+              </Animated.View>
             </View>
 
             {/* ── Trust badges ── */}
-            <View className="mt-8 flex-row justify-center gap-6">
+            <Animated.View className="mt-8 flex-row justify-center gap-6"
+              entering={_entering}
+              exiting={_exiting}
+              layout={_layoutAnimation}
+            >
               <View className="flex-row items-center gap-1.5">
                 <MaterialIcons name="verified-user" size={16} color="#c5a059" />
                 <Text className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
@@ -376,8 +412,7 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                   Privacy Protected
                 </Text>
               </View>
-            </View>
-
+            </Animated.View>
             <View className="self-end mt-6 px-4">
               <Text className="text-center text-xs leading-relaxed text-gray-400">
                 By continuing, you agree to our{" "}
@@ -390,8 +425,9 @@ const handleNext = useCallback(async (values: LoginFormValues) => {
                 </Text>.
               </Text>
             </View>
+
           </View>
-        </View>
+        </Animated.View>
       </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   );

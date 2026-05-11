@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import { Text } from "../ui/Text";
 import { Event_WITH_ROLE } from "./EventwithRole";
+import Animated from "react-native-reanimated";
+import { _entering, _exiting, _layoutAnimation } from "@/src/utils/helper";
 
 interface UpcomingEventsTabProps {
   isActive: boolean;
@@ -61,11 +63,11 @@ export const UpcomingEventsTab = ({ isActive }: UpcomingEventsTabProps) => {
           </Text>
         </View>
       ) : events.length > 0 ? (
-        events.map((event) => (
+        events.map((event, index) => (
           <Event_WITH_ROLE
-            key={event.id}
+            key={`${event.id}-${index}`}
             event={event}
-            onPress={() => {}}
+            onPress={() => { }}
             asGuest={event.role === "Guest"}
           />
         ))

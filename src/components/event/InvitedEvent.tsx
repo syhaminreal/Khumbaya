@@ -2,7 +2,7 @@ import { VendorEventInvitation } from "@/src/features/business";
 import { useGetVendorEventInvitations } from "@/src/features/business/hooks/use-business";
 import { useGetInvitedEvents } from "@/src/features/events/hooks/use-event";
 import { useAuthStore } from "@/src/store/AuthStore";
-import { formatDate, formatTime } from "@/src/utils/helper";
+import { _entering, _exiting, _layoutAnimation, formatDate, formatTime } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import Card from "../ui/Card";
 import { Event_WITH_ROLE } from "./EventwithRole";
+import Animated from "react-native-reanimated";
 
 interface InvitedEventsTabProps {
   isActive: boolean;
@@ -65,7 +66,6 @@ const VendorEventCard = ({
     </Card>
   );
 };
-
 export const InvitedEventsTab = ({ isActive }: InvitedEventsTabProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -78,7 +78,7 @@ export const InvitedEventsTab = ({ isActive }: InvitedEventsTabProps) => {
     isError,
     refetch,
   } = useGetInvitedEvents();
- console.log('This is the invited events tab with the data 🦓🦓🦓🦓🦓🦓', invitedEvents)
+  console.log('This is the invited events tab with the data 🦓🦓🦓🦓🦓🦓', invitedEvents)
   const {
     data: vendorInvitations = [],
     isLoading: isLoadingVendor,
@@ -103,7 +103,11 @@ export const InvitedEventsTab = ({ isActive }: InvitedEventsTabProps) => {
   const hasData = invitedEvents.length > 0 || vendorInvitations.length > 0;
 
   return (
-    <View className="flex-1">
+    <Animated.View className="flex-1"
+      entering={_entering}
+      exiting={_exiting}
+      layout={_layoutAnimation}
+    >
       {/* Tab Bar */}
       <View className="flex-row border-b border-border px-4">
         <Pressable
@@ -175,7 +179,7 @@ export const InvitedEventsTab = ({ isActive }: InvitedEventsTabProps) => {
           )
         ) : invitedEvents.length > 0 ? (
           <>
-      
+
             {invitedEvents.map((event) => (
               <Event_WITH_ROLE
                 key={event.id}
@@ -195,6 +199,6 @@ export const InvitedEventsTab = ({ isActive }: InvitedEventsTabProps) => {
           </View>
         )}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 };

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
+import { Easing, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
 
 type PasswordStrength = "weak" | "medium" | "strong" | "very-strong";
 export const calculatePasswordStrength = (pwd: string): PasswordStrength => {
@@ -10,6 +11,10 @@ export const calculatePasswordStrength = (pwd: string): PasswordStrength => {
   return "very-strong";
 };
 
+const _damping = 8;
+export const _entering = FadeInDown.springify(500).damping(_damping).easing(Easing.ease);
+export const _exiting = FadeOut.springify(500).damping(_damping).easing(Easing.ease);
+export const _layoutAnimation = LinearTransition.springify(500).damping(_damping);
 export const parseDate = (value?: string): Date => {
   if (!value) return new Date();
   const parsed = new Date(value);
@@ -208,13 +213,40 @@ export function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export const shadowStyle = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  android: { elevation: 3 },
-  default: {},
-});
+
+export const shadowStyle = {
+  backgroundColor: '#FFF', // Always need a bg color for shadows to show
+  borderRadius: 12,
+
+  // The "Pop" Border
+  borderWidth: 1,
+  borderColor: 'rgba(0, 0, 0, 0.05)', // Super subtle border
+
+  ...Platform.select({
+    ios: {
+      // New boxShadow API for smooth animation
+      boxShadow: [
+        {
+          offsetX: 0,
+          offsetY: 2,
+          blurRadius: 8,
+          color: 'rgba(0, 0, 0, 0.07)',
+        },
+      ],
+    },
+    android: {
+      // Latest Android shadow support (RN 0.76+)
+      boxShadow: [
+        {
+          offsetX: 0,
+          offsetY: 2,
+          blurRadius: 8,
+          color: 'rgba(0, 0, 0, 0.07)',
+        },
+      ],
+      // Fallback for older versions if needed
+      // elevation: 3, 
+    },
+    default: {},
+  }),
+};

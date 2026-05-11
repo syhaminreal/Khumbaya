@@ -1,2 +1,2 @@
-import Logistic from "@/src/screen/guest/logistic";
+import Logistic from "@/src/screen/guest/guest-logistic";
 export default Logistic;

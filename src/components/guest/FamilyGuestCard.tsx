@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { FamilyGroup } from "../../features/guests/types";
+import Animated from "react-native-reanimated";
 
 interface FamilyCardProps {
   family: FamilyGroup;
   onPress?: () => void;
   onDelete?: () => void;
+  style?: any
 }
 
 const getFamilyEffectiveStatus = (
@@ -27,6 +29,7 @@ const getFamilyEffectiveStatus = (
 
 export default function FamilyCard({
   family,
+  style,
   onPress,
   onDelete,
 }: FamilyCardProps) {
@@ -76,7 +79,7 @@ export default function FamilyCard({
     .slice(0, 2);
 
   return (
-    <View className="mb-3 rounded-2xl bg-white">
+    <Animated.View className="mb-3 rounded-2xl bg-white" style={style}>
       <TouchableOpacity
         onPress={onPress}
         disabled={!onPress}
@@ -156,6 +159,6 @@ export default function FamilyCard({
           </View>
         </View>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }

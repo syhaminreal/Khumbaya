@@ -1,4 +1,9 @@
 import AvatarPicker from "@/src/components/ui/AvatarPicker";
+import {
+  CountryOption,
+  CountryPickerModal,
+} from "@/src/components/ui/CountryPhone";
+import { COUNTRY_DATA } from "@/src/constants/countrydata";
 import { useUpdateUserMe } from "@/src/features/user/api/use-user";
 import { useAuthStore } from "@/src/store/AuthStore";
 import { formatDate, parseDate } from "@/src/utils/helper";
@@ -11,8 +16,10 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -51,6 +58,10 @@ export default function EditProfileScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [loading, setLoading] = useState(true);
   const [showDobPicker, setShowDobPicker] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<CountryOption>(
+    COUNTRY_DATA[0]
+  );
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -76,6 +87,15 @@ export default function EditProfileScreen() {
     dob: "",
   });
 
+  const resolveCountryFromPhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, "");
+    if (!digits) return COUNTRY_DATA[0];
+    const match = COUNTRY_DATA.filter((c) => digits.startsWith(c.dialCode)).sort(
+      (a, b) => b.dialCode.length - a.dialCode.length
+    )[0];
+    return match ?? COUNTRY_DATA[0];
+  };
+
   useEffect(() => {
     if (!isProfileLoading && user) {
       setForm({
@@ -91,6 +111,9 @@ export default function EditProfileScreen() {
         zip: user.zip || "",
         dob: user.dob ? user.dob.toISOString() : "",
       });
+      if (user.phone) {
+        setSelectedCountry(resolveCountryFromPhone(user.phone));
+      }
       setLoading(false);
     } else if (!isProfileLoading && !user) {
       setLoading(false);
@@ -195,6 +218,26 @@ export default function EditProfileScreen() {
     setShowDobPicker(false);
   };
 
+  const phoneDigits = form.phone.replace(/\D/g, "");
+  const localPhoneDigits = phoneDigits.startsWith(selectedCountry.dialCode)
+    ? phoneDigits.slice(selectedCountry.dialCode.length)
+    : phoneDigits;
+
+  const handleSelectCountry = (country: CountryOption) => {
+    setSelectedCountry(country);
+    const matched = COUNTRY_DATA.filter((c) => phoneDigits.startsWith(c.dialCode)).sort(
+      (a, b) => b.dialCode.length - a.dialCode.length
+    )[0];
+    const digitsWithoutCountry = matched
+      ? phoneDigits.slice(matched.dialCode.length)
+      : localPhoneDigits;
+    const nextPhone =
+      digitsWithoutCountry.length > 0
+        ? `+${country.dialCode}-${digitsWithoutCountry}`
+        : "";
+    set("phone", nextPhone);
+  };
+
   const isSaving = saveState === "saving";
 
   if (loading || isProfileLoading) {
@@ -212,6 +255,12 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f6f7]" edges={["bottom"]}>
+      <CountryPickerModal
+        visible={pickerVisible}
+        selected={selectedCountry}
+        onSelect={handleSelectCountry}
+        onClose={() => setPickerVisible(false)}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -271,14 +320,36 @@ export default function EditProfileScreen() {
             <Text className="text-sm font-semibold text-gray-700 mb-2">
               Phone Number
             </Text>
-            <TextInput
-              className="bg-white rounded-md px-4 py-3.5 text-sm text-gray-900 border border-gray-200"
-              placeholder="+977 98XXXXXXXX"
-              placeholderTextColor="#9CA3AF"
-              value={form.phone}
-              onChangeText={(v) => set("phone", v)}
-              keyboardType="phone-pad"
-            />
+            <View className="h-14 flex-row items-center rounded-md border border-gray-200 bg-white overflow-hidden">
+              <Pressable
+                onPress={() => setPickerVisible(true)}
+                className="h-full flex-row items-center gap-1.5 px-3 border-r border-gray-200"
+              >
+                <Image
+                  source={selectedCountry.image}
+                  style={{ width: 26, height: 18, borderRadius: 3 }}
+                  resizeMode="cover"
+                />
+                <Text className="text-sm font-medium text-gray-800">
+                  +{selectedCountry.dialCode}
+                </Text>
+              </Pressable>
+              <TextInput
+                className="flex-1 px-4 text-base text-gray-900"
+                placeholder="98XXXXXXXX"
+                placeholderTextColor="#9CA3AF"
+                value={localPhoneDigits}
+                onChangeText={(v) => {
+                  const digits = v.replace(/\D/g, "");
+                  const nextPhone =
+                    digits.length > 0
+                      ? `+${selectedCountry.dialCode}-${digits}`
+                      : "";
+                  set("phone", nextPhone);
+                }}
+                keyboardType="phone-pad"
+              />
+            </View>
           </View>
 
           {/* Date of Birth */}

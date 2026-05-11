@@ -11,7 +11,7 @@ import { shadowStyle } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 export function getGuestStatus(guest: GuestWithRoom): "checked-in" | "checked-out" | "pending" {
   if (guest.hasCheckedOut) return "checked-out";
@@ -182,6 +183,10 @@ export default function HotelManagementScreen() {
     () => filteredGuests.filter((g) => !g.room),
     [filteredGuests]
   );
+  // Memoize keyExtractor
+  const keyExtractor = useCallback(
+    (item: any) => item.invitationId.toString(), []
+  );
 
   const categoryPickerOptions = [
     { value: "all", label: "All Guests", count: normalizedGuests.length },
@@ -272,6 +277,25 @@ export default function HotelManagementScreen() {
 
 
   // ─── Render ──────────────────────────────────────────────────────────────────
+  const scrollY = useSharedValue(0);
+
+  // Memoize scroll handler - don't recreate on every render
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+  const renderItem = useCallback(({ item, index }: { item: any, index: number }) => (
+    <UnassignedGuestRow
+      guest={item}
+      isGuestView={isGuestView}
+      onAssignRoom={(selectedGuest) => {
+        setRoomAssignmentModal({ visible: true, guest: selectedGuest });
+        setNewRoom("");
+      }}
+      onDetailsPress={navigateToDetails}
+    />
+  ), [scrollY]); // scrollY ref never changes, safe dependency
 
   return (
     <SafeAreaView className="flex-1 bg-[#F7F8FA]" edges={[]}>
@@ -401,26 +425,22 @@ export default function HotelManagementScreen() {
           <Text className="font-jakarta-semibold text-sm text-gray-500">Loading rooms…</Text>
         </View>
       ) : activeTab === "assign" ? (
-        <FlatList
+        <Animated.FlatList
           data={unassignedGuests}
-          keyExtractor={(item, idx) => `${item.user?.id ?? "guest"}-${idx}`}
-          renderItem={({ item: guest }) => (
-            <UnassignedGuestRow
-              guest={guest}
-              isGuestView={isGuestView}
-              onAssignRoom={(selectedGuest) => {
-                setRoomAssignmentModal({ visible: true, guest: selectedGuest });
-                setNewRoom("");
-              }}
-              onDetailsPress={navigateToDetails}
-            />
-          )}
+          onScroll={scrollHandler}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: 120,
             paddingTop: 4,
             gap: 10,
           }}
+          getItemLayout={(_, index) => ({  // ← big performance win if fixed height
+            length: 36,
+            offset: 36 * index,
+            index,
+          })}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

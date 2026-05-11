@@ -22,18 +22,19 @@ import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { cn } from "@/src/utils/cn";
 import { Ionicons } from "@expo/vector-icons";
 import { RelativePathString, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
   Modal,
+  Animated as RAnimated,
   Pressable,
   TouchableOpacity,
   View,
 } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 type GuestFilterTab = "accepted" | "pending" | "draft";
 
 export default function GuestListScreen() {
@@ -41,7 +42,7 @@ export default function GuestListScreen() {
   const { push } = useThrottledRouter();
   const params = useLocalSearchParams();
   const eventId = Number(params.eventId);
-
+  const scrollY = useRef(new RAnimated.Value(0)).current;
   const {
     data: subEventsResponse,
   } = useSubEventsOfEvent(Number(eventId));
@@ -195,20 +196,20 @@ export default function GuestListScreen() {
 
   const filteredGroupedInvitations = useMemo(() => {
     return groupedInvitations.filter((item: GroupedInvitation) => {
-        if (item.type === "family") {
-          const effectiveStatus = getFamilyEffectiveStatus(item.members);
-          const matchesStatus = matchesTabStatus(effectiveStatus, activeTab);
+      if (item.type === "family") {
+        const effectiveStatus = getFamilyEffectiveStatus(item.members);
+        const matchesStatus = matchesTabStatus(effectiveStatus, activeTab);
 
-          if (!matchesStatus) return false;
-          return item.members.some((member) => matchesSelectedCategory(member));
-        }
+        if (!matchesStatus) return false;
+        return item.members.some((member) => matchesSelectedCategory(member));
+      }
 
-        const status = String(item.data.eventGuest.status ?? "pending")
-          .trim()
-          .toLowerCase();
-        if (!matchesTabStatus(status, activeTab)) return false;
-        return matchesSelectedCategory(item.data);
-      })
+      const status = String(item.data.eventGuest.status ?? "pending")
+        .trim()
+        .toLowerCase();
+      if (!matchesTabStatus(status, activeTab)) return false;
+      return matchesSelectedCategory(item.data);
+    })
       .map((item: GroupedInvitation): GroupedInvitation => {
         if (item.type === "family") {
           return {
@@ -226,7 +227,7 @@ export default function GuestListScreen() {
         const nameB =
           b.type === "family" ? b.family_name : (b.data.user.username ?? "");
         return nameA.localeCompare(nameB);
-        
+
       });
   }, [
     groupedInvitations,
@@ -238,12 +239,12 @@ export default function GuestListScreen() {
 
   const draftInvitations = useMemo(() => {
     return tabFilteredInvitations.filter((invitation: GuestDetailInterface) => {
-        const status = String(invitation.eventGuest.status ?? "pending")
-          .trim()
-          .toLowerCase();
-        return status === "draft" && matchesSelectedCategory(invitation);
-      }
-      );
+      const status = String(invitation.eventGuest.status ?? "pending")
+        .trim()
+        .toLowerCase();
+      return status === "draft" && matchesSelectedCategory(invitation);
+    }
+    );
   }, [tabFilteredInvitations, matchesSelectedCategory]);
 
   const filteredGuestCount =
@@ -453,13 +454,22 @@ export default function GuestListScreen() {
       {isLoading ? (
         <Text>Loading invitations...</Text>
       ) : activeTab === "draft" ? (
-        <FlatList
+        <Animated.FlatList
           data={draftInvitations}
           keyExtractor={(item: GuestDetailInterface) =>
             `draft-${item.user.id}`
           }
-          renderItem={({ item }: { item: GuestDetailInterface }) => (
-            <DraftInvitationCard
+          initialNumToRender={10}
+          renderItem={({ item, index }: { item: GuestDetailInterface, index: number }) => {
+            const renderItem = [
+              -1, 0, 86 * index, 86 * (index + 2)
+            ]
+            const scale = scrollY.interpolate({
+              inputRange: renderItem,
+              outputRange: [1, 1, 1, 0]
+
+            })
+            return <DraftInvitationCard
               guest={item}
               onMoveToPending={() => onPressDraftSend(item)}
               onDeleteDraft={() => onDeleteDraft(item)}
@@ -472,7 +482,7 @@ export default function GuestListScreen() {
                 draftAction?.userId === item.user.id
               }
             />
-          )}
+          }}
           contentContainerStyle={{ paddingBottom: 20 }}
           showsVerticalScrollIndicator={false}
           className="mt-4"
@@ -502,12 +512,14 @@ export default function GuestListScreen() {
                   onPress={() => {
                     onPressFamilyCard(item);
                   }}
+                  style={''}
                 />
               );
             }
 
             return (
               <GuestCard
+
                 guest={item.data}
                 onPress={() => {
                   onPressGuestCard(item.data);

@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
-    ActivityIndicator,
-    Image,
-    Pressable,
-    Text,
-    View,
+  ActivityIndicator,
+  Image,
+  Pressable,
+  Text,
+  View,
 } from "react-native";
 import { GuestDetailInterface } from "../../features/guests/types";
 
@@ -13,23 +13,25 @@ interface DraftInvitationCardProps {
   onMoveToPending: () => void;
   onDeleteDraft: () => void;
   isMoving: boolean;
+  style?: any;
   isDeleting: boolean;
 }
 
 export default function DraftInvitationCard({
   guest,
   onMoveToPending,
+  style,
   onDeleteDraft,
   isMoving,
   isDeleting,
 }: DraftInvitationCardProps) {
   const initials = guest.user.username
     ? guest.user.username
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "GU";
 
   const displayName =
@@ -38,7 +40,9 @@ export default function DraftInvitationCard({
   const phone = guest.user.phone?.trim();
 
   return (
-    <View className="mb-3 rounded-2xl border border-[#EE2B8C]/20 bg-white">
+    <View className="mb-3 rounded-2xl border border-[#EE2B8C]/20 bg-white"
+      style={style}
+    >
       <View className="min-h-[86px] flex-row items-center gap-3 px-4 py-3">
         {guest.user.photo ? (
           <Image
@@ -90,7 +94,7 @@ export default function DraftInvitationCard({
             <>
               <Ionicons name="paper-plane-outline" size={16} color="#EE2B8C" />
               <Text className="ml-2 text-sm font-semibold text-[#EE2B8C]">
-            Send Invitation
+                Send Invitation
               </Text>
             </>
           )}

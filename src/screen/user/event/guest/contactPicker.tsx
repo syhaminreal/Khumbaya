@@ -270,11 +270,10 @@ export default function ContactPickerScreen() {
 
           {/* Checkmark */}
           <View
-            className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-              isSelected
+            className={`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected
                 ? "bg-[#EE2B8C] border-[#EE2B8C]"
                 : "border-slate-300 bg-white"
-            }`}
+              }`}
           >
             {isSelected && (
               <Ionicons name="checkmark" size={14} color="#fff" />
@@ -401,18 +400,17 @@ export default function ContactPickerScreen() {
           <TouchableOpacity
             onPress={handleImport}
             disabled={isInviting || selected.size === 0}
-            className={`h-14 rounded-2xl items-center justify-center flex-row ${
-              selected.size === 0 ? "bg-gray-200" : "bg-[#EE2B8C]"
-            }`}
+            className={`h-14 rounded-2xl items-center justify-center flex-row ${selected.size === 0 ? "bg-gray-200" : "bg-[#EE2B8C]"
+              }`}
             style={
               selected.size > 0
                 ? {
-                    shadowColor: "#EE2B8C",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.35,
-                    shadowRadius: 8,
-                    elevation: 8,
-                  }
+                  shadowColor: "#EE2B8C",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.35,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }
                 : {}
             }
           >
@@ -426,9 +424,8 @@ export default function ContactPickerScreen() {
                   color={selected.size === 0 ? "#9CA3AF" : "#fff"}
                 />
                 <Text
-                  className={`ml-2 text-sm font-semibold ${
-                    selected.size === 0 ? "text-gray-400" : "text-white"
-                  }`}
+                  className={`ml-2 text-sm font-semibold ${selected.size === 0 ? "text-gray-400" : "text-white"
+                    }`}
                 >
                   {selected.size === 0
                     ? "Select contacts to invite"

@@ -22,7 +22,7 @@ export function RoomCardItem({
   item,
   isPending,
   activeCheckoutUserId,
-  onManage, 
+  onManage,
   isGuestView,
   onCheckout,
 }: {

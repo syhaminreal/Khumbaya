@@ -3,6 +3,7 @@ import {
   useEventResponseWithUser,
   useSubmitRsvpResponse,
 } from "@/src/features/events/hooks/use-event";
+import { _layoutAnimation, _entering, _exiting } from "@/src/utils/helper";
 import { useAuthStore } from "@/src/store/AuthStore";
 import { useRsvpStore } from "@/src/store/useRsvpStore";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -168,9 +169,6 @@ export const RSVPFormContent = ({
   const arrivalLocation = watch("arrivalLocation");
   const departureLocation = watch("departureLocation");
   const _damping = 8;
-  const _entering = FadeInDown.springify(500).damping(_damping);
-  const _exiting = FadeOut.springify(500).damping(_damping);
-  const _layoutAnimation = LinearTransition.springify(500).damping(_damping);
 
   const onSubmit = (values: RSVPFormValues) => {
     submitRsvp(

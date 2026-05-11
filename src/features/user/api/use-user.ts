@@ -25,10 +25,6 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (credentials: UserLoginType) => {
-      console.log(
-        "The informatin of the user trying to login is ",
-        credentials
-      );
       const { data } = await api.post<ResponseFormat<LoginResponse>>(
         "user/login",
         credentials

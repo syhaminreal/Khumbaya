@@ -1,5 +1,4 @@
 import { useThrottledRouter } from '@/src/hooks/useThrottledRouter';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { Navigation, Plus, Truck } from 'lucide-react-native';
 import { ActivityIndicator, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
@@ -9,6 +8,7 @@ import { StatCard } from '../../components/logistics/StatCard';
 import { useGetVehicle } from '../../features/logistics/hooks/use-transport';
 import type { EventVehicle } from '../../features/logistics/type';
 import { formatDate, formatTime } from '../../utils/helper';
+import GuestLogistic from '../guest/guest-logistic';
 
 const toFleetStatus = (status?: string): 'En Route' | 'Active' | 'In Service' | 'Idle' => {
   const normalized = status?.toLowerCase?.() ?? '';
@@ -71,13 +71,7 @@ const LogisticsHomepage = () => {
   
   if (isGuestView) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center px-6" edges={["top", "bottom"]}>
-        <MaterialIcons name="construction" size={44} color="#ee2b8c" />
-        <Text className="mt-4 text-lg font-jakarta-bold text-gray-900">Coming soon</Text>
-        <Text className="mt-2 text-sm text-gray-500 text-center">
-          Guest access to Logistics management is on the way.
-        </Text>
-      </SafeAreaView>
+     <GuestLogistic />
     );
   }
   return (

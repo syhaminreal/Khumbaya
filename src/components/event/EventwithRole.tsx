@@ -1,9 +1,11 @@
 import Card from "@/src/components/ui/Card";
 import { Event, EventRole } from "@/src/constants/event";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
+import { _entering, _exiting, _layoutAnimation, shadowStyle } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
+import Animated from "react-native-reanimated";
 
 const roleConfig: Record<
   EventRole,
@@ -44,9 +46,13 @@ export const Event_WITH_ROLE = ({
   const { wrapperClass, textClass } = roleStyle;
 
   return (
-    <Card className="my-2">
+    <Animated.View
+      layout={_layoutAnimation}
+      entering={_entering}
+      exiting={_exiting}
+    >
       <Pressable
-        className="flex-row p-3 rounded-md overflow-hidden"
+        className="flex-row p-3 rounded-md overflow-hidden bg-white my-1"
         onPress={() => {
           if (isRequest && asGuest) {
             push(`/(protected)/(client-stack)/events/${event.id}/(guest)`);
@@ -56,6 +62,8 @@ export const Event_WITH_ROLE = ({
             push(`/(protected)/(client-stack)/events/${event.id}`);
           }
         }}
+        style={shadowStyle}
+
       >
         <View className="w-20 h-20 rounded-lg overflow-hidden">
           <Image source={{ uri: event.imageUrl }} className="w-full h-full" />
@@ -91,51 +99,55 @@ export const Event_WITH_ROLE = ({
           </View>
         </View>
       </Pressable>
-      {isRequest && !asGuest && (
-        <View className="border-t border-border mx-3 mt-1 pt-3 pb-2">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <View className="bg-blue-50 p-1.5 rounded-full">
-                <Ionicons name="briefcase-outline" size={14} color="#3B82F6" />
+      {
+        isRequest && !asGuest && (
+          <View className="border-t border-border mx-3 mt-1 pt-3 pb-2">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-2">
+                <View className="bg-blue-50 p-1.5 rounded-full">
+                  <Ionicons name="briefcase-outline" size={14} color="#3B82F6" />
+                </View>
+                <Text className="font-jakarta-semibold text-xs text-blue-700">
+                  Vendor booking request
+                </Text>
               </View>
-              <Text className="font-jakarta-semibold text-xs text-blue-700">
-                Vendor booking request
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  className="bg-primary px-3 py-1.5 rounded-full"
+                  onPress={() =>
+                    push(
+                      `/(protected)/(client-stack)/events/${event.id}/(vendor)/`
+                    )
+                  }
+                >
+                  <Text className="font-jakarta-semibold text-xs text-white">
+                    Accept
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity className="border border-border px-3 py-1.5 rounded-full">
+                  <Text className="font-jakarta-semibold text-xs text-text-secondary">
+                    Decline
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )
+      }
+      {
+        isRequest && asGuest && (
+          <View className="border-t border-border mx-3 mt-1 pt-3 pb-2">
+            <View className="flex-row items-center gap-2">
+              <View className="bg-pink-50 p-1.5 rounded-full">
+                <Ionicons name="mail-outline" size={14} color="#ee2b8c" />
+              </View>
+              <Text className="font-jakarta-semibold text-xs text-primary">
+                You're invited — tap to RSVP
               </Text>
             </View>
-            <View className="flex-row gap-2">
-              <TouchableOpacity
-                className="bg-primary px-3 py-1.5 rounded-full"
-                onPress={() =>
-                  push(
-                    `/(protected)/(client-stack)/events/${event.id}/(vendor)/`
-                  )
-                }
-              >
-                <Text className="font-jakarta-semibold text-xs text-white">
-                  Accept
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="border border-border px-3 py-1.5 rounded-full">
-                <Text className="font-jakarta-semibold text-xs text-text-secondary">
-                  Decline
-                </Text>
-              </TouchableOpacity>
-            </View>
           </View>
-        </View>
-      )}
-      {isRequest && asGuest && (
-        <View className="border-t border-border mx-3 mt-1 pt-3 pb-2">
-          <View className="flex-row items-center gap-2">
-            <View className="bg-pink-50 p-1.5 rounded-full">
-              <Ionicons name="mail-outline" size={14} color="#ee2b8c" />
-            </View>
-            <Text className="font-jakarta-semibold text-xs text-primary">
-              You're invited — tap to RSVP
-            </Text>
-          </View>
-        </View>
-      )}
-    </Card>
+        )
+      }
+    </Animated.View >
   );
 };
