@@ -141,7 +141,7 @@ export const getUpcomingEventsApi = async ({
     params: { page, limit },
   });
   const payload = response.data?.data;
-
+  //TODO: FIX THIS SHIT
   if (Array.isArray(payload?.items)) {
     return payload.items.map((item: any, index: number) => {
       // Merge properties from the indexed key (e.g., payload["0"]) if it exists
@@ -152,8 +152,8 @@ export const getUpcomingEventsApi = async ({
       };
 
       const startDateTime = mergedItem.startDateTime || mergedItem.startDate;
-      const location = mergedItem.location ?? "Location TBA";
-      const venue = mergedItem.venue ?? "";
+      const location = mergedItem.location ?? ""
+      const venue = mergedItem.venue ?? ""
 
       return {
         ...mergedItem,
