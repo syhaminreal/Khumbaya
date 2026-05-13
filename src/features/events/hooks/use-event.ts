@@ -6,6 +6,7 @@ import {
   acceptRsvpInvitationApi,
   CREATEEVENT,
   createEventApi,
+  duplicateEventApi,
   getCompletedEventsApi,
   getEventById,
   getEventOwners,
@@ -33,7 +34,7 @@ export const useCreateEvent = () => {
         "events/upcoming",
       ]);
     },
-    
+
     onSuccess: async (_data, variables) => {
       const invalidations = [
         queryClient.invalidateQueries({ queryKey: ["events/upcoming"] }),
@@ -195,6 +196,26 @@ export const useGetEventOwner = (eventId: string) => {
         role: string;
       }[] = await getEventOwners(eventId);
       return responses;
+    },
+  });
+};
+
+export const useDuplicateEvent = (parentEventId?: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: string | number) => duplicateEventApi(eventId),
+    onSuccess: async () => {
+      if (parentEventId) {
+        queryClient.invalidateQueries({
+          queryKey: ["sub-events", parentEventId],
+        });
+        queryClient.invalidateQueries({ queryKey: ["event", parentEventId] });
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["events/upcoming"] }),
+        queryClient.invalidateQueries({ queryKey: ["events/completed"] }),
+        queryClient.invalidateQueries({ queryKey: ["events/with-role"] }),
+      ]);
     },
   });
 };

@@ -1,12 +1,15 @@
 import SubEventCard from "@/src/components/event/subevent/CardSubevent";
 import { SubEvent } from "@/src/constants/event";
-import { useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
+import {
+  useDuplicateEvent,
+  useSubEventsOfEvent,
+} from "@/src/features/events/hooks/use-event";
 import { useEventStore } from "@/src/features/events/store/useEventStore";
 import { sortByDateTime } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useMemo } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
 //TODO: Helper ma rakhna data
 const getCalendarDay = (dateStr?: string | null): string => {
   if (!dateStr) return "";
@@ -36,12 +39,15 @@ export default function ListSubEvent() {
   const { isGuest } = useLocalSearchParams<{ isGuest?: string }>();
   const isGuestView = isGuest === "true";
   const { eventId } = useLocalSearchParams();
-  const eventDraft = useEventStore((event) => event.eventDraft)
+  const eventDraft = useEventStore((event) => event.eventDraft);
   const {
     data: subEventsResponse,
     isLoading,
     refetch,
   } = useSubEventsOfEvent(Number(eventId));
+
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const { mutateAsync: duplicateSubEvent } = useDuplicateEvent(Number(eventId));
 
   const subEvents = (subEventsResponse ?? []) as SubEvent[];
 
@@ -94,6 +100,22 @@ export default function ListSubEvent() {
     </View>
   );
 
+  const handleDuplicate = async (item: SubEvent) => {
+    setDuplicatingId(item.id);
+    try {
+      await duplicateSubEvent(item.id);
+      Alert.alert("Success", "Sub-event duplicated successfully.");
+    } catch (error: any) {
+      Alert.alert(
+        "Duplicate failed",
+        error?.message || "Unable to duplicate sub-event. Please try again."
+      );
+    } finally {
+      setDuplicatingId(null);
+      refetch();
+    }
+  };
+
   return (
     <View className="flex-1 bg-[#f8f6f7]">
       {isLoading ? (
@@ -106,16 +128,42 @@ export default function ListSubEvent() {
         <FlatList
           data={listData}
           keyExtractor={(item) => item.key}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 100,
+          }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
             if (item.type === "header") return null;
             return (
-              <SubEventCard
-                item={item.item}
-                event={eventDraft!}
-                isGuestView={isGuestView}
-              />
+              <View className="mb-4">
+                <SubEventCard
+                  item={item.item}
+                  event={eventDraft!}
+                  isGuestView={isGuestView}
+                />
+                {!isGuestView && (
+                  <TouchableOpacity
+                    disabled={duplicatingId === item.item.id}
+                    onPress={() => handleDuplicate(item.item)}
+                    className={`mt-2 rounded-full px-4 py-2 items-center ${
+                      duplicatingId === item.item.id
+                        ? "bg-gray-400"
+                        : "bg-primary"
+                    }`}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <Ionicons name="copy-outline" size={16} color="white" />
+                      <Text className="text-sm font-semibold text-white">
+                        {duplicatingId === item.item.id
+                          ? "Duplicating..."
+                          : "Duplicate"}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </View>
             );
           }}
         />
@@ -131,7 +179,9 @@ export default function ListSubEvent() {
           className="absolute bottom-6 right-6 flex-row items-center gap-2 bg-primary px-5 py-3 rounded-full shadow-2xl"
         >
           <Ionicons name="add-circle" size={20} color="white" />
-          <Text className="text-white font-bold tracking-wide">Add Activity</Text>
+          <Text className="text-white font-bold tracking-wide">
+            Add Activity
+          </Text>
         </TouchableOpacity>
       )}
     </View>
