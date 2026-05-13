@@ -1,29 +1,29 @@
 import Card from "@/src/components/ui/Card";
 import { Text } from "@/src/components/ui/Text";
-import { shadowStyle } from "@/src/utils/helper";
+import { formatDateTime, shadowStyle } from "@/src/utils/helper";
 import { MemberRsvpCardProp, RSVPStatus } from "@/src/utils/type/rsvp";
 import { Ionicons } from "@expo/vector-icons";
 import {
-    Image,
-    Pressable,
-    TouchableOpacity,
-    View,
+  Image,
+  Pressable,
+  TouchableOpacity,
+  View,
 } from "react-native";
 const statusConfig: Record<
   RSVPStatus,
   { label: string; wrapperClass: string; textClass: string }
 > = {
-  attending: {
+  Attending: {
     label: "Attending",
     wrapperClass: "bg-green-100 px-2.5 py-0.5 rounded-full",
     textClass: "text-xs text-green-700",
   },
-  declined: {
+  Declined: {
     label: "Declined",
     wrapperClass: "bg-red-100 px-2.5 py-0.5 rounded-full",
     textClass: "text-xs text-red-600",
   },
-  pending: {
+  Pending: {
     label: "Not Responded",
     wrapperClass: "bg-slate-100 px-2.5 py-0.5 rounded-full",
     textClass: "text-xs text-slate-500",
@@ -42,19 +42,19 @@ const MemberCard = ({
   isOrganizerView?: boolean;
 }) => {
   const { label, wrapperClass, textClass } = statusConfig[member.status];
-  const isAttending = member.status === "attending";
-  const isPending = member.status === "pending";
+  const isAttending = member.status === "Attending";
+  const isPending = member.status === "Pending";
   const shouldShowEmail =
-    !!member.email && !member.email.toLowerCase().startsWith("guest_");
+    !!member.user.email && !member.user.email.toLowerCase().startsWith("guest_");
 
   return (
     <Card className="p-4 bg-background-secondary">
       <View className="flex-row gap-4 items-start">
         {/* Avatar */}
         <View className="w-16 h-16 rounded-xl overflow-hidden bg-pink-50 shrink-0 items-center justify-center">
-          {member.avatarUrl ? (
+          {member.user.photo ? (
             <Image
-              source={{ uri: member.avatarUrl }}
+              source={{ uri: member.user.photo }}
               className="w-full h-full"
               resizeMode="cover"
             />
@@ -71,7 +71,7 @@ const MemberCard = ({
               variant="h2"
               numberOfLines={1}
             >
-              {member.name}
+              {member.user.username}
             </Text>
             <View className={wrapperClass}>
               <Text variant="h2" className={textClass}>
@@ -81,11 +81,11 @@ const MemberCard = ({
           </View>
           <View>
             <View className="mt-2 gap-1">
-              {member.phone ? (
+              {member.user.phone ? (
                 <View className="flex-row items-center gap-2">
                   <Ionicons name="call-outline" size={13} color="#64748b" />
                   <Text className="text-sm text-slate-500">
-                    {member.phone}
+                    {member.user.phone}
                   </Text>
                 </View>
               ) : null}
@@ -94,7 +94,7 @@ const MemberCard = ({
                 <View className="flex-row items-center gap-2">
                   <Ionicons name="mail-open-outline" size={13} color="#64748b" />
                   <Text className="text-sm text-slate-500">
-                    {member.email}
+                    {member.user.email}
                   </Text>
                 </View>
               ) : null}
@@ -103,28 +103,28 @@ const MemberCard = ({
 
           {isAttending && (
             <View className="mt-2 gap-1">
-              {member.dateRange && (
+              {member.eventGuest.arrivalDatetime && (
                 <View className="flex-row items-center gap-2">
                   <Ionicons name="calendar-outline" size={13} color="#64748b" />
                   <Text className="text-sm text-slate-500">
-                    {member.dateRange}
+                    {formatDateTime(member.eventGuest.arrivalDatetime.toString())}
                   </Text>
                 </View>
               )}
-              {member.roomNeeded && (
+              {member.eventGuest.isAccomodation && (
                 <View className="flex-row items-center gap-2">
                   <Ionicons name="bed-outline" size={13} color="#64748b" />
                   <Text className="text-sm text-slate-500">
                     Room:{" "}
                     <Text variant="caption" className="text-slate-800 text-sm">
-                      {member.assignedRoom && member.assignedRoom.length > 0
-                        ? member.assignedRoom
+                      {member.eventGuest.assignedRoom && member.eventGuest.assignedRoom.length > 0
+                        ? member.eventGuest.assignedRoom
                         : "Not Assigned"}
                     </Text>
                   </Text>
                 </View>
               )}
-              {member.notes && (
+              {member.eventGuest.notes && (
                 <View className="flex-row items-center gap-2">
                   <Ionicons
                     name="chatbubble-outline"
@@ -132,7 +132,7 @@ const MemberCard = ({
                     color="#64748b"
                   />
                   <Text className="text-sm text-slate-500" numberOfLines={2}>
-                    {member.notes}
+                    {member.eventGuest.notes}
                   </Text>
                 </View>
               )}

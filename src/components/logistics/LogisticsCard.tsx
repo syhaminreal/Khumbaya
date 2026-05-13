@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { Truck, UserPlus } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -11,6 +12,7 @@ interface LogisticsCardProps {
   availabilityStart?:   Date |null;
   availabilityEnd?:  Date|null;
   onPress?: () => void;
+  onEditPress?: () => void;
   onManagePress?: () => void;
   onAddGuestPress?: () => void;
 }
@@ -37,6 +39,7 @@ export const LogisticsCard: React.FC<LogisticsCardProps> = ({
   availabilityStart,
   availabilityEnd,
   onPress,
+  onEditPress,
   onManagePress,
   onAddGuestPress,
 }) => {
@@ -64,9 +67,19 @@ export const LogisticsCard: React.FC<LogisticsCardProps> = ({
             <Text className="text-gray-500 font-jakarta text-xs">{type}</Text>
           </View>
         </View>
-        <View className={`${styles.bg} px-3 py-1 rounded-full border border-black/5 flex-row items-center`}>
-          <View className={`w-1.5 h-1.5 rounded-full ${styles.dot} mr-1.5`} />
-          <Text className={`${styles.text} text-[10px] font-jakarta-bold uppercase`}>{status}</Text>
+        <View className="flex-row items-center gap-2">
+          {onEditPress && (
+            <TouchableOpacity
+              onPress={onEditPress}
+              className="w-8 h-8 rounded-full items-center justify-center border border-gray-100 bg-gray-50"
+            >
+              <MaterialIcons name="more-vert" size={16} color="#6b7280" />
+            </TouchableOpacity>
+          )}
+          <View className={`${styles.bg} px-3 py-1 rounded-full border border-black/5 flex-row items-center`}>
+            <View className={`w-1.5 h-1.5 rounded-full ${styles.dot} mr-1.5`} />
+            <Text className={`${styles.text} text-[10px] font-jakarta-bold uppercase`}>{status}</Text>
+          </View>
         </View>
       </View>
 
