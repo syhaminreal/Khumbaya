@@ -1,18 +1,18 @@
 import {
-    createReviewApi,
-    createReviewForBusinessApi,
-    deleteReviewApi,
-    getReviewApi,
-    getReviewsApi,
-    updateReviewApi,
+  createReviewApi,
+  createReviewForBusinessApi,
+  deleteReviewApi,
+  getReviewApi,
+  getReviewsApi,
+  updateReviewApi,
 } from "@/src/features/review/api";
 import type {
-    CreateReviewForBusinessPayload,
-    CreateReviewPayload,
-    ReviewListResponse,
-    ReviewQueryParams,
-    ReviewResponse,
-    UpdateReviewPayload,
+  CreateReviewForBusinessPayload,
+  CreateReviewPayload,
+  ReviewListResponse,
+  ReviewQueryParams,
+  ReviewResponse,
+  UpdateReviewPayload,
 } from "@/src/features/review/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -57,7 +57,7 @@ export const useCreateReviewForBusiness = () => {
       payload: CreateReviewForBusinessPayload;
     }) => createReviewForBusinessApi(businessId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["reviews"], exact: false });
     },
   });
 };
@@ -73,8 +73,11 @@ export const useUpdateReview = () => {
       payload: UpdateReviewPayload;
     }) => updateReviewApi(id, payload),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["review", variables.id] });
-      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      queryClient.invalidateQueries({
+        queryKey: ["review", variables.id],
+        exact: false,
+      });
+      queryClient.invalidateQueries({ queryKey: ["reviews"], exact: false });
     },
   });
 };

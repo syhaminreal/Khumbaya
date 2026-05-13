@@ -4,7 +4,7 @@ import { useReviews } from "@/src/features/review/hooks/use-review";
 import { useAuthStore } from "@/src/store/AuthStore";
 import { shadowStyle } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Image, Pressable, ScrollView, View } from "react-native";
 
 const FALLBACK_AVATAR =
@@ -28,6 +28,25 @@ interface ReviewSectionProps {
   resolvedId: string;
 }
 
+const normalizeText = (value?: string | null, fallback = ""): string =>
+  value?.trim() || fallback;
+
+const normalizeAvatarUrl = (...sources: Array<string | null | undefined>) =>
+  sources
+    .find((source) => typeof source === "string" && source.trim().length > 0)
+    ?.trim() || FALLBACK_AVATAR;
+
+const formatReviewDate = (createdAt?: string | null) => {
+  if (!createdAt) {
+    return "Unknown date";
+  }
+
+  const parsed = new Date(createdAt);
+  return Number.isNaN(parsed.getTime())
+    ? "Unknown date"
+    : parsed.toLocaleDateString();
+};
+
 function ReviewCard({ review }: { review: Review }) {
   return (
     <View
@@ -43,7 +62,6 @@ function ReviewCard({ review }: { review: Review }) {
         shadowStyle,
       ]}
     >
-      {/* Reviewer header */}
       <View className="flex-row items-center gap-3 mb-3">
         <Image
           source={{ uri: review.reviewerAvatarUrl }}
@@ -66,7 +84,6 @@ function ReviewCard({ review }: { review: Review }) {
         </View>
       </View>
 
-      {/* Star row */}
       <View className="flex-row gap-0.5 mb-2.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <MaterialIcons
@@ -78,7 +95,6 @@ function ReviewCard({ review }: { review: Review }) {
         ))}
       </View>
 
-      {/* Quote */}
       <Text
         className="text-sm text-gray-600 leading-5 italic"
         numberOfLines={4}
@@ -117,33 +133,51 @@ export function ReviewSection({ businessId, resolvedId }: ReviewSectionProps) {
     Number.isNaN(businessId) ? undefined : { businessId, page: 1, limit: 10 }
   );
 
-  const reviews: Review[] =
-    reviewData?.items.map((review) => ({
-      id: String(review.id),
-      reviewerName:
-        review.reviewerName?.trim() ||
-        review.username?.trim() ||
-        review.user?.name?.trim() ||
-        review.user?.username?.trim() ||
-        (review.userId === user?.id ? user.username?.trim() : "") ||
-        "Anonymous",
-      reviewerAvatarUrl:
-        review.reviewerAvatar ??
-        review.user?.photo ??
-        (review.userId === user?.id ? user.photo : null) ??
-        review.businessAvatar ??
-        FALLBACK_AVATAR,
-      rating: review.rating,
-      quote: review.description ?? "",
-      date: new Date(review.createdAt).toLocaleDateString(),
-      userId: review.userId,
-      reviewId: review.id,
-    })) ?? [];
+  const reviewItems = reviewData?.items ?? [];
+  const currentUserId = user?.id !== undefined ? String(user.id) : "";
+
+  const reviews = useMemo(
+    () =>
+      reviewItems.map((review) => {
+        const isCurrentUser =
+          review.userId !== undefined &&
+          String(review.userId) === currentUserId;
+
+        return {
+          id: String(review.id),
+          reviewerName:
+            normalizeText(review.reviewerName) ||
+            (isCurrentUser ? normalizeText(user?.username) : "") ||
+            "Anonymous",
+          reviewerAvatarUrl: normalizeAvatarUrl(
+            review.reviewerAvatar,
+            review.user?.photo,
+            isCurrentUser ? user?.photo : undefined,
+            review.businessAvatar
+          ),
+          rating: review.rating,
+          quote: normalizeText(review.description),
+          date: formatReviewDate(review.createdAt),
+          userId: review.userId,
+          reviewId: review.id,
+        };
+      }),
+    [reviewItems, currentUserId, user?.photo, user?.username]
+  );
+
+  const userReview = useMemo(
+    () =>
+      user
+        ? reviewItems.find(
+            (review) =>
+              review.userId !== undefined &&
+              String(review.userId) === currentUserId
+          )
+        : undefined,
+    [reviewItems, currentUserId, user]
+  );
 
   const reviewCount = reviewData?.totalItems ?? reviews.length;
-  const userReview = user
-    ? reviewData?.items.find((review) => review.userId === user.id)
-    : undefined;
   const reviewButtonLabel = userReview ? "Edit Review" : "Write Review";
 
   const openReviewModal = () => {
@@ -167,7 +201,6 @@ export function ReviewSection({ businessId, resolvedId }: ReviewSectionProps) {
   return (
     <>
       <View className="mt-2 bg-white px-4 pt-5 pb-6">
-        {/* Header row */}
         <View className="flex-row justify-between items-center mb-4">
           <View>
             <Text className="text-lg font-bold text-[#181114]">Reviews</Text>
@@ -194,7 +227,6 @@ export function ReviewSection({ businessId, resolvedId }: ReviewSectionProps) {
           )}
         </View>
 
-        {/* Review list / empty state */}
         {reviews.length === 0 ? (
           <EmptyReviews />
         ) : (
@@ -210,7 +242,6 @@ export function ReviewSection({ businessId, resolvedId }: ReviewSectionProps) {
         )}
       </View>
 
-      {/* Write / edit review modal */}
       <WriteReviewModal
         visible={showReviewModal}
         onClose={closeReviewModal}
