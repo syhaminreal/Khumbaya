@@ -21,6 +21,9 @@ export interface MakeEventMemberType {
   userId: number;
   role: string;
 }
+export interface RemoveEventMemberType {
+  userId: number;
+}
 export interface EVENT {
   id: number;
   title: string;
@@ -248,6 +251,13 @@ export const makeEventMember = async (
   data: MakeEventMemberType
 ) => {
   const response = await api.post(`/event/${eventId}/member`, data);
+  return response.data;
+};
+export const removeEventMember = async (
+  eventId: number | string,
+  data: RemoveEventMemberType
+) => {
+  const response = await api.delete(`/event/${eventId}/member`, { data });
   return response.data;
 };
 export const getEventCategory = async () => {

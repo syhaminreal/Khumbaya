@@ -1,5 +1,8 @@
 import { Text } from "@/src/components/ui/Text";
-import { useGetEventOwner } from "@/src/features/events/hooks/use-event";
+import {
+  useGetEventOwner,
+  useRemoveEventMember,
+} from "@/src/features/events/hooks/use-event";
 import { Ionicons } from "@expo/vector-icons";
 import {
   router as expoRouter,
@@ -8,7 +11,7 @@ import {
   useLocalSearchParams,
 } from "expo-router";
 import { useCallback, useMemo } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 
 export function TransferOwnerShipPage() {
   const params = useLocalSearchParams();
@@ -23,7 +26,9 @@ export function TransferOwnerShipPage() {
     data: eventMembers,
     isLoading: memberLoading,
     refetch: refetchEventMembers,
-  } = useGetEventOwner(Number(eventId));
+  } = useGetEventOwner(String(eventId));
+  const { mutate: removeMember, isPending: isRemovingMember } =
+    useRemoveEventMember(String(eventId));
 
   useFocusEffect(
     useCallback(() => {
@@ -45,6 +50,45 @@ export function TransferOwnerShipPage() {
       <Ionicons name="add" size={28} color="#111827" />
     </TouchableOpacity>
   );
+
+  const handleRemoveMember = (member: any) => {
+    const user = member?.user ?? member;
+    const userId = Number(user?.id ?? member?.userId);
+
+    if (!userId) {
+      Alert.alert("Error", "Member id not found.");
+      return;
+    }
+
+    Alert.alert(
+      "Remove Member",
+      `Are you sure you want to remove ${user?.username || "this member"}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            removeMember(
+              { userId },
+              {
+                onSuccess: () => {
+                  Alert.alert("Success", "Member removed successfully.");
+                },
+                onError: (error: any) => {
+                  const message =
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Failed to remove member.";
+                  Alert.alert("Error", message);
+                },
+              }
+            );
+          },
+        },
+      ]
+    );
+  };
 
   const totalMembers = eventMembers?.length ?? 0;
   const activeRoles = useMemo(() => {
@@ -110,6 +154,17 @@ export function TransferOwnerShipPage() {
                     )}
                     className="flex-row items-center p-4 bg-slate-50 rounded-md border border-slate-200"
                   >
+                    <TouchableOpacity
+                      onPress={() => handleRemoveMember(member)}
+                      disabled={isRemovingMember}
+                      className="size-10 rounded-full bg-red-50 items-center justify-center mr-3"
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={20}
+                        color="#dc2626"
+                      />
+                    </TouchableOpacity>
                     
                     <View className="size-12 rounded-full bg-slate-200 items-center justify-center mr-4">
                       <Ionicons name="person" size={24} color="#64748b" />

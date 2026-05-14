@@ -16,6 +16,8 @@ import {
   getUpcomingEventsApi,
   makeEventMember,
   MakeEventMemberType,
+  removeEventMember,
+  RemoveEventMemberType,
   submitRsvpResponseApi,
   updateEventApi,
 } from "../api/events.service";
@@ -177,24 +179,43 @@ export const useSubEventsOfEvent = (eventId: number) => {
 
 export const useMakeEventMember = (eventId: number) => {
   const queryClient = useQueryClient();
+  const normalizedEventId = String(eventId);
   return useMutation({
     mutationFn: (payload: MakeEventMemberType) =>
       makeEventMember(eventId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event-responses", eventId] });
       queryClient.invalidateQueries({ queryKey: ["rsvp-invitations"] });
-      queryClient.invalidateQueries({ queryKey: ["event-owner", eventId] });
+      queryClient.invalidateQueries({
+        queryKey: ["event-owner", normalizedEventId],
+      });
     },
   });
 };
-export const useGetEventOwner = (eventId: string) => {
+
+export const useRemoveEventMember = (eventId: number | string) => {
+  const queryClient = useQueryClient();
+  const normalizedEventId = String(eventId);
+  return useMutation({
+    mutationFn: (payload: RemoveEventMemberType) =>
+      removeEventMember(normalizedEventId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["event-owner", normalizedEventId],
+      });
+    },
+  });
+};
+
+export const useGetEventOwner = (eventId: number | string) => {
+  const normalizedEventId = String(eventId);
   return useQuery({
-    queryKey: ["event-owner", eventId],
+    queryKey: ["event-owner", normalizedEventId],
     queryFn: async () => {
       const responses: {
         user: User;
         role: string;
-      }[] = await getEventOwners(eventId);
+      }[] = await getEventOwners(normalizedEventId);
       return responses;
     },
   });
