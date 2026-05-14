@@ -205,6 +205,7 @@ export default function ContactPickerScreen() {
             phone: finalPhone,
             fullName: contact.name,
             isFamily: inviteWithFamily,
+            isDraft: false,
             role: "Guest",
             category: "Friend",
             status: "pending",

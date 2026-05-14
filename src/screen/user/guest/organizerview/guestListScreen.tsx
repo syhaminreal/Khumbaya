@@ -281,6 +281,11 @@ export default function GuestListScreen() {
     );
   }, [eventId]);
 
+  const openImportGuestScreen = useCallback(() => {
+    if (!eventId) return;
+    push(`./guests/import-guests` as RelativePathString);
+  }, [eventId]);
+
   const onPressGuestCard = (guest: GuestDetailInterface) => {
     setGuestDetail(guest);
     //TODO: Draft the detail of the guest instead of using the params in this 
@@ -451,6 +456,20 @@ export default function GuestListScreen() {
           {filteredGuestCount === 1 ? "" : "s"}
         </Text>
       </View>
+
+      <TouchableOpacity
+        className="absolute right-6 bottom-52 w-14 h-14 rounded-full bg-white border border-[#EE2B8C] items-center justify-center z-50"
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 4,
+          elevation: 4,
+        }}
+        onPress={openImportGuestScreen}
+      >
+        <Ionicons name="cloud-download-outline" size={22} color="#EE2B8C" />
+      </TouchableOpacity>
 
       <TouchableOpacity
         className="absolute right-6 bottom-32 w-14 h-14 rounded-full bg-white border border-[#EE2B8C] items-center justify-center z-50"

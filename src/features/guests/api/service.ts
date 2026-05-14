@@ -1,5 +1,5 @@
 import api from "@/src/api/axios";
-import { GuestWithRoom, RoomData } from "@/src/features/hotel/types/hotel.types";
+import { RoomData } from "@/src/features/hotel/types/hotel.types";
 
 export interface InviteGuestPayload {
   fullName: string;
@@ -82,6 +82,10 @@ export const removeInvitation = async (eventId: number, guestId: number) => {
   return response.data.data;
 };
 
-
-
-
+export const importGuestlist =async (fromEventId: number, toEventId: number) => {
+  const response = await api.post(`/invitation/import-guest`, {
+    fromEventId,
+    toEventId
+  });
+  return response.data.data ?? response.data ;
+};

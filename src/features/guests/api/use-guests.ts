@@ -6,6 +6,7 @@ import {
   getEventGuestCategories,
   getGuestRoom,
   getInvitation,
+  importGuestlist,
   inviteGuest,
   removeInvitation,
   type CreateGuestCategoryPayload,
@@ -58,6 +59,29 @@ export const useCreateEventGuestCategory = () => {
   });
 };
 
+
+export const useImportGuestlist = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      fromEventId,
+      toEventId,
+    }: {
+      fromEventId: number;
+      toEventId: number;
+    }) => importGuestlist(fromEventId, toEventId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["event-guests", variables.toEventId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["event-invitations", variables.toEventId],
+      });
+    }
+
+  });
+};
+
 export const useInviteGuest = () => {
   const queryClient = useQueryClient();
 
@@ -99,7 +123,7 @@ export const useRemoveInvitation = () => {
   });
 };
 
-export const useGetGuestRoom = (eventId: number | null  ) => {
+export const useGetGuestRoom = (eventId: number | null) => {
   return useQuery<RoomData[]>({
     queryKey: ["event-guest-room", eventId],
     queryFn: async () => getGuestRoom(eventId!),
