@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -16,7 +15,7 @@ interface Vendor {
   id: string;
   name: string;
   category: string;
-  status: "booked" | "pending" | "available";
+  status: "booked" | "pending";
   contact?: string;
   price?: string;
   rating?: number;
@@ -25,100 +24,87 @@ interface Vendor {
 
 const mapBusinessStatusToVendorStatus = (status: unknown): Vendor["status"] => {
   const normalized = String(status ?? "").toLowerCase();
-  if (normalized.includes("pending") || normalized.includes("request")) {
-    return "pending";
+  if (
+    normalized.includes("confirmed") ||
+    normalized.includes("booked") ||
+    normalized.includes("completed")
+  ) {
+    return "booked";
   }
-  if (normalized.includes("available") || normalized.includes("open")) {
-    return "available";
-  }
-  return "booked";
+  return "pending";
+};
+
+const statusBadgeClass: Record<Vendor["status"], string> = {
+  booked: "bg-green-100",
+  pending: "bg-orange-100",
+};
+
+const statusTextClass: Record<Vendor["status"], string> = {
+  booked: "text-green-700",
+  pending: "text-orange-600",
 };
 
 const VendorCard = ({ vendor, eventId }: { vendor: Vendor; eventId?: string }) => (
   <TouchableOpacity
-    style={styles.vendorCard}
+    className="bg-white rounded-2xl overflow-hidden flex-row items-center shadow-sm"
+    style={{ elevation: 3 }}
     onPress={() =>
       router.push({ pathname: "/(shared)/explore/[vendorId]" as RelativePathString, params: { vendorId: vendor.id, fromEventId: eventId, eventVendorStatus: vendor.status } })
     }
     activeOpacity={0.8}
   >
-    <View style={styles.vendorImageContainer}>
+    <View className="w-[80px] h-[80px] relative">
       {vendor.imageUrl ? (
         <Image
           source={{ uri: vendor.imageUrl }}
-          style={styles.vendorImage}
+          className="w-full h-full"
           resizeMode="cover"
         />
       ) : (
-        <View style={styles.vendorImagePlaceholder}>
+        <View className="w-full h-full bg-gray-100 items-center justify-center">
           <Ionicons name="storefront" size={32} color="#9CA3AF" />
         </View>
       )}
-      <View
-        style={[
-          styles.statusBadge,
-          vendor.status === "booked" && styles.statusBooked,
-          vendor.status === "pending" && styles.statusPending,
-          vendor.status === "available" && styles.statusAvailable,
-        ]}
-      >
-        <Text
-          style={[
-            styles.statusText,
-            vendor.status === "booked" && styles.statusTextBooked,
-            vendor.status === "pending" && styles.statusTextPending,
-            vendor.status === "available" && styles.statusTextAvailable,
-          ]}
-        >
+      <View className={`absolute top-2 left-2 px-2 py-1 rounded-xl ${statusBadgeClass[vendor.status]}`}>
+        <Text className={`text-[10px] font-semibold capitalize ${statusTextClass[vendor.status]}`}>
           {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
         </Text>
       </View>
     </View>
 
-    <View style={styles.vendorInfo}>
-      <Text style={styles.vendorName}>{vendor.name}</Text>
-      <Text style={styles.vendorCategory}>{vendor.category}</Text>
+    <View className="flex-1 px-3 py-2">
+      <Text className="text-base font-semibold text-[#181114]">{vendor.name}</Text>
+      <Text className="text-xs text-gray-500 mt-0.5">{vendor.category}</Text>
 
-      <View style={styles.vendorMeta}>
+      <View className="flex-row items-center gap-3 mt-1.5">
         {vendor.rating && (
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={14} color="#F59E0B" fill="#F59E0B" />
-            <Text style={styles.ratingText}>{vendor.rating}</Text>
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="star" size={14} color="#F59E0B" />
+            <Text className="text-xs font-medium text-amber-500">{vendor.rating}</Text>
           </View>
         )}
-        {vendor.price && <Text style={styles.priceText}>{vendor.price}</Text>}
+        {vendor.price && (
+          <Text className="text-xs font-semibold text-emerald-500">{vendor.price}</Text>
+        )}
       </View>
     </View>
 
-    <View style={styles.vendorAction}>
-      {vendor.status === "available" ? (
-        <TouchableOpacity
-          style={styles.bookButton}
-          onPress={() =>
-            router.push({ pathname: "/(shared)/explore/[vendorId]" as RelativePathString, params: { vendorId: vendor.id, fromEventId: eventId, eventVendorStatus: vendor.status } })
-          }
-        >
-          <Text style={styles.bookButtonText}>Book Now</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          style={styles.viewButton}
-          onPress={() =>
-            router.push({ pathname: "/(shared)/explore/[vendorId]" as RelativePathString, params: { vendorId: vendor.id, fromEventId: eventId, eventVendorStatus: vendor.status } })
-          }
-        >
-          <Ionicons name="ellipsis-horizontal" size={20} color="#6B7280" />
-        </TouchableOpacity>
-      )}
+    <View className="pr-3">
+      <TouchableOpacity
+        className="p-2"
+        onPress={() =>
+          router.push({ pathname: "/(shared)/explore/[vendorId]" as RelativePathString, params: { vendorId: vendor.id, fromEventId: eventId, eventVendorStatus: vendor.status } })
+        }
+      >
+        <Ionicons name="ellipsis-horizontal" size={20} color="#6B7280" />
+      </TouchableOpacity>
     </View>
   </TouchableOpacity>
 );
 
 export default function EventVendorsPage() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
-  const [activeTab, setActiveTab] = useState<
-    "all" | "booked" | "pending" | "available"
-  >("all");
+  const [activeTab, setActiveTab] = useState<"all" | "booked" | "pending">("all");
 
   const {
     data: eventBusinesses = [],
@@ -143,89 +129,76 @@ export default function EventVendorsPage() {
     }));
   }, [eventBusinesses]);
 
+  const bookedCount = vendorsData.filter((v) => v.status === "booked").length;
+  const pendingCount = vendorsData.filter((v) => v.status === "pending").length;
+
   const filteredVendors = vendorsData.filter((vendor) => {
     if (activeTab === "all") return true;
     return vendor.status === activeTab;
   });
 
-  const bookedCount = vendorsData.filter((v) => v.status === "booked").length;
-  const pendingCount = vendorsData.filter((v) => v.status === "pending").length;
-  const availableCount = vendorsData.filter(
-    (v) => v.status === "available"
-  ).length;
-
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{bookedCount}</Text>
-          <Text style={styles.statLabel}>Booked</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{pendingCount}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{availableCount}</Text>
-          <Text style={styles.statLabel}>Available</Text>
-        </View>
-      </View>
-
+    <SafeAreaView className="flex-1 bg-[#f8f6f7]" edges={["bottom"]}>
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsContent}
+      <View className="bg-white border-b border-gray-200 px-4 py-3 flex-row gap-3">
+        <TouchableOpacity
+          className={`flex-1 py-2.5 rounded-full items-center justify-center ${activeTab === "all" ? "bg-[#ee2b8c]" : "bg-gray-100"}`}
+          onPress={() => setActiveTab("all")}
         >
-          {(["all", "booked", "pending", "available"] as const).map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab && styles.tabTextActive,
-                ]}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <Text className={`text-sm font-semibold ${activeTab === "all" ? "text-white" : "text-gray-500"}`}>
+            All
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className={`flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-1.5 ${activeTab === "pending" ? "bg-[#ee2b8c]" : "bg-gray-100"}`}
+          onPress={() => setActiveTab("pending")}
+        >
+          <Text className={`text-sm font-semibold ${activeTab === "pending" ? "text-white" : "text-gray-500"}`}>Pending</Text>
+          <View className={`w-5 h-5 rounded-full items-center justify-center ${activeTab === "pending" ? "bg-white/30" : "bg-orange-100"}`}>
+            <Text className={`text-[11px] font-bold ${activeTab === "pending" ? "text-white" : "text-orange-500"}`}>{pendingCount}</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className={`flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-1.5 ${activeTab === "booked" ? "bg-[#ee2b8c]" : "bg-gray-100"}`}
+          onPress={() => setActiveTab("booked")}
+        >
+          <Text className={`text-sm font-semibold ${activeTab === "booked" ? "text-white" : "text-gray-500"}`}>Booked</Text>
+          <View className={`w-5 h-5 rounded-full items-center justify-center ${activeTab === "booked" ? "bg-white/30" : "bg-green-100"}`}>
+            <Text className={`text-[11px] font-bold ${activeTab === "booked" ? "text-white" : "text-green-600"}`}>{bookedCount}</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Vendor List */}
       <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.vendorList}
+        className="flex-1"
+        contentContainerStyle={{ padding: 16, gap: 8 }}
         showsVerticalScrollIndicator={false}
       >
         {!eventId && (
-          <View style={styles.emptyState}>
+          <View className="items-center justify-center py-16">
             <Ionicons name="warning-outline" size={48} color="#F59E0B" />
-            <Text style={styles.emptyTitle}>Event not found</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text className="text-lg font-semibold text-gray-500 mt-4">Event not found</Text>
+            <Text className="text-sm text-gray-400 mt-1">
               Open this page from an event to load vendors.
             </Text>
           </View>
         )}
 
         {isLoading && !!eventId && (
-          <View style={styles.emptyState}>
+          <View className="items-center justify-center py-16">
             <Ionicons name="sync-outline" size={48} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>Loading vendors...</Text>
+            <Text className="text-lg font-semibold text-gray-500 mt-4">Loading vendors...</Text>
           </View>
         )}
 
         {isError && !!eventId && (
-          <View style={styles.emptyState}>
+          <View className="items-center justify-center py-16">
             <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-            <Text style={styles.emptyTitle}>Could not load vendors</Text>
-            <Text style={styles.emptySubtitle}>Please try again.</Text>
+            <Text className="text-lg font-semibold text-gray-500 mt-4">Could not load vendors</Text>
+            <Text className="text-sm text-gray-400 mt-1">Please try again.</Text>
           </View>
         )}
 
@@ -234,20 +207,20 @@ export default function EventVendorsPage() {
         ))}
 
         {filteredVendors.length === 0 && !!eventId && !isLoading && !isError && (
-          <View style={styles.emptyState}>
+          <View className="items-center justify-center py-16">
             <Ionicons name="storefront-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyTitle}>No vendors found</Text>
-            <Text style={styles.emptySubtitle}>Try adjusting your filters</Text>
+            <Text className="text-lg font-semibold text-gray-500 mt-4">No vendors found</Text>
+            <Text className="text-sm text-gray-400 mt-1">Try adjusting your filters</Text>
           </View>
         )}
 
-        {/* Bottom spacer for FAB */}
-        <View style={styles.bottomSpacer} />
+        <View className="h-20" />
       </ScrollView>
 
-      {/* Floating Action Button: Add Vendor */}
+      {/* Floating Action Button */}
       <TouchableOpacity
-        style={styles.fab}
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#ee2b8c] items-center justify-center"
+        style={{ elevation: 8 }}
         onPress={() => router.push("/(shared)/explore/explore")}
       >
         <Ionicons name="add" size={28} color="white" />
@@ -255,247 +228,3 @@ export default function EventVendorsPage() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f6f7",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#181114",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  headerButton: {
-    padding: 8,
-  },
-  statsRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#ee2b8c",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  tabsContainer: {
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  tabsContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-  },
-  tabActive: {
-    backgroundColor: "#ee2b8c",
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#6B7280",
-  },
-  tabTextActive: {
-    color: "white",
-  },
-  content: {
-    flex: 1,
-  },
-  vendorList: {
-    padding: 16,
-    gap: 12,
-  },
-  vendorCard: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  vendorImageContainer: {
-    width: 100,
-    height: 100,
-    position: "relative",
-  },
-  vendorImage: {
-    width: "100%",
-    height: "100%",
-  },
-  vendorImagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusBadge: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBooked: {
-    backgroundColor: "#DCFCE7",
-  },
-  statusPending: {
-    backgroundColor: "#FFEDD5",
-  },
-  statusAvailable: {
-    backgroundColor: "#DBEAFE",
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-  statusTextBooked: {
-    color: "#16A34A",
-  },
-  statusTextPending: {
-    color: "#EA580C",
-  },
-  statusTextAvailable: {
-    color: "#2563EB",
-  },
-  vendorInfo: {
-    flex: 1,
-    padding: 12,
-  },
-  vendorName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#181114",
-  },
-  vendorCategory: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  vendorMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 6,
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#F59E0B",
-  },
-  priceText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#10B981",
-  },
-  vendorAction: {
-    paddingRight: 12,
-  },
-  bookButton: {
-    backgroundColor: "#ee2b8c",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  bookButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  viewButton: {
-    padding: 8,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: "#9CA3AF",
-    marginTop: 4,
-  },
-  bottomSpacer: {
-    height: 80,
-  },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#ee2b8c",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#ee2b8c",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-});
