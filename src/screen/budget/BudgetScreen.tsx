@@ -6,6 +6,7 @@ import {
   useEventById,
   useUpdateEvent,
 } from "@/src/features/events/hooks/use-event";
+import { useEventStore } from "@/src/features/events/store/useEventStore";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,9 +26,12 @@ import {
 export default function EventBudgetScreen() {
   const [search, setSearch] = useState("");
   const [editBudgetVisible, setEditBudgetVisible] = useState(false);
+  const { eventDraft } = useEventStore();
   const [budgetInput, setBudgetInput] = useState("");
   const router = useRouter();
   const { eventId, isSubEvent } = useLocalSearchParams<{ eventId: string; isSubEvent: string }>();
+  let effectiveEventId = eventId;
+
   const isSubEventBoolean = useMemo(() => {
     if ("true" == isSubEvent) {
       return true;
@@ -36,9 +40,19 @@ export default function EventBudgetScreen() {
     }
   }, [eventId]
   );
-  console.log('This is the sub event pge of the event', isSubEvent, isSubEventBoolean);
+
+  if (isSubEvent) {
+
+    if (!eventDraft) {
+      return <>
+        No information about the event seems like its coming from the wrong route
+      </>
+    }
+    effectiveEventId = isSubEventBoolean ? eventDraft.id : eventId;
+  }
+
   const { data: eventData, isLoading: eventLoading } = useEventById(
-    Number(eventId)
+    Number(effectiveEventId)
   );
   const { mutate: updateEvent, isPending: isUpdatingBudget } = useUpdateEvent(
     Number(eventId)
@@ -46,7 +60,7 @@ export default function EventBudgetScreen() {
 
   const hasBudget = eventData?.budget && eventData.budget > 0 ? true : false;
   const { data: budgetData, isLoading: budgetLoading } = useBudgetSummary(
-    Number(eventId),
+    Number(effectiveEventId),
     { enabled: hasBudget }
   );
 
@@ -82,7 +96,7 @@ export default function EventBudgetScreen() {
     );
   }
 
-  if (!hasBudget) {
+  if (!hasBudget && !isSubEventBoolean) {
     return <SetBudgetForm eventId={Number(eventId)} />;
   }
 
@@ -94,8 +108,8 @@ export default function EventBudgetScreen() {
     );
   }
 
-  const data = budgetData;
-  const totalBudget = data.summary?.totalBudget || 0;
+  const data = budgetData; // Calculate the budget data of the parent id if it is a sub event, otherwise use the data as it is.
+  const totalBudget = data.summary?.totalBudget;
   const totalAllocated = data.summary?.totalAllocated || 0;
   const totalSpent = data.summary?.totalSpend || 0;
   const totalRemaining = data.summary?.remaining || 0;
@@ -305,17 +319,18 @@ export default function EventBudgetScreen() {
           </View>
         )}
       </ScrollView>
-
-      <TouchableOpacity
-        className="absolute right-5 bottom-8 flex-row items-center gap-2 px-6 py-3 rounded-full bg-[#ee2b8c] shadow-lg active:opacity-80"
-        activeOpacity={0.8}
-        onPress={handleAddPress}
-      >
-        <MaterialIcons name="add" size={24} color="#fff" />
-        <Text className="text-white text-xs font-bold tracking-tight">
-          Add Category
-        </Text>
-      </TouchableOpacity>
+      {!isSubEventBoolean &&
+        <TouchableOpacity
+          className="absolute right-5 bottom-8 flex-row items-center gap-2 px-6 py-3 rounded-full bg-[#ee2b8c] shadow-lg active:opacity-80"
+          activeOpacity={0.8}
+          onPress={handleAddPress}
+        >
+          <MaterialIcons name="add" size={24} color="#fff" />
+          <Text className="text-white text-xs font-bold tracking-tight">
+            Add Category
+          </Text>
+        </TouchableOpacity>
+      }
     </View>
   );
 }

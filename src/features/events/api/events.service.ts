@@ -250,6 +250,10 @@ export const makeEventMember = async (
   const response = await api.post(`/event/${eventId}/member`, data);
   return response.data;
 };
+export const removeEventMember = async (eventId:number , userId:number) => {
+  const response = await api.delete(`/event/${eventId}/member/${userId}`);
+  return response.data;
+}
 export const getEventCategory = async () => {
   const responce = await api.get("/general-category");
   return responce;

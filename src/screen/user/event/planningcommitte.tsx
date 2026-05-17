@@ -1,5 +1,6 @@
 import { Text } from "@/src/components/ui/Text";
-import { useGetEventOwner } from "@/src/features/events/hooks/use-event";
+import { useGetEventOwner, useRemoveEventMember } from "@/src/features/events/hooks/use-event";
+import { useEventStore } from "@/src/features/events/store/useEventStore";
 import { Ionicons } from "@expo/vector-icons";
 import {
   router as expoRouter,
@@ -7,8 +8,15 @@ import {
   useFocusEffect,
   useLocalSearchParams,
 } from "expo-router";
-import { useCallback, useMemo } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export function TransferOwnerShipPage() {
   const params = useLocalSearchParams();
@@ -23,7 +31,12 @@ export function TransferOwnerShipPage() {
     data: eventMembers,
     isLoading: memberLoading,
     refetch: refetchEventMembers,
-  } = useGetEventOwner(Number(eventId));
+  } = useGetEventOwner(eventId);
+  const { mutate, isPending } = useRemoveEventMember(Number(eventId));
+  const [menuMember, setMenuMember] = useState<unknown | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const eventDraft = useEventStore((state) => state.eventDraft);
+  const organizerId =  eventDraft?.organizer 
 
   useFocusEffect(
     useCallback(() => {
@@ -46,15 +59,40 @@ export function TransferOwnerShipPage() {
     </TouchableOpacity>
   );
 
-  const totalMembers = eventMembers?.length ?? 0;
-  const activeRoles = useMemo(() => {
-    if (!eventMembers?.length) return 0;
-    return new Set(
-      eventMembers
-        .map((member) => (member as { role?: string })?.role)
-        .filter((role): role is string => !!role)
-    ).size;
-  }, [eventMembers]);
+  const handleDeleteMember = (member: any) => {
+    const user = member.user 
+    const userId =user?.id 
+      
+    if (!userId) {
+      Alert.alert("Remove failed", "User id not found for this member.");
+      return;
+    }
+
+    if (organizerId && userId === organizerId) {
+      Alert.alert("Not allowed", "Organizer cannot be removed.");
+      return;
+    }
+
+    setDeletingId(userId);
+    mutate(
+      { userId },
+      {
+        onSuccess: () => {
+          setMenuMember(null);
+          refetchEventMembers() ;
+        },
+        onError: (error: any) => {
+          Alert.alert(
+            "Remove failed",
+            error?.message || "Unable to remove member. Please try again."
+          );
+        },
+        onSettled: () => {
+          setDeletingId(null);
+        },
+      }
+    );
+  };
 
   return (
     <View className="flex-1 ">
@@ -98,10 +136,12 @@ export function TransferOwnerShipPage() {
                 Member List
               </Text>
               {eventMembers?.map((member, index) => {
-                const user = (member as { user?: any })?.user ?? member;
-                const name = user?.username || "Member";
-                const phoneValue = user?.phone || user?.phoneNumber || null;
-                const role = (member as { role?: string })?.role;
+                const user = (member)?.user;
+                const name = user?.username ;
+                const phoneValue = user?.phone ; 
+                const role = member.role ; 
+                const memberUserId = user?.id 
+                const isOrganizer = memberUserId === organizerId;
 
                 return (
                   <View
@@ -127,6 +167,18 @@ export function TransferOwnerShipPage() {
                         {role ? `Role: ${role}` : "Event member"}
                       </Text>
                     </View>
+                    {!isOrganizer && (
+                      <TouchableOpacity
+                        onPress={() => setMenuMember(member)}
+                        className="ml-2 p-2"
+                      >
+                        <Ionicons
+                          name="ellipsis-vertical"
+                          size={18}
+                          color="#64748b"
+                        />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 );
               })}
@@ -138,6 +190,42 @@ export function TransferOwnerShipPage() {
           )}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={!!menuMember}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuMember(null)}
+      >
+        <Pressable
+          className="flex-1 bg-black/20 justify-end"
+          onPress={() => setMenuMember(null)}
+        >
+          <Pressable className="bg-white rounded-2xl p-4 mx-4 mb-6">
+            <TouchableOpacity
+              onPress={() => menuMember && handleDeleteMember(menuMember)}
+              disabled={isPending || deletingId !== null}
+              className="flex-row items-center gap-3 py-3"
+            >
+              <View className="h-8 w-8 rounded-full bg-red-50 items-center justify-center">
+                <Ionicons name="trash-outline" size={16} color="#ef4444" />
+              </View>
+              <Text className="text-base text-gray-900">
+                {isPending || deletingId !== null ? "Removing..." : "Remove"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setMenuMember(null)}
+              className="flex-row items-center gap-3 py-3"
+            >
+              <View className="h-8 w-8 rounded-full bg-gray-100 items-center justify-center">
+                <Ionicons name="close" size={16} color="#9CA3AF" />
+              </View>
+              <Text className="text-base text-gray-500">Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Sticky Bottom CTA */}
     </View>

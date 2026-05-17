@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { Platform } from "react-native";
-import { Easing, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { useEffect, useState } from "react";
+import { Modal, Platform } from "react-native";
+import Animated, { Easing, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
 
 
 type DateTimePickerChangeEvent = { type?: string };
@@ -316,4 +315,4 @@ export const shadowStyle = {
 
 
 
-  
+export const AnimatedModal  = Animated.createAnimatedComponent(Modal);

@@ -42,6 +42,8 @@ const manageActions = [
   { id: "catering", name: "Catering", icon: "restaurant", color: "#F43F5E", route: "./catering" as RelativePathString, params: { isGuest: "true" } },
   { id: "hotel-management", name: "Assigned Room", icon: "bed-outline", color: "#F59E0B", route: "./hotel" as RelativePathString, params: { isGuest: "true" } },
   { id: "logistics", name: "Assigned Vehicles", icon: "cube-outline", color: "#10B981", route: "./(logistics)" as RelativePathString, params: { isGuest: "true" } },
+  { id: "checklist", name: "Checklist", icon: "checkmark-circle-outline", color: "#EC4899", route: "./tasklist" as RelativePathString, isVisibility: true , params:{isGuest: "true"} },
+
 ];
 
 

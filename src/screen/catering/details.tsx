@@ -136,6 +136,9 @@ export default function CateringDetailsScreen() {
   const params = useLocalSearchParams();
   const eventId = Number(params.eventId);
   const cateringId = Number(params.cateringId);
+  const isGuest = params.isGuest === "true";
+  const isSubEvent = params.isSubEvent === "true";
+  const isViewerMode = isGuest || isSubEvent;
 
   const [menuPage] = useState(1);
 
@@ -179,6 +182,8 @@ export default function CateringDetailsScreen() {
   );
 
   const handleAddMenu = () => {
+    if (isViewerMode) return;
+
     router.push({
       pathname:
         "./[cateringId]/add-menu",
@@ -298,14 +303,16 @@ export default function CateringDetailsScreen() {
         <View className="px-5 mt-5">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-base font-black text-on-surface">Menu</Text>
-            <TouchableOpacity
-              onPress={handleAddMenu}
-              className="flex-row items-center gap-1 bg-primary px-3 py-1.5 rounded-full"
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="add" size={14} color="#fff" />
-              <Text className="text-xs font-bold text-white">Add item</Text>
-            </TouchableOpacity>
+            {!isViewerMode && (
+              <TouchableOpacity
+                onPress={handleAddMenu}
+                className="flex-row items-center gap-1 bg-primary px-3 py-1.5 rounded-full"
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="add" size={14} color="#fff" />
+                <Text className="text-xs font-bold text-white">Add item</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {isLoadingMenu && !menuData ? (
@@ -334,18 +341,20 @@ export default function CateringDetailsScreen() {
                 </Text>
               </View>
             </>
-          ) : (
+            ) : (
             <View className="items-center justify-center py-16 bg-surface-light rounded-2xl border border-outline-variant/10">
               <MaterialIcons name="restaurant-menu" size={36} color="#ddd" />
               <Text className="text-sm font-semibold text-muted-light mt-3">
                 No menu items yet
               </Text>
-              <TouchableOpacity
-                onPress={handleAddMenu}
-                className="mt-4 bg-primary px-5 py-2 rounded-full"
-              >
-                <Text className="text-sm font-bold text-white">+ Add first item</Text>
-              </TouchableOpacity>
+              {!isViewerMode && (
+                <TouchableOpacity
+                  onPress={handleAddMenu}
+                  className="mt-4 bg-primary px-5 py-2 rounded-full"
+                >
+                  <Text className="text-sm font-bold text-white">+ Add first item</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>

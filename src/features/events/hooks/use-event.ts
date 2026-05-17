@@ -16,6 +16,7 @@ import {
   getUpcomingEventsApi,
   makeEventMember,
   MakeEventMemberType,
+  removeEventMember,
   submitRsvpResponseApi,
   updateEventApi,
 } from "../api/events.service";
@@ -234,6 +235,15 @@ export const useUpdateEvent = (eventId: number) => {
     },
   });
 };
+export const useRemoveEventMember = (eventId:number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({userId}:{userId:number}) => removeEventMember(eventId,userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-owner", eventId] }); // ONly refetch the eventMember in the ui 
+    },
+  });
+}
 
 // export const useDeleteEvent = (eventId: number) => {
 //   const queryClient = useQueryClient();

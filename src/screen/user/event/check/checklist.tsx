@@ -3,11 +3,12 @@ import { TODO_ALL_CATEGORY, type TodoCategoryFilter } from "@/src/constants/todo
 import { useBulkUpdateTodoStatus, useDeleteTodo, useTodosByEventId } from "@/src/features/todo/hooks/useTodo";
 import { useTodoDraftStore } from "@/src/features/todo/store";
 import type { TodoColumn } from "@/src/features/todo/type";
+import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { useAuthStore } from "@/src/store/AuthStore";
 import { filterTaskByDueDate, type DueDateFilter } from "@/src/utils/dateFilters";
-import { useDebounce } from "@/src/utils/helper";
+import { _entering, _exiting, _layoutAnimation, AnimatedModal, useDebounce } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import ChecklistTaskItem from "./ChecklistTaskItem";
@@ -16,7 +17,6 @@ import { DueDateFilterModal } from "./DueDateFilterModal";
 export type ChecklistTask = TodoColumn;
 
 export default function ChecklistScreen() {
-  const router = useRouter();
   const { eventId, isGuest } = useLocalSearchParams<{
     eventId?: string
     isGuest?: string;
@@ -28,6 +28,8 @@ export default function ChecklistScreen() {
 
   const isGuestView = isGuest === "true";
   const { user } = useAuthStore();
+  const { push } = useThrottledRouter();
+  const userId = user?.id ?? 0;
   const { clearTodoDetail, setTodoDetail } = useTodoDraftStore();
 
   const { data: todos = [], isLoading, isFetching } = useTodosByEventId(eventId);
@@ -41,7 +43,6 @@ export default function ChecklistScreen() {
     const updates = Object.entries(debouncedOverrides).map(([id, isDone]) => ({
       todoId: Number(id),
       isDone,
-      status: isDone ? "completed" : "pending",
     }));
 
     if (updates.length > 0) bulkAsync(updates);
@@ -54,31 +55,51 @@ export default function ChecklistScreen() {
 
   const hasActiveFilter = !!selectedDueDate || showAssignedToMe;
 
-  const mergedTodos = useMemo(
-    () => todos.map((t: ChecklistTask) => ({
-      ...t,
-      isDone: t.id! in localOverrides ? localOverrides[t.id as number] : t.isDone,
-    })),
-    [todos, localOverrides]
+  const mergedTodos: ChecklistTask[] = useMemo(
+    () => todos.map((t: ChecklistTask) => {
+      const taskId = t.id;
+      const serverDoneByUserIds = t.doneByuserIds ?? [];
+      const hasOverride = typeof taskId === "number" && taskId in localOverrides;
+      const overrideValue = hasOverride ? localOverrides[taskId] : undefined;
+
+      let effectiveDoneByUserIds = serverDoneByUserIds;
+      if (hasOverride) {
+        if (overrideValue) {
+          if (!serverDoneByUserIds.includes(userId)) {
+            effectiveDoneByUserIds = [...serverDoneByUserIds, userId];
+          }
+        } else if (serverDoneByUserIds.includes(userId)) {
+          effectiveDoneByUserIds = serverDoneByUserIds.filter((id) => id !== userId);
+        }
+      }
+
+      return {
+        ...t,
+        doneByuserIds: effectiveDoneByUserIds,
+        isDone: effectiveDoneByUserIds.includes(userId),
+      };
+    }),
+    [todos, localOverrides, userId]
   );
 
   const filteredTodos = useMemo(() => {
     return mergedTodos.filter((todo: ChecklistTask) => {
       if (selectedCategory !== TODO_ALL_CATEGORY && todo.category !== selectedCategory) return false;
       if (!filterTaskByDueDate(todo.dueDate, selectedDueDate)) return false;
-      if (showAssignedToMe && user?.id && todo.assignedTo !== user.id) return false;
+      if (showAssignedToMe && userId && todo.assignedTo !== userId) return false;
       return true;
     });
-  }, [mergedTodos, selectedCategory, selectedDueDate, showAssignedToMe, user?.id]);
+  }, [mergedTodos, selectedCategory, selectedDueDate, showAssignedToMe, userId]);
 
   // ── handlers ──────────────────────────────────────────────────────────────
   const handleToggleComplete = useCallback((task: ChecklistTask) => {
-    if (typeof task.id !== "number") return;
+    const taskId = task.id;
+    if (typeof taskId !== "number") return;
     setLocalOverrides((prev) => ({
       ...prev,
-      [task.id as number]: !(task.id! in prev ? prev[task.id as number] : task.isDone),
+      [taskId]: !(taskId in prev ? prev[taskId] : task.doneByuserIds?.includes(userId)),
     }));
-  }, []);
+  }, [userId]);
 
   const handleDeleteTask = useCallback(
     (task: ChecklistTask) => {
@@ -98,8 +119,8 @@ export default function ChecklistScreen() {
   const handleCreateTask = useCallback(() => {
     if (!eventId || isGuestView) return;
     clearTodoDetail();
-    router.push({ pathname: "../tasklist/detail", params: { eventId } });
-  }, [clearTodoDetail, eventId, router, isGuestView]);
+    push({ pathname: "../tasklist/detail", params: { eventId } });
+  }, [clearTodoDetail, eventId, push, isGuestView]);
 
   // ── loading skeleton ──────────────────────────────────────────────────────
   if (isLoading || !todos) {
@@ -188,12 +209,12 @@ export default function ChecklistScreen() {
                 key={task.id}
                 task={task}
                 isDeleting={isDeletingTodo}
-                onToggleComplete={() => { if (!isGuestView) handleToggleComplete(task); }}
+                onToggleComplete={() => { handleToggleComplete(task); }}
                 onDeletePress={() => { if (!isGuestView) handleDeleteTask(task); }}
                 onEditPress={() => {
                   if (!eventId) return;
                   setTodoDetail(task);
-                  router.push({
+                  push({
                     pathname: "../tasklist/detail",
                     params: { eventId, taskId: task.id, isGuestview: isGuestView ? "true" : undefined },
                   });
@@ -203,14 +224,14 @@ export default function ChecklistScreen() {
           )}
         </View>
       </ScrollView>
-          {isFetching && (
-            <View className="items-end">
-              <View className=" absolute bottom-8 right-8 flex-row items-center gap-2 bg-[#ee2b8c]/10 border border-[#ee2b8c]/30 px-3 py-2 rounded-full">
-                <ActivityIndicator size="small" color="#ee2b8c" />
-                <Text className="text-[#ee2b8c] text-xs font-semibold">Loading</Text>
-              </View>
-            </View>
-          )}
+      {isFetching && (
+        <View className="items-end">
+          <View className=" absolute bottom-8 right-8 flex-row items-center gap-2 bg-[#ee2b8c]/10 border border-[#ee2b8c]/30 px-3 py-2 rounded-full">
+            <ActivityIndicator size="small" color="#ee2b8c" />
+            <Text className="text-[#ee2b8c] text-xs font-semibold">Loading</Text>
+          </View>
+        </View>
+      )}
 
       {hasTodos && (
         <Modal
