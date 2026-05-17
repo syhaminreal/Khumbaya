@@ -141,6 +141,14 @@ export interface ReviewPayload {
   date: string;
 }
 
+export const getEventVendorApi = async (
+  eventId: string | number,
+  vendorId: string | number
+): Promise<any> => {
+  const response = await api.get(`/event/${eventId}/vendor/${vendorId}`);
+  return response.data.data;
+};
+
 export const submitVendorReviewApi = async (
   businessId: number | string,
   review: ReviewPayload

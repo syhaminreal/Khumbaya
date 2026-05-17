@@ -29,6 +29,7 @@ interface BookingReqModalProps {
   onSubmit?: (formData: FormData) => void;
   asRoute?: boolean; // When true, skips Modal wrapper (for Expo Router transparentModal)
   vendorId?: number;
+  fromEventId?: number;
 }
 
 interface FormData {
@@ -47,6 +48,7 @@ export default function BookingReqModal({
   onSubmit,
   asRoute = false,
   vendorId,
+  fromEventId,
 }: BookingReqModalProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -150,6 +152,13 @@ export default function BookingReqModal({
     }
   }, [visible]);
 
+  // Pre-select event when navigating from an event context
+  useEffect(() => {
+    if (fromEventId) {
+      setValue("eventId", String(fromEventId), { shouldValidate: true });
+    }
+  }, [fromEventId]);
+
   const onFormSubmit: SubmitHandler<FormData> = async (data) => {
     if (!vendorId) {
       Alert.alert("Error", "Vendor not found. Please try again.");
@@ -250,82 +259,94 @@ export default function BookingReqModal({
                         Which event is this for?
                       </Text>
 
-                      <Pressable
-                        onPress={() => setShowEventDropdown(!showEventDropdown)}
-                        className={`h-14 bg-white border rounded-lg px-4 flex-row items-center justify-between ${
-                          errors.eventId ? "border-red-400" : "border-gray-200"
-                        }`}
-                      >
-                        <Text
-                          className={`text-base ${
-                            selectedEvent
-                              ? "text-text-primary"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          {selectedEvent?.title || "Select an Event"}
-                        </Text>
-                        <MaterialIcons
-                          name={
-                            showEventDropdown ? "expand-less" : "expand-more"
-                          }
-                          size={24}
-                          color="#111827"
-                        />
-                      </Pressable>
-
-                      {errors.eventId && (
-                        <Text className="text-red-500 text-xs mt-1">
-                          {errors.eventId.message}
-                        </Text>
-                      )}
-
-                      {/* Dropdown Menu */}
-                      {showEventDropdown && (
-                        <View className="absolute top-24 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                          {eventsLoading ? (
-                            <View className="px-4 py-3">
-                              <Text className="text-gray-400">
-                                Loading events...
-                              </Text>
-                            </View>
-                          ) : events.length === 0 ? (
-                            <View className="px-4 py-3">
-                              <Text className="text-gray-400">
-                                No events found
-                              </Text>
-                            </View>
-                          ) : (
-                            events.map((event: AppEvent) => (
-                              <Pressable
-                                key={event.id}
-                                onPress={() => {
-                                  setValue("eventId", event.id, {
-                                    shouldValidate: true,
-                                  });
-                                  setShowEventDropdown(false);
-                                }}
-                                className="px-4 py-3 border-b border-gray-100 last:border-b-0"
-                              >
-                                <Text className="text-text-primary">
-                                  {event.title}
-                                </Text>
-                              </Pressable>
-                            ))
-                          )}
+                      {fromEventId ? (
+                        <View className="h-14 bg-gray-50 border border-gray-200 rounded-lg px-4 flex-row items-center gap-2">
+                          <MaterialIcons name="event" size={18} color="#ee2b8c" />
+                          <Text className="text-text-primary text-base flex-1">
+                            {selectedEvent?.title ?? `Event #${fromEventId}`}
+                          </Text>
+                          <MaterialIcons name="lock-outline" size={16} color="#9CA3AF" />
                         </View>
-                      )}
+                      ) : (
+                        <>
+                          <Pressable
+                            onPress={() => setShowEventDropdown(!showEventDropdown)}
+                            className={`h-14 bg-white border rounded-lg px-4 flex-row items-center justify-between ${
+                              errors.eventId ? "border-red-400" : "border-gray-200"
+                            }`}
+                          >
+                            <Text
+                              className={`text-base ${
+                                selectedEvent
+                                  ? "text-text-primary"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              {selectedEvent?.title || "Select an Event"}
+                            </Text>
+                            <MaterialIcons
+                              name={
+                                showEventDropdown ? "expand-less" : "expand-more"
+                              }
+                              size={24}
+                              color="#111827"
+                            />
+                          </Pressable>
 
-                      <Pressable className="mt-3 flex-row items-center gap-1">
-                        <MaterialIcons
-                          name="add-circle"
-                          size={18}
-                          color="#ee2b8c"
-                        />
-                        <Text className="text-primary text-sm font-medium">
-                          I haven't created one yet
-                        </Text>
-                      </Pressable>
+                          {errors.eventId && (
+                            <Text className="text-red-500 text-xs mt-1">
+                              {errors.eventId.message}
+                            </Text>
+                          )}
+
+                          {/* Dropdown Menu */}
+                          {showEventDropdown && (
+                            <View className="absolute top-24 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                              {eventsLoading ? (
+                                <View className="px-4 py-3">
+                                  <Text className="text-gray-400">
+                                    Loading events...
+                                  </Text>
+                                </View>
+                              ) : events.length === 0 ? (
+                                <View className="px-4 py-3">
+                                  <Text className="text-gray-400">
+                                    No events found
+                                  </Text>
+                                </View>
+                              ) : (
+                                events.map((event: AppEvent) => (
+                                  <Pressable
+                                    key={event.id}
+                                    onPress={() => {
+                                      setValue("eventId", event.id, {
+                                        shouldValidate: true,
+                                      });
+                                      setShowEventDropdown(false);
+                                    }}
+                                    className="px-4 py-3 border-b border-gray-100 last:border-b-0"
+                                  >
+                                    <Text className="text-text-primary">
+                                      {event.title}
+                                    </Text>
+                                  </Pressable>
+                                ))
+                              )}
+                            </View>
+                          )}
+
+                          <Pressable className="mt-3 flex-row items-center gap-1">
+                            <MaterialIcons
+                              name="add-circle"
+                              size={18}
+                              color="#ee2b8c"
+                            />
+                            <Text className="text-primary text-sm font-medium">
+                              I haven't created one yet
+                            </Text>
+                          </Pressable>
+                        </>
+                      )}
                     </View>
                   )}
                 />

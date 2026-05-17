@@ -1,4 +1,5 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { Modal, TextInput, TouchableOpacity, View } from "react-native";
 import { useState } from "react";
 import { Text } from "../ui/Text";
@@ -24,9 +25,21 @@ export function HeaderExploreVendor({
 
   return (
     <View className="pt-6 pb-2 bg-gray-50">
-      <Text className="text-2xl mb-4 px-5 text-gray-900" variant="h1">
-        Find your dream team
-      </Text>
+      <View className="flex-row items-center mb-4 px-4">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm"
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={{ shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 }}
+        >
+          <Ionicons name="chevron-back" size={20} color="#ee2b8c" />
+        </TouchableOpacity>
+        <Text className="flex-1 text-center text-2xl text-gray-900" variant="h1">
+          Find your dream team
+        </Text>
+        <View className="h-10 w-10" />
+      </View>
 
       <View className="mx-4 flex-row items-center gap-2">
         <View className="flex-1 flex-row items-center h-12 bg-white rounded-2xl px-4 border border-gray-100">

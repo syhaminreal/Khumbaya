@@ -20,20 +20,21 @@ import {
 } from "@/src/features/guests/types";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { cn } from "@/src/utils/cn";
+import { _layoutAnimation } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import { RelativePathString, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
   Modal,
-  Animated as RAnimated,
   Pressable,
   TouchableOpacity,
   View,
 } from "react-native";
+
 import { TextInput } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
+import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 type GuestFilterTab = "accepted" | "pending" | "draft";
 
@@ -42,7 +43,6 @@ export default function GuestListScreen() {
   const { push } = useThrottledRouter();
   const params = useLocalSearchParams();
   const eventId = Number(params.eventId);
-  const scrollY = useRef(new RAnimated.Value(0)).current;
   const {
     data: subEventsResponse,
   } = useSubEventsOfEvent(Number(eventId));
@@ -281,10 +281,14 @@ export default function GuestListScreen() {
     );
   }, [eventId]);
 
+  const openImportGuestScreen = useCallback(() => {
+    if (!eventId) return;
+    push(`./guests/import-guests` as RelativePathString);
+  }, [eventId]);
+
   const onPressGuestCard = (guest: GuestDetailInterface) => {
     setGuestDetail(guest);
     //TODO: Draft the detail of the guest instead of using the params in this 
-    console.log('This plave is hit to route the use🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀r ',)
     push({
       pathname:
         `./guests/[guestDetailId]`,
@@ -366,7 +370,21 @@ export default function GuestListScreen() {
       clearGuestDetail();
     };
   }, [clearFamilyGuest, clearGuestDetail]);
+  const [tabWidth, setTabWidth] = useState(0);
+  const indicatorX = useSharedValue(0);
 
+  // when tab changes, slide the indicator
+  const handleTabPress = (tab: GuestFilterTab, index: number) => {
+    setActiveTab(tab);
+    indicatorX.value = withTiming(index * tabWidth, {
+      duration: 150,
+      easing: Easing.out(Easing.quad),
+    });;
+  }
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+  }));
   return (
     <SafeAreaView className="p-4 h-full" edges={[]}>
       <View>
@@ -392,13 +410,15 @@ export default function GuestListScreen() {
           </TouchableOpacity>
         </View>
 
-        <View className="flex-row">
-          {tabs.map((tab) => (
+        <View className="flex-row"
+          onLayout={(e) => setTabWidth(e.nativeEvent.layout.width / tabs.length)}
+        >
+          {tabs.map((tab, index: number) => (
             <Pressable
               key={tab.value}
-              onPress={() => setActiveTab(tab.value)}
+              onPress={() => handleTabPress(tab.value, index)}
               className={cn(
-                "flex-1 items-center pb-3 pt-2 border-b-2",
+                "flex-1 items-center pb-3 pt-2 ",
                 activeTab === tab.value
                   ? "border-primary"
                   : "border-transparent"
@@ -415,6 +435,20 @@ export default function GuestListScreen() {
               </Text>
             </Pressable>
           ))}
+          <Animated.View
+            style={[
+              indicatorStyle,
+              {
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                width: tabWidth,
+                height: 2,
+                backgroundColor: "#EE2B8C",
+              },
+            ]}
+          />
+
         </View>
 
         <Text className="text-[11px] text-gray-500 mt-2 font-jakarta">
@@ -422,6 +456,20 @@ export default function GuestListScreen() {
           {filteredGuestCount === 1 ? "" : "s"}
         </Text>
       </View>
+
+      <TouchableOpacity
+        className="absolute right-6 bottom-52 w-14 h-14 rounded-full bg-white border border-[#EE2B8C] items-center justify-center z-50"
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 4,
+          elevation: 4,
+        }}
+        onPress={openImportGuestScreen}
+      >
+        <Ionicons name="cloud-download-outline" size={22} color="#EE2B8C" />
+      </TouchableOpacity>
 
       <TouchableOpacity
         className="absolute right-6 bottom-32 w-14 h-14 rounded-full bg-white border border-[#EE2B8C] items-center justify-center z-50"
@@ -461,14 +509,7 @@ export default function GuestListScreen() {
           }
           initialNumToRender={10}
           renderItem={({ item, index }: { item: GuestDetailInterface, index: number }) => {
-            const renderItem = [
-              -1, 0, 86 * index, 86 * (index + 2)
-            ]
-            const scale = scrollY.interpolate({
-              inputRange: renderItem,
-              outputRange: [1, 1, 1, 0]
 
-            })
             return <DraftInvitationCard
               guest={item}
               onMoveToPending={() => onPressDraftSend(item)}
@@ -504,27 +545,36 @@ export default function GuestListScreen() {
               ? `family-${item.familyId}`
               : `individual-${item.data.user.id}`
           }
-          renderItem={({ item }: { item: GroupedInvitation }) => {
+          renderItem={({ item, index }: { item: GroupedInvitation, index: number }) => {
             if (item.type === "family") {
               return (
-                <FamilyCard
-                  family={item}
-                  onPress={() => {
-                    onPressFamilyCard(item);
-                  }}
-                  style={''}
-                />
+                <Animated.View
+                  layout={_layoutAnimation}
+                  entering={FadeInDown.delay(index * 20).duration(300)}
+                >
+                  <FamilyCard
+                    family={item}
+                    onPress={() => {
+                      onPressFamilyCard(item);
+                    }}
+                    style={''}
+                  />
+                </Animated.View>
               );
             }
 
             return (
-              <GuestCard
+              <Animated.View
+                layout={_layoutAnimation}
+                entering={FadeInDown.delay(index * 20).duration(300)}>
+                <GuestCard
 
-                guest={item.data}
-                onPress={() => {
-                  onPressGuestCard(item.data);
-                }}
-              />
+                  guest={item.data}
+                  onPress={() => {
+                    onPressGuestCard(item.data);
+                  }}
+                />
+              </Animated.View>
             );
           }}
           contentContainerStyle={{ paddingBottom: 20 }}

@@ -9,7 +9,7 @@ import type { Vendor } from "@/src/utils/type/vendor";
 import { useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+// FAAAAAAAAAAAHHHHHHH
 const CATEGORIES = Object.values(BusinessCategory);
 const CATEGORY_LABELS: Record<BusinessCategory, string> = {
   [BusinessCategory.Venue]: "Venue",

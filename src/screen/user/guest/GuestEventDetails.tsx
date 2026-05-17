@@ -28,13 +28,15 @@ export default function GuestEventDetails() {
   const router = useRouter();
   const {push} = useThrottledRouter()
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
-  //Get the detail of the sub event in the draft 
-  const setDraft = useRsvpStore((s) => s.setDraft);
+  const setDraftMembers = useRsvpStore((s) => s.setDraftMembers);
+  const setSelectedUserId = useRsvpStore((s) => s.setSelectedUserId);
   const clearDraft = useRsvpStore((s) => s.clearDraft);
 
   const { data: eventDetails, isLoading } = useEventById(Number(eventId));
   const { data: eventResponse, isLoading: responseLoading } =
     useEventResponseWithUser(Number(eventId));
+
+
 const manageActions = [
   { id: "subevents", name: "Sub Events", icon: "layers-outline", color: "#F97316", route: "./(subevent)" as RelativePathString, params: { isGuest: "true" } , isDisabled: eventDetails?.parentId ? true : false},
   { id: "catering", name: "Catering", icon: "restaurant", color: "#F43F5E", route: "./catering" as RelativePathString, params: { isGuest: "true" } },
@@ -74,19 +76,7 @@ const manageActions = [
     extrapolate: "clamp",
   });
   const insets = useSafeAreaInsets();
-  const familyDraftMembers = responses.map((r) => ({
-    user: {
-      id: r.user.id,
-      username: r.user.username,
-      photo: r.user.photo,
-      email: r.user.email,
-      phone: r.user.phone,
-      relation: r.user.relation,
-      familyId: r.user.familyId,
-    },
-    familyId: r.eventGuest?.familyId ?? null,
-    eventGuest: r.eventGuest ?? null,
-  }));
+  const familyDraftMembers = responses;
 
   if (isLoading || responseLoading) {
     return (
@@ -101,6 +91,10 @@ const manageActions = [
 
   const handleIndividualRsvp = () => {
     clearDraft();
+    if (responses[0]?.user?.id) {
+      setDraftMembers(responses);
+      setSelectedUserId(responses[0].user.id);
+    }
     router.push(`/(protected)/(client-stack)/events/${eventId}/(guest)/rsvp`);
   };
 
@@ -108,20 +102,7 @@ const manageActions = [
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     { useNativeDriver: false } // navigation.setOptions updates are not native-driven
   );
-  const handleServicePress = (serviceId: string) => {
-    const routeMap: Record<string, string> = {
-      lodging: "lodge",
-      transport: "logistic",
-      meals: "food",
-    };
 
-    const page = routeMap[serviceId];
-    if (!page) return;
-
-    router.push(
-      `/(protected)/(client-stack)/events/${eventId}/(guest)/services/${page}`
-    );
-  };
 
   if (isLoading) {
     return (<View>
@@ -143,7 +124,6 @@ const manageActions = [
           left: 0,
           right: 0,
           height: 88,
-          backgroundColor: "#ffffff",
           ...shadowStyle,
           opacity: headerOpacity,
           zIndex: 10,
@@ -211,11 +191,11 @@ const manageActions = [
               )
             ))}
              <Row
-                          title="Gallery"
-                          description="Upload & Share Photos"
-                          iconstring="images"
-                          onPress={() => push("./gallery" as RelativePathString)}
-                        />
+                title="Gallery"
+                description="Upload & Share Photos"
+                iconstring="images"
+                onPress={() => push("./gallery" as RelativePathString)}
+              />
                    
           </View>
         </View>
@@ -231,20 +211,8 @@ const manageActions = [
                 onEdit={() => {
                   const first = responses[0];
                   if (first) {
-                    setDraft({
-                      user: {
-                        id: first.user.id,
-                        username: first.user.username,
-                        photo: first.user.photo,
-                        email: first.user.email,
-                        phone: first.user.phone,
-                        relation: first.user.relation,
-                        familyId: first.user.familyId,
-                      },
-                      familyId: first.eventGuest?.familyId ?? undefined,
-                      eventGuest: first.eventGuest ?? null,
-                      familyMembers: familyDraftMembers,
-                    });
+                    setDraftMembers(responses);
+                    setSelectedUserId(first.user.id);
                   }
 
                   router.push(
@@ -254,20 +222,9 @@ const manageActions = [
                 onView={() => {
                   const first = responses[0];
                   if (first) {
-                    setDraft({
-                      user: {
-                        id: first.user.id,
-                        username: first.user.username,
-                        photo: first.user.photo,
-                        email: first.user.email,
-                        phone: first.user.phone,
-                        relation: first.user.relation,
-                        familyId: first.user.familyId,
-                      },
-                      familyId: first.eventGuest?.familyId ?? undefined,
-                      eventGuest: first.eventGuest ?? null,
-                      familyMembers: familyDraftMembers,
-                    });
+                    setDraftMembers(responses);
+                    setSelectedUserId(first.user.id);
+
                   }
 
                   router.push(

@@ -8,7 +8,9 @@ import { Image, Pressable, Text, View } from "react-native";
 type SubEventCardProps = {
   item: SubEvent;
   event: Event;
-  isGuestView: boolean
+  isGuestView: boolean;
+  showMenu?: boolean;
+  onMenuPress?: () => void;
 };
 
 const getDerivedStatus = (item: SubEvent) => {
@@ -75,7 +77,9 @@ const PILL_HEIGHT = 52;
 export default function SubEventCard({
   item,
   event,
-  isGuestView
+  isGuestView,
+  showMenu = false,
+  onMenuPress,
 }: SubEventCardProps) {
   const { push } = useThrottledRouter();
   const { setSubEventDraft } = useSubeventDraftStore();
@@ -119,10 +123,25 @@ export default function SubEventCard({
           <Text className="text-xs font-bold text-primary uppercase tracking-widest flex-1 mr-2">
             {timeRange}
           </Text>
-          <View className={`px-2 py-1 rounded-md ${statusMeta.badgeClassName}`}>
-            <Text className="text-[10px] font-bold uppercase text-white">
-              {statusMeta.label}
-            </Text>
+          <View className="flex-row items-center gap-2">
+            <View className={`px-2 py-1 rounded-md ${statusMeta.badgeClassName}`}>
+              <Text className="text-[10px] font-bold uppercase text-white">
+                {statusMeta.label}
+              </Text>
+            </View>
+            {showMenu && (
+              <Pressable
+                onPress={onMenuPress}
+                className="h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/20"
+                hitSlop={6}
+              >
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={16}
+                  color="#ee2b8c"
+                />
+              </Pressable>
+            )}
           </View>
         </View>
 

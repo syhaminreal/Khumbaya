@@ -103,7 +103,7 @@ export default function ExpenseDetailScreen() {
       [
         {
           text: "Cancel",
-          onPress: () => {},
+          onPress: () => { },
           style: "cancel",
         },
         {
@@ -146,7 +146,7 @@ export default function ExpenseDetailScreen() {
       [
         {
           text: "Cancel",
-          onPress: () => {},
+          onPress: () => { },
           style: "cancel",
         },
         {
@@ -243,7 +243,7 @@ export default function ExpenseDetailScreen() {
           <View className="flex-1 items-center justify-center px-6">
             <Pressable
               className="bg-white rounded-3xl p-6 w-full"
-              onPress={() => {}}
+              onPress={() => { }}
             >
               <Text className="text-[#181114] text-lg mb-4" variant="h1">
                 {selectedPayment?.name}

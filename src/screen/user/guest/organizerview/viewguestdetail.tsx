@@ -40,6 +40,8 @@ const formatDisplayValue = (value?: string) => {
   if (!value) return "-";
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
+//TODO: Delete this
+
 
 export default function ViewGuestDetail() {
   const router = useRouter();

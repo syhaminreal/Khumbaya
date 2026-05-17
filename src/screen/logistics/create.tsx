@@ -2,7 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Alert,
@@ -20,7 +20,8 @@ import z from "zod";
 import { CountryOption, CountryPickerModal } from "../../components/ui/CountryPhone";
 import { DateTimeRangePicker } from "../../components/ui/DateTimeRangePicker";
 import { COUNTRY_DATA } from "../../constants/countrydata";
-import { useCreateVehicle } from "../../features/logistics/hooks/use-transport";
+import { useCreateVehicle, useUpdateVehicle } from "../../features/logistics/hooks/use-transport";
+import { useEventvehicleStore } from "../../features/logistics/store/useLogisticStore";
 import { cn } from "../../utils/cn";
 
 const createLogisticsFormSchema = z
@@ -80,9 +81,11 @@ export default function CreateLogisticsScreen() {
   
   const router = useRouter();
   
-  const { eventId , isEdit } = useLocalSearchParams();
-  const isEditMode =useMemo(() => isEdit === "true", [isEdit]);
+  const { eventId , isEdit, vehicleId } = useLocalSearchParams();
+  const isEditMode = useMemo(() => isEdit === "true", [isEdit]);
+  const { draft, clearDraft } = useEventvehicleStore();
   const createVehicleMutation = useCreateVehicle(String(eventId ?? ""));
+  const updateVehicleMutation = useUpdateVehicle(String(eventId ?? ""), vehicleId ? String(vehicleId) : undefined);
 
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRY_DATA[0]);
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -92,6 +95,7 @@ export default function CreateLogisticsScreen() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<CreateLogisticsFormValues>({
     resolver: zodResolver(createLogisticsFormSchema),
@@ -109,6 +113,39 @@ export default function CreateLogisticsScreen() {
   const startDate = watch("availablityStartTime");
   const endDate = watch("availablityEndTime");
 
+  useEffect(() => {
+    if (!isEditMode || !draft) return;
+
+    const parseDate = (value?: Date | string | null) => {
+      if (!value) return new Date();
+      const parsed = value instanceof Date ? value : new Date(value);
+      return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+    };
+
+    const parseDriverNumber = (value?: string | null) => {
+      if (!value) return { dialCode: null as string | null, phone: "" };
+      const normalized = value.startsWith("+") ? value.slice(1) : value;
+      const [dialCode, phone = ""] = normalized.split("-");
+      return { dialCode, phone };
+    };
+
+    const { dialCode, phone } = parseDriverNumber(draft.driverNumber ?? undefined);
+    const matchedCountry = dialCode ? COUNTRY_DATA.find((item) => item.dialCode === dialCode) : undefined;
+    if (matchedCountry) {
+      setSelectedCountry(matchedCountry);
+    }
+
+    reset({
+      vehicleName: draft.vehicleName ?? "",
+      capacity: draft.capacity !== null && draft.capacity !== undefined ? String(draft.capacity) : "",
+      wheels: "",
+      driverName: draft.driverName ?? "",
+      driverPhone: phone,
+      availablityStartTime: parseDate(draft.availablityStartTime),
+      availablityEndTime: parseDate(draft.availablityEndTime),
+    });
+  }, [draft, isEditMode, reset]);
+
   const onSubmit = async (values: CreateLogisticsFormValues) => {
     if (!eventId || Array.isArray(eventId)) {
       Alert.alert("Error", "Invalid event id.");
@@ -123,20 +160,44 @@ export default function CreateLogisticsScreen() {
       : undefined;
 
     try {
-      await createVehicleMutation.mutateAsync({
-        vehicleName: values.vehicleName.trim(),
-        capacity: parsedCapacity,
-        driverName: cleanedDriverName || undefined,
-        driverNumber: fullDriverNumber,
-        availablityStartTime: values.availablityStartTime,
-        availablityEndTime: values.availablityEndTime,
-      });
+      if (isEditMode) {
+        if (!vehicleId || Array.isArray(vehicleId)) {
+          Alert.alert("Error", "Invalid vehicle id.");
+          return;
+        }
 
-      Alert.alert("Success", "Vehicle added successfully.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+        await updateVehicleMutation.mutateAsync({
+          vehicleName: values.vehicleName.trim(),
+          capacity: parsedCapacity,
+          driverName: cleanedDriverName || undefined,
+          driverNumber: fullDriverNumber,
+          availablityStartTime: values.availablityStartTime,
+          availablityEndTime: values.availablityEndTime,
+        });
+
+        clearDraft();
+        Alert.alert("Success", "Vehicle updated successfully.", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+        return;
+      }else{
+
+        await createVehicleMutation.mutateAsync({
+          vehicleName: values.vehicleName.trim(),
+          capacity: parsedCapacity,
+          driverName: cleanedDriverName || undefined,
+          driverNumber: fullDriverNumber,
+          availablityStartTime: values.availablityStartTime,
+          availablityEndTime: values.availablityEndTime,
+        });
+  
+        Alert.alert("Success", "Vehicle added successfully.", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+      }
+
     } catch (error) {
-      const message = (error as Error).message || "An error occurred while adding the vehicle.";
+      const message = (error as Error).message || "An error occurred while saving the vehicle.";
 
       Alert.alert("Error", message);
     }
@@ -153,6 +214,7 @@ export default function CreateLogisticsScreen() {
   };
 
   const handleSave = handleSubmit(onSubmit, onInvalid);
+  const isSaving = isEditMode ? updateVehicleMutation.isPending : createVehicleMutation.isPending;
 
   return (
     <SafeAreaView className="flex-1 bg-[#f8f6f7]" edges={["top", "bottom"]}>
@@ -175,16 +237,16 @@ export default function CreateLogisticsScreen() {
           <MaterialIcons name="arrow-back" size={20} color="#181114" />
         </TouchableOpacity>
         <Text className="font-bold text-lg text-[#181114] flex-1 text-center">
-          Add Vehicle
+          {isEditMode ? "Edit Vehicle" : "Add Vehicle"}
         </Text>
         <TouchableOpacity
           onPress={handleSave}
-          disabled={createVehicleMutation.isPending}
+          disabled={isSaving}
           className="w-16 h-10 items-center justify-center"
-          style={{ opacity: createVehicleMutation.isPending ? 0.6 : 1 }}
+          style={{ opacity: isSaving ? 0.6 : 1 }}
         >
           <Text className="text-primary font-bold">
-            {createVehicleMutation.isPending ? "Adding..." : "Add"}
+            {isSaving ? (isEditMode ? "Saving..." : "Adding...") : (isEditMode ? "Save" : "Add")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -347,13 +409,19 @@ export default function CreateLogisticsScreen() {
                   </Text>
                   <MaterialIcons name="arrow-drop-down" size={18} color="#9ca3af" />
                 </Pressable>
-                <TextInput
-                  value={watch("driverPhone")}
-                  onChangeText={(text) => setValue("driverPhone", text, { shouldDirty: true })}
-                  placeholder="Enter phone number"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="phone-pad"
-                  className="flex-1 px-4 text-base text-[#181114]"
+                <Controller
+                  control={control}
+                  name="driverPhone"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      value={value}
+                      onChangeText={onChange}
+                      placeholder="Enter phone number"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="phone-pad"
+                      className="flex-1 px-4 text-base text-[#181114]"
+                    />
+                  )}
                 />
               </View>
             </View>

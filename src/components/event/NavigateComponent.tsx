@@ -10,13 +10,15 @@ interface QuickServiceButtonProps {
   color: string;
   route: RelativePathString;
   isGuest?: boolean;
+  isSubEventView?: boolean;
   className?: string;
 }
 export default function NavigateComponent({
   id,
   name,
   icon,
-  isGuest=false,
+  isGuest = false,
+  isSubEventView,
   color,
   className,
   route,
@@ -28,8 +30,8 @@ export default function NavigateComponent({
       onPress={() => push({
         pathname: route,
         params: {
-          isGuest:  isGuest ? "true" : "false",
-      
+          isGuest: isGuest ? "true" : "false",
+          isSubEvent: isSubEventView ? "true" : "false"
         },
       })}
       activeOpacity={0.8}

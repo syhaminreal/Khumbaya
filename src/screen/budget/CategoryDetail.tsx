@@ -64,7 +64,7 @@ export default function CategoryDetailsScreen() {
     setMenuVisible(false);
     router.push({
       pathname:
-        `/(protected)/(client-stack)/events/${eventId}/(organizer)/edit-budget-category` as any,
+        `./edit-budget-category` ,
       params: {
         categoryId: categoryId,
       },

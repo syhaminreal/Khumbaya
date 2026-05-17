@@ -9,6 +9,7 @@ import {
   getBusinessListApi,
   getEventBusinessApi,
   getEventOfBusiness,
+  getEventVendorApi,
   getMyBusiness,
   getUserBusiness,
   ReviewPayload,
@@ -212,6 +213,16 @@ export const useGetEventOfBusiness = (
     queryKey: ["business-event", userId],
     queryFn: () => getEventOfBusiness(businessIds),
     enabled: businessIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+};
+
+export const useGetEventVendor = (eventId: string | number, vendorId: string | number) => {
+  return useQuery({
+    queryKey: ["event-vendor", eventId, vendorId],
+    queryFn: () => getEventVendorApi(eventId, vendorId),
+    enabled: !!eventId && !!vendorId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });

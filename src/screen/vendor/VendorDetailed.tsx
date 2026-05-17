@@ -1,7 +1,7 @@
 import { Text } from "@/src/components/ui/Text";
 import { AvailableSpacesSection } from "@/src/components/vendor/AvailableSpacesSection";
 import { ServiceInfoSection } from "@/src/components/vendor/ServiceInfoSection";
-import { useGetBusinessById } from "@/src/features/business/hooks/use-business";
+import { useGetBusinessById, useGetEventVendor } from "@/src/features/business/hooks/use-business";
 import {
   BusinessCategory,
   OtherServiceAttribute,
@@ -56,23 +56,22 @@ function truncateHeaderTitle(title?: string | null, maxLength = 28): string {
     ? safe
     : `${safe.slice(0, maxLength).trimEnd()}...`;
 }
-
+// FAAAAAAH
 export default function VendorDetailed() {
   const router = useRouter();
-  const { vendorId } = useLocalSearchParams<{ vendorId: string }>();
+  const { vendorId, fromEventId } = useLocalSearchParams<{ vendorId: string; fromEventId?: string }>();
   const resolvedId = Array.isArray(vendorId) ? vendorId[0] : (vendorId ?? "");
+  const resolvedEventId = Array.isArray(fromEventId) ? fromEventId[0] : (fromEventId ?? "");
 
   const [showGallery, setShowGallery] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All Photos");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [locationText, setLocationText] = useState("—");
 
   const businessId = Number(resolvedId);
 
-  const {
-    data: businessWithAttribute,
-    isLoading,
-    isError,
-  } = useGetBusinessById(resolvedId);
+  const { data: businessWithAttribute, isLoading, isError } = useGetBusinessById(resolvedId);
 
   useEffect(() => {
     const biz = businessWithAttribute?.businessInformation;
@@ -175,10 +174,7 @@ export default function VendorDetailed() {
 
           {/* Vendor info block */}
           <View className="bg-white px-4 pb-4">
-            <View
-              className="flex-row items-end justify-between"
-              style={{ marginTop: -36 }}
-            >
+            <View className="flex-row items-end justify-between" style={{ marginTop: -36 }}>
               {/* Avatar */}
               <View
                 style={{
@@ -315,7 +311,7 @@ export default function VendorDetailed() {
         )}
 
         {/* Gallery */}
-        <View className="mt-2 bg-white px-4 pt-5 pb-4">
+        <View className="mt-2  px-4 pt-5 pb-4">
           <View className="flex-row justify-between items-center mb-3">
             <View>
               <Text className="text-lg font-bold text-[#181114]">Gallery</Text>
@@ -384,37 +380,76 @@ export default function VendorDetailed() {
           </View>
         </View>
 
-        {/* ── Reviews ── replaced with extracted component */}
-        <ReviewSection businessId={businessId} resolvedId={resolvedId} />
+        {/* Reviews */}
+        <View className="mt-2 bg-white px-4 pt-5 pb-6">
+          <View className="flex-row justify-between items-center mb-4">
+            <View>
+              <Text className="text-lg font-bold text-[#181114]">Reviews</Text>
+              <Text className="text-xs text-gray-400">{reviews.length} total</Text>
+            </View>
+            {user && (
+              <Pressable
+                onPress={() => setShowReviewModal(true)}
+                className="flex-row items-center gap-1.5 bg-primary px-3 py-1.5 rounded-full"
+                style={{ elevation: 2, shadowColor: "#ee2b8c", shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}
+              >
+                <MaterialIcons name="edit" size={12} color="#fff" />
+                <Text className="text-white text-xs font-semibold">Write Review</Text>
+              </Pressable>
+            )}
+          </View>
+
+          {reviews.length === 0 ? (
+            <View className="items-center py-10 bg-gray-50 rounded-2xl">
+              <View className="h-14 w-14 rounded-full bg-gray-100 items-center justify-center mb-3">
+                <MaterialIcons name="rate-review" size={28} color="#d1d5db" />
+              </View>
+              <Text className="text-gray-500 font-semibold text-sm">No reviews yet</Text>
+              <Text className="text-gray-400 text-xs mt-1">Be the first to share your experience</Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 4 }}>
+              {reviews.map((review) => (
+                <View key={review.id} style={[{ width: 300, backgroundColor: "#fff", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#f3f4f6" }, shadowStyle]}>
+                  <View className="flex-row items-center gap-3 mb-3">
+                    <Image source={{ uri: review.reviewerAvatarUrl }} className="h-10 w-10 rounded-full bg-gray-100" resizeMode="cover" />
+                    <View className="flex-1">
+                      <Text className="text-sm font-semibold text-[#181114]">{review.reviewerName}</Text>
+                      <Text className="text-[10px] text-gray-400 mt-0.5">{review.date}</Text>
+                    </View>
+                    <View className="bg-amber-50 px-2 py-1 rounded-lg flex-row items-center gap-0.5">
+                      <MaterialIcons name="star" size={13} color="#f59e0b" />
+                      <Text className="text-xs font-bold text-amber-600">{review.rating}</Text>
+                    </View>
+                  </View>
+                  <View className="flex-row gap-0.5 mb-2.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <MaterialIcons key={`${review.id}-${i}`} name="star" size={13} color={i < review.rating ? "#f59e0b" : "#e5e7eb"} />
+                    ))}
+                  </View>
+                  <Text className="text-sm text-gray-600 leading-5 italic" numberOfLines={4}>
+                    "{review.quote}"
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
 
         {/* Enquiry CTA */}
         <View className="px-4 pt-4 pb-6">
           <Pressable
             className="w-full rounded-2xl bg-primary py-4 items-center justify-center flex-row gap-2"
-            style={{
-              elevation: 6,
-              shadowColor: "#ee2b8c",
-              shadowOpacity: 0.4,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-            }}
-            onPress={() =>
-              router.push({
-                pathname: "/(shared)/explore/[vendorId]/enquiryform",
-                params: {
-                  vendorId: resolvedId,
-                  businessId: String(biz.id ?? resolvedId),
-                },
-              })
-            }
+            style={{ elevation: 6, shadowColor: "#ee2b8c", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}
+            onPress={() => router.push({ pathname: "/(shared)/explore/[vendorId]/enquiryform", params: { vendorId: resolvedId, businessId: String(biz.id ?? resolvedId) } })}
           >
             <MaterialIcons name="send" size={18} color="#fff" />
-            <Text className="text-base font-bold text-white tracking-wide">
-              Send Enquiry
-            </Text>
+            <Text className="text-base font-bold text-white tracking-wide">Send Enquiry</Text>
           </Pressable>
         </View>
       </ScrollView>
+
+      <WriteReviewModal visible={showReviewModal} onClose={() => setShowReviewModal(false)} businessId={resolvedId} />
 
       {/* Gallery Modal */}
       <Modal
@@ -445,7 +480,7 @@ export default function VendorDetailed() {
               <Pressable
                 key={filter}
                 onPress={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full border ${activeFilter === filter ? "bg-primary border-primary" : "bg-white border-gray-200"}`}
+                className={`px-4 py-2 rounded-full border ${activeFilter === filter ? "bg-primary border-primary" : "border-gray-200"}`}
               >
                 <Text
                   className={`text-sm font-semibold ${activeFilter === filter ? "text-white" : "text-gray-500"}`}

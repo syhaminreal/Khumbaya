@@ -152,8 +152,8 @@ export const getUpcomingEventsApi = async ({
       };
 
       const startDateTime = mergedItem.startDateTime || mergedItem.startDate;
-      const location = mergedItem.location ?? ""
-      const venue = mergedItem.venue ?? ""
+      const location = mergedItem.location ?? "";
+      const venue = mergedItem.venue ?? "";
 
       return {
         ...mergedItem,
@@ -212,6 +212,10 @@ export const deleteEventApi = async (id: number) => {
   const response = await api.delete(`/event/${id}`);
   return response.data;
 };
+export const duplicateEventApi = async (eventId: string | number) => {
+  const response = await api.post(`/event/${eventId}/duplicate`);
+  return response.data;
+};
 export const getEventGuest = async (id: number) => {
   const response = await api.get(`/event/${id}/guests`);
   return response.data;
@@ -225,7 +229,6 @@ export const getResponsesWithUser = async (eventId: number) => {
   const response = await api.get(`invitation/event-responses/${eventId}`);
   return response.data.data;
 };
-
 
 export const submitRsvpResponseApi = async (
   eventId: number,
@@ -250,8 +253,7 @@ export const makeEventMember = async (
 export const getEventCategory = async () => {
   const responce = await api.get("/general-category");
   return responce;
-
-}
+};
 export const getEventOwners = async (eventId: string) => {
   const response = await api.get(`/event/${eventId}/users`);
   return response.data.data;

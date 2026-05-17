@@ -25,10 +25,10 @@ const EventDetailHero = ({
   imageUrl,
   status = "upcoming",
   title = "Event Details",
-  date = "—",
+  date = "ï¿½",
   startDateTime,
   endDateTime,
-  location = "—",
+  location = "ï¿½",
   venue,
   days = 0,
   hours = 0,
@@ -68,7 +68,7 @@ const EventDetailHero = ({
 
         <View className="absolute bottom-10 left-0 w-full px-6 z-10 mb-4">
           <View className="flex-col gap-1 items-center justify-center">
-            <Text className="text-3xl font-extrabold text-white leading-tight tracking-tight text-center">
+            <Text className="text-3xl font-extrabold text-white leading-tight tracking-tight text-center  font-greatvibes">
               {event.title}
             </Text>
             <View className="flex items-center gap-1 text-white/90 mt-1">
@@ -76,9 +76,9 @@ const EventDetailHero = ({
                 <Ionicons name="calendar" size={18} color="white" />
                 <Text className="text-sm font-medium text-white">
                   {/* {event.date} */}
-                   {event.startDateTime
-                    ?  formatDate(event.startDateTime)
-                    : "—"}
+                  {event.startDateTime
+                    ? formatDate(event.startDateTime)
+                    : "ï¿½"}
                   {event.endDateTime
                     ? ` - ${formatDate(event.endDateTime)}`
                     : ""}

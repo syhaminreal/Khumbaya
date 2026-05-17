@@ -9,6 +9,7 @@ export const budgetCategoryFormSchema = z.object({
     .refine((val) => !isNaN(val) && val > 0, {
       message: "Allocated budget must be a positive number",
     }),
+  subEventId: z.number().optional()
 });
 
 export type BudgetCategoryFormData = z.infer<typeof budgetCategoryFormSchema>;

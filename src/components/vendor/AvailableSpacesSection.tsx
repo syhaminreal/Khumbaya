@@ -31,7 +31,6 @@ const AMENITIES: AmenityItem[] = [
   { key: "alcoholAllowed", label: "Alcohol", icon: "local-bar" },
   { key: "isOutDoor", label: "Outdoor", icon: "park" },
 ];
-
 export function AvailableSpacesSection({
   venues,
   coverFallback,
@@ -44,7 +43,7 @@ export function AvailableSpacesSection({
   const [selectedVenue, setSelectedVenue] = useState<{ venue: VenueAttribute; image: string } | null>(null);
 
   return (
-    <View className="bg-white mt-2 pb-0">
+    <View className=" mt-2 pb-0">
       <View className="px-4 pt-5 pb-3">
         <Text className="text-xl font-semibold text-[#181114]">Available Spaces</Text>
         <Text className="text-xs text-gray-400 mt-0.5">Select your preferred venue</Text>

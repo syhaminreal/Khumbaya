@@ -1,23 +1,23 @@
 import { User } from "@/src/store/AuthStore";
 
 export interface Invitation {
-  id: number;
-  userId: number | null;
-  hasCheckedIn: boolean | null;
-  hasCheckedOut: boolean | null;
-  eventId: number;
-  familyId: number | null;
-  respondedBy: number | null;
-  respondedAt: Date | null;
-  invitedBy: number;
-  role: string;
-  status: string | null;
-  notes: string | null;
-  category: string;
-  unInvitedSubevent: number[];
-  isArrivalPickupRequired: boolean | null;
-  isDeparturePickupRequired: boolean | null;
-  organizerNote: string | null;
+  id: number; // non Changeble by the organizer and the guest 
+  userId: number ;  // Non changable at al 
+  hasCheckedIn: boolean | null; // By both 
+  hasCheckedOut: boolean | null; // By both 
+  eventId: number; // Non changable at all
+  familyId: number | null; // Can be changed by the organizer 
+  respondedBy: number | null; // Not changable
+  respondedAt: Date | null; // Only by the guest 
+  invitedBy: number; // Not chanable
+  role: string; // only by the organizer
+  status: string | null; // By the guest but can be overridden by the organizer
+  notes: string | null; // By the guest 
+  category: string; // By org
+  unInvitedSubevent: number[]; // Only by te organiwe 
+  isArrivalPickupRequired: boolean | null; // guest
+  isDeparturePickupRequired: boolean | null; //guest
+  organizerNote: string | null; // Organixer only 
   isAccomodation: boolean | null;
   assignedRoom: string | null;
   arrivalDatetime: Date | null;

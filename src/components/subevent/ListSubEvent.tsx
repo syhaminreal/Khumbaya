@@ -1,12 +1,23 @@
 import SubEventCard from "@/src/components/event/subevent/CardSubevent";
 import { SubEvent } from "@/src/constants/event";
-import { useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
+import {
+  useDuplicateEvent,
+  useSubEventsOfEvent,
+} from "@/src/features/events/hooks/use-event";
 import { useEventStore } from "@/src/features/events/store/useEventStore";
 import { sortByDateTime } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useMemo } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 //TODO: Helper ma rakhna data
 const getCalendarDay = (dateStr?: string | null): string => {
   if (!dateStr) return "";
@@ -36,12 +47,16 @@ export default function ListSubEvent() {
   const { isGuest } = useLocalSearchParams<{ isGuest?: string }>();
   const isGuestView = isGuest === "true";
   const { eventId } = useLocalSearchParams();
-  const eventDraft = useEventStore((event) => event.eventDraft)
+  const eventDraft = useEventStore((event) => event.eventDraft);
   const {
     data: subEventsResponse,
     isLoading,
     refetch,
   } = useSubEventsOfEvent(Number(eventId));
+
+  const [menuItem, setMenuItem] = useState<SubEvent | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const { mutateAsync: duplicateSubEvent } = useDuplicateEvent(Number(eventId));
 
   const subEvents = (subEventsResponse ?? []) as SubEvent[];
 
@@ -94,6 +109,23 @@ export default function ListSubEvent() {
     </View>
   );
 
+  const handleDuplicate = async (item: SubEvent) => {
+    setDuplicatingId(item.id);
+    try {
+      await duplicateSubEvent(item.id);
+      Alert.alert("Success", "Sub-event duplicated successfully.");
+    } catch (error: any) {
+      Alert.alert(
+        "Duplicate failed",
+        error?.message || "Unable to duplicate sub-event. Please try again."
+      );
+    } finally {
+      setDuplicatingId(null);
+      setMenuItem(null);
+      refetch();
+    }
+  };
+
   return (
     <View className="flex-1 bg-[#f8f6f7]">
       {isLoading ? (
@@ -106,20 +138,64 @@ export default function ListSubEvent() {
         <FlatList
           data={listData}
           keyExtractor={(item) => item.key}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 100,
+          }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
             if (item.type === "header") return null;
             return (
-              <SubEventCard
-                item={item.item}
-                event={eventDraft!}
-                isGuestView={isGuestView}
-              />
+              <View className="mb-4 relative">
+                <SubEventCard
+                  item={item.item}
+                  event={eventDraft!}
+                  isGuestView={isGuestView}
+                  showMenu={!isGuestView}
+                  onMenuPress={() => setMenuItem(item.item)}
+                />
+              </View>
             );
           }}
         />
       )}
+      {/* FAAAAAH */}
+      <Modal
+        visible={!!menuItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuItem(null)}
+      >
+        <Pressable
+          className="flex-1 bg-black/20 justify-end"
+          onPress={() => setMenuItem(null)}
+        >
+          <Pressable className="bg-white rounded-2xl p-4 mx-4 mb-6">
+            <TouchableOpacity
+              onPress={() => menuItem && handleDuplicate(menuItem)}
+              disabled={duplicatingId === menuItem?.id}
+              className="flex-row items-center gap-3 py-3"
+            >
+              <View className="h-8 w-8 rounded-full bg-primary/10 items-center justify-center">
+                <Ionicons name="copy-outline" size={16} color="#ee2b8c" />
+              </View>
+              <Text className="text-base text-gray-900">
+                {duplicatingId === menuItem?.id ? "Duplicating..." : "Duplicate"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setMenuItem(null)}
+              className="flex-row items-center gap-3 py-3"
+            >
+              <View className="h-8 w-8 rounded-full bg-gray-100 items-center justify-center">
+                <Ionicons name="close" size={16} color="#9CA3AF" />
+              </View>
+              <Text className="text-base text-gray-500">Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
       {/* TODO:Review ai generated code */}
       {!isGuestView && (
         <TouchableOpacity
@@ -131,7 +207,9 @@ export default function ListSubEvent() {
           className="absolute bottom-6 right-6 flex-row items-center gap-2 bg-primary px-5 py-3 rounded-full shadow-2xl"
         >
           <Ionicons name="add-circle" size={20} color="white" />
-          <Text className="text-white font-bold tracking-wide">Add Activity</Text>
+          <Text className="text-white font-bold tracking-wide">
+            Add Activity
+          </Text>
         </TouchableOpacity>
       )}
     </View>

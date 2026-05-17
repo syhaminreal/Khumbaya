@@ -66,7 +66,7 @@ export default function ManageVehicleScreen() {
     setValue,
     setError,
     clearErrors,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<AssignTransportFormValues>({
     defaultValues: {
       fromLocation: "",
@@ -177,15 +177,15 @@ export default function ManageVehicleScreen() {
     setSelectedGuestData(guest);
     setSelectedGuestId(guest.id);
     setAssignmentType(type);
-    setEditableEndpoint(type === "arrival" ? "to" : "from");
-    setPickerTarget(type === "arrival" ? "toTime" : "fromTime");
+    setEditableEndpoint("to");
+    setPickerTarget("toTime");
 
     const arrivalTime = parseOptionalGuestDate(guest.arrivalDatetime) ?? new Date();
     const departureTime = parseOptionalGuestDate(guest.departureDatetime) ?? new Date();
 
     if (type === "arrival") {
       reset({
-        fromLocation: guest.arrivalLocation ?? guest.arrivalInfo ?? "",
+        fromLocation: "",
         toLocation: "",
         fromTime: arrivalTime,
         toTime: new Date(arrivalTime.getTime() + 60 * 60 * 1000),
@@ -193,9 +193,9 @@ export default function ManageVehicleScreen() {
     } else {
       reset({
         fromLocation: "",
-        toLocation: guest.departureLocation ?? guest.departureInfo ?? "",
-        fromTime: new Date(departureTime.getTime() - 60 * 60 * 1000),
-        toTime: departureTime,
+        toLocation: "",
+        fromTime: departureTime,
+        toTime: new Date(departureTime.getTime() + 60 * 60 * 1000),
       });
     }
 
@@ -260,8 +260,8 @@ export default function ManageVehicleScreen() {
       return;
     }
 
-    const requiredLocationField = assignmentType === "arrival" ? "toLocation" : "fromLocation";
-    const requiredTimeField = assignmentType === "arrival" ? "toTime" : "fromTime";
+    const requiredLocationField = "toLocation";
+    const requiredTimeField = "toTime";
 
     if (!values[requiredLocationField].trim()) {
       setError(requiredLocationField, {
@@ -289,7 +289,7 @@ export default function ManageVehicleScreen() {
         isDeparture: assignmentType === "departure",
         fromTime: values.fromTime,
         toTime: values.toTime,
-        fromLocation: values.fromLocation.trim(),
+        fromLocation: values.fromLocation.trim() || autoFromLocation.trim(),
         toLocation: values.toLocation.trim(),
       };
 
@@ -304,17 +304,41 @@ export default function ManageVehicleScreen() {
   });
 
   const isArrivalAssignment = assignmentType === "arrival";
-  const editableLocationField = isArrivalAssignment ? "toLocation" : "fromLocation";
-  const editableTimeField = isArrivalAssignment ? "toTime" : "fromTime";
-  const autoLocation = isArrivalAssignment ? fromLocation : toLocation;
-  const autoTime = isArrivalAssignment ? fromTime : toTime;
-  const editableLocationLabel = isArrivalAssignment ? "To" : "From";
-  const autoLocationLabel = isArrivalAssignment ? "From" : "To";
-  const editableTimeLabel = isArrivalAssignment ? "To Time" : "From Time";
-  const autoTimeLabel = isArrivalAssignment ? "From Time" : "To Time";
-  const editablePlaceholder = isArrivalAssignment
+  const isDepartureAssignment = assignmentType === "departure";
+  const editableLocationField = "toLocation";
+  const editableTimeField = "toTime";
+  const autoFromLocation = isArrivalAssignment
+    ? (selectedGuestData?.arrivalLocation ?? selectedGuestData?.arrivalInfo ?? "")
+    : "";
+  const autoFromTime = isArrivalAssignment
+    ? (parseOptionalGuestDate(selectedGuestData?.arrivalDatetime) ?? null)
+    : null;
+  const autoToLocation = isDepartureAssignment
+    ? (selectedGuestData?.departureLocation ?? selectedGuestData?.departureInfo ?? "")
+    : "";
+  const autoToTime = isDepartureAssignment
+    ? (parseOptionalGuestDate(selectedGuestData?.departureDatetime) ?? null)
+    : null;
+  const editableLocationLabel = "To";
+  const autoLocationLabel = "From";
+  const editableTimeLabel = "To Time";
+  const autoTimeLabel = "From Time";
+  const fromSuggestionTime = autoFromTime
+    ? `${formatDate(autoFromTime.toISOString())} • ${formatTime(autoFromTime.toISOString())}`
+    : "Not set";
+  const toSuggestionTime = autoToTime
+    ? `${formatDate(autoToTime.toISOString())} • ${formatTime(autoToTime.toISOString())}`
+    : "Not set";
+  const fromTimeValue = `${formatDate((fromTime as Date).toISOString())} • ${formatTime((fromTime as Date).toISOString())}`;
+  const toTimeValue = `${formatDate((toTime as Date).toISOString())} • ${formatTime((toTime as Date).toISOString())}`;
+  const fromTimeDisplay = dirtyFields.fromTime ? fromTimeValue : "Select time";
+  const toTimeDisplay = dirtyFields.toTime ? toTimeValue : "Select time";
+  const fromPlaceholder = isArrivalAssignment
+    ? "Pickup location (arrival)"
+    : "Pickup location (departure)";
+  const toPlaceholder = isArrivalAssignment
     ? "Where should the guest be brought to?"
-    : "Where should we pick the guest up from?";
+    : "Where should we drop the guest off?";
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
@@ -681,37 +705,67 @@ export default function ManageVehicleScreen() {
             </View>
 
             {/* Content */}
-            <View className="gap-4 mb-6">
-              <View className="gap-2">
+              <View className="gap-5 mb-6">
+              <View className="gap-3">
                 <Text className="text-[9px] font-jakarta-bold text-gray-400 uppercase">
                   {autoLocationLabel}
                 </Text>
-                <View className="bg-gray-50 border border-gray-100 rounded-xl p-4 gap-2">
-                  <Text className="text-sm font-jakarta-semibold text-gray-900" numberOfLines={1}>
-                    {autoLocation || "Not set"}
+                 <View className="border border-gray-200 rounded-md overflow-hidden bg-white">
+                  <TextInput
+                    placeholder={fromPlaceholder}
+                    className="px-4 py-3 font-jakarta-medium text-sm text-gray-900"
+                    placeholderTextColor="#9ca3af"
+                    value={fromLocation}
+                    onChangeText={(text) => setValue("fromLocation", text, { shouldDirty: true, shouldValidate: true })}
+                  />
+                </View>
+                {autoFromLocation ? (
+                  <Text className="text-[11px] text-gray-400 font-jakarta-medium italic mt-1">
+                    {`Suggestion: ${autoFromLocation}`}
                   </Text>
-                  <Text className="text-[10px] font-jakarta-bold text-gray-500 uppercase mt-1">
+                ) : null}
+                <View className="mt-2 gap-2">
+                  <Text className="text-[10px] font-jakarta-bold text-gray-500 uppercase">
                     {autoTimeLabel}
                   </Text>
-                  <Text className="text-xs text-gray-500 font-jakarta-medium">
-                    {autoTime ? `${formatDate(autoTime.toISOString())} • ${formatTime(autoTime.toISOString())}` : "Time not set"}
-                  </Text>
+                  <TouchableOpacity
+                    onPress={() => openTimePicker("fromTime")}
+                    className="bg-white border border-gray-100 rounded-md px-4 py-3 flex-row items-center justify-between"
+                  >
+                    <View>
+                      <Text className="text-sm font-jakarta-semibold text-gray-900">
+                        {fromTimeDisplay}
+                      </Text>
+                  
+                    </View>
+                    <Ionicons name="time-outline" size={18} color="#ee2b8c" />
+                  </TouchableOpacity>
+                  {autoFromTime ? (
+                    <Text className="text-xs text-gray-400 font-jakarta-medium italic">
+                      {`Suggestion: ${fromSuggestionTime}`}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
 
-              <View className="gap-2">
+              <View className="gap-3">
                 <Text className="text-[9px] font-jakarta-bold text-gray-400 uppercase">
                   {editableLocationLabel}
                 </Text>
-                <View className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <View className="border border-gray-200 rounded-md overflow-hidden bg-white">
                   <TextInput
-                    placeholder={editablePlaceholder}
+                    placeholder={toPlaceholder}
                     className="px-4 py-3 font-jakarta-medium text-sm text-gray-900"
                     placeholderTextColor="#9ca3af"
-                    value={isArrivalAssignment ? toLocation : fromLocation}
+                    value={toLocation}
                     onChangeText={(text) => setValue(editableLocationField, text, { shouldDirty: true, shouldValidate: true })}
                   />
                 </View>
+                {isDepartureAssignment && autoToLocation ? (
+                  <Text className="text-[11px] text-gray-400 font-jakarta-medium italic mt-1">
+                    {`Suggestion: ${autoToLocation}`}
+                  </Text>
+                ) : null}
                 {errors[editableLocationField] && (
                   <Text className="text-[10px] text-red-500 font-jakarta-medium">
                     {errors[editableLocationField]?.message}
@@ -719,24 +773,29 @@ export default function ManageVehicleScreen() {
                 )}
               </View>
 
-              <View className="gap-2">
+              <View className="gap-3">
                 <Text className="text-[9px] font-jakarta-bold text-gray-400 uppercase">
                   {editableTimeLabel}
                 </Text>
                 <TouchableOpacity
                   onPress={() => openTimePicker(editableTimeField)}
-                  className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex-row items-center justify-between"
+                  className="bg-white border border-gray-100 rounded-md px-4 py-3 flex-row items-center justify-between"
                 >
                   <View>
                     <Text className="text-sm font-jakarta-semibold text-gray-900">
-                      {formatDate(((isArrivalAssignment ? toTime : fromTime) as Date).toISOString())}
+                      {toTimeDisplay}
                     </Text>
                     <Text className="text-xs text-gray-500 font-jakarta-medium mt-0.5">
                       Tap to adjust time
                     </Text>
                   </View>
-                  <Ionicons name="calendar-outline" size={18} color="#ee2b8c" />
+                  <Ionicons name="time-outline" size={18} color="#ee2b8c" />
                 </TouchableOpacity>
+                {isDepartureAssignment && autoToTime ? (
+                  <Text className="text-xs text-gray-400 font-jakarta-medium italic">
+                    {`Suggestion: ${toSuggestionTime}`}
+                  </Text>
+                ) : null}
               </View>
             </View>
 

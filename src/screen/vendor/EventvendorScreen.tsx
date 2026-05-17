@@ -90,7 +90,7 @@ export default function EventvendorScreen() {
             ? "New"
             : rawStatus.includes("pending")
               ? "Pending"
-              : business?.is_verified
+              : business?.isVerified
                 ? "Confirmed"
                 : "Pending";
 
@@ -107,7 +107,7 @@ export default function EventvendorScreen() {
         day: isValidDate
           ? String(createdAtDate.getDate()).padStart(2, "0")
           : "--",
-        title: business?.business_name ?? "Unnamed Business",
+        title: business?.businessName ?? "Unnamed Business",
         couple: business?.description ?? "Vendor Partner",
         location: business?.location ?? "Location unavailable",
         category: business?.category ?? "General",

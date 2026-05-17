@@ -5,7 +5,9 @@ import {
   CreateVehicle,
   get_vehicle_assignment,
   getEventVehicles,
-  getGuestTransportation
+  getGuestTransportation,
+  update_vehicle,
+  UpdateVehiclePayload
 } from "../api";
 
 import {
@@ -79,6 +81,34 @@ export const useAssignVehicle = (eventId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["vehicle/assign"],
       });
+    },
+  });
+};
+
+export const useUpdateVehicle = (eventId: string, vehicleId?: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ["logistics", "update-vehicle", eventId, vehicleId],
+    mutationFn: (params: UpdateVehiclePayload) => {
+      if (!vehicleId) {
+        return Promise.reject(new Error("Vehicle id is missing."));
+      }
+
+      return update_vehicle(vehicleId, params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["logistics", "vehicle", eventId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["logistics", "guest-transportation", eventId],
+      });
+      if (vehicleId) {
+        queryClient.invalidateQueries({
+          queryKey: ["vehicle/assign", vehicleId],
+        });
+      }
     },
   });
 };

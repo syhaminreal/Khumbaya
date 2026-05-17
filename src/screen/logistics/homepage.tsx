@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LogisticsCard } from '../../components/logistics/LogisticsCard';
 import { StatCard } from '../../components/logistics/StatCard';
 import { useGetVehicle } from '../../features/logistics/hooks/use-transport';
+import { useEventvehicleStore } from '../../features/logistics/store/useLogisticStore';
 import type { EventVehicle } from '../../features/logistics/type';
 import { formatDate, formatTime } from '../../utils/helper';
 import GuestLogistic from '../guest/guest-logistic';
@@ -35,6 +36,7 @@ const LogisticsHomepage = () => {
   const {push} =useThrottledRouter();
   const { eventId, isGuest } = useLocalSearchParams();
   const isGuestView = isGuest === "true";
+  const setDraft = useEventvehicleStore((state) => state.setDraft);
   const { data: vehicles = [], isLoading: isVehiclesLoading } = useGetVehicle(String(eventId ?? ''));
 
   const fleetCards = vehicles.map((vehicle: EventVehicle, index: number) => {
@@ -48,6 +50,7 @@ const LogisticsHomepage = () => {
       origin: `Start: ${toAvailabilityText(vehicle.availablityStartTime)}`,
       destination: `End: ${toAvailabilityText(vehicle.availablityEndTime)}`,
       rawId: String(idValue),
+      rawVehicle: vehicle,
     };
   });
 
@@ -67,6 +70,19 @@ const LogisticsHomepage = () => {
       },
     });
 
+  };
+
+  const handleEditVehicle = (vehicle: EventVehicle, vehicleId: string) => {
+    if (isGuestView) return;
+    setDraft(vehicle);
+    push({
+      pathname: './edit-logistics',
+      params: {
+        eventId: String(eventId),
+        vehicleId,
+        isEdit: 'true',
+      },
+    });
   };
   
   if (isGuestView) {
@@ -148,6 +164,8 @@ const LogisticsHomepage = () => {
                   status={vehicle.status}
                   origin={vehicle.origin}
                   destination={vehicle.destination}
+                  onPress={() => handleManageVehicle(vehicle.rawId)}
+                  onEditPress={() => handleEditVehicle(vehicle.rawVehicle, vehicle.rawId)}
                   onManagePress={() => handleManageVehicle(vehicle.rawId)}
                 />
               ))

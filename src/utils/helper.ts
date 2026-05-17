@@ -1,7 +1,70 @@
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { Easing, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
+
+type DateTimePickerChangeEvent = { type?: string };
+type DateTimePickerMode = "date" | "time";
+type DateTimeSetValue<TField extends string = string> = (
+  field: TField,
+  value: Date | null,
+  options?: { shouldDirty?: boolean }
+) => void;
+
+// Helper Function 
+export const openDateOrTimePicker = (
+  field: string,
+  dateTime: Date | null,
+  type: DateTimePickerMode,
+  onChange: (event: DateTimePickerChangeEvent, selectedDate?: Date) => void
+) => {
+  void field;
+  const value = dateTime ?? new Date();
+  DateTimePickerAndroid.open({
+    value,
+    onChange: onChange,
+    mode: type,
+  });
+};
+
+// NOTE: Reusable date/time picker handler is intentionally not used in RSVP for now.
+// It can be brought back later if multiple screens need the same merge logic.
+// export const createDateTimePickerHandler = <TField extends string>(
+//   field: TField,
+//   mode: DateTimePickerMode,
+//   currentValue: Date | null,
+//   setValue: DateTimeSetValue<TField>,
+//   options: { shouldDirty?: boolean } = { shouldDirty: true }
+// ) =>
+//   (event: DateTimePickerChangeEvent, selectedDate?: Date) => {
+//     if (event?.type === "dismissed") return;
+//
+//     const baseValue = currentValue ?? new Date();
+//     const pickedValue = selectedDate ?? baseValue;
+//
+//     let nextValue = pickedValue;
+//     if (mode === "date" && baseValue) {
+//       nextValue = new Date(baseValue);
+//       nextValue.setFullYear(
+//         pickedValue.getFullYear(),
+//         pickedValue.getMonth(),
+//         pickedValue.getDate()
+//       );
+//     }
+//     if (mode === "time" && baseValue) {
+//       nextValue = new Date(baseValue);
+//       nextValue.setHours(
+//         pickedValue.getHours(),
+//         pickedValue.getMinutes(),
+//         pickedValue.getSeconds(),
+//         pickedValue.getMilliseconds()
+//       );
+//     }
+//
+//     setValue(field, nextValue, options);
+//   };
 type PasswordStrength = "weak" | "medium" | "strong" | "very-strong";
 export const calculatePasswordStrength = (pwd: string): PasswordStrength => {
   if (pwd.length === 0) return "weak";
@@ -250,3 +313,7 @@ export const shadowStyle = {
     default: {},
   }),
 };
+
+
+
+  

@@ -10,7 +10,7 @@ import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -27,8 +27,16 @@ export default function EventBudgetScreen() {
   const [editBudgetVisible, setEditBudgetVisible] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
   const router = useRouter();
-  const { eventId } = useLocalSearchParams();
-
+  const { eventId, isSubEvent } = useLocalSearchParams<{ eventId: string; isSubEvent: string }>();
+  const isSubEventBoolean = useMemo(() => {
+    if ("true" == isSubEvent) {
+      return true;
+    } else {
+      return false;
+    }
+  }, [eventId]
+  );
+  console.log('This is the sub event pge of the event', isSubEvent, isSubEventBoolean);
   const { data: eventData, isLoading: eventLoading } = useEventById(
     Number(eventId)
   );
@@ -36,8 +44,7 @@ export default function EventBudgetScreen() {
     Number(eventId)
   );
 
-  const hasBudget = eventData?.budget && eventData.budget > 0;
-  console.log(hasBudget);
+  const hasBudget = eventData?.budget && eventData.budget > 0 ? true : false;
   const { data: budgetData, isLoading: budgetLoading } = useBudgetSummary(
     Number(eventId),
     { enabled: hasBudget }
@@ -102,7 +109,7 @@ export default function EventBudgetScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <TouchableOpacity
+            !isSubEventBoolean && <TouchableOpacity
               onPress={() =>
                 push({
                   pathname: "../edit-event",
@@ -118,7 +125,7 @@ export default function EventBudgetScreen() {
       />
 
       <Modal
-        visible={editBudgetVisible}
+        visible={editBudgetVisible && !isSubEvent}
         transparent={true}
         animationType="fade"
         onRequestClose={() => setEditBudgetVisible(false)}
