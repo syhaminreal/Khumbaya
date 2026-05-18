@@ -13,6 +13,7 @@ export interface CREATEEVENT {
   parentId?: number;
   location?: string;
   venue?: string;
+  venueId?: number | null;
   role?: string;
   imageUrl?: string;
   rsvpDeadline?: string;
@@ -33,6 +34,7 @@ export interface EVENT {
   parentId?: number;
   location?: string;
   venue?: string | null;
+  venueId?: number | null;
   role?: string;
   status?: string;
   organizer?: number;

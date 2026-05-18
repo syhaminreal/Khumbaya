@@ -7,6 +7,7 @@ export interface Event {
   location: string;
   dressCode?: string | null;
   venue: string;
+  venueId?: number | null;
   imageUrl: string;
   role: EventRole;
   status: EventTab;
