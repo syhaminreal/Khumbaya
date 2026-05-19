@@ -286,13 +286,13 @@ export default function AddMenuScreen() {
               onPress={handleSubmit(onSubmit)}
               disabled={createMenuMutation.isPending}
               activeOpacity={0.8}
-              className="rounded-xl bg-primary py-4 items-center justify-center"
+              className="rounded-xl  bg-primary py-4 items-center justify-center"
               style={shadowStyle}
             >
               {createMenuMutation.isPending ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Text className="text-white text-base font-black tracking-tight">
+                <Text className="text-base  text-white font-black tracking-tight">
                   Add Menu Item
                 </Text>
               )}
