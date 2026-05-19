@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, Image, Modal, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Fragment, useState } from "react";
 import { FamilyGroup } from "../../features/guests/types";
 import Animated from "react-native-reanimated";
+import { BottomActionMenu, ThreeDotButton } from "../event/guest/threedot";
 
 interface FamilyCardProps {
   family: FamilyGroup;
@@ -155,71 +155,49 @@ return (
                 </Text>
               </View>
 
-              {effectiveStatus.toLowerCase() === "pending" && onMoveToDraft ? (
-                <TouchableOpacity
-                  onPress={() => setMenuVisible(true)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="ellipsis-horizontal" size={20} color="#F59E0B" />
-                </TouchableOpacity>
-              ) : null}
-
-              {onDelete ? (
-                <TouchableOpacity
-                  onPress={onDelete}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                </TouchableOpacity>
+              {(effectiveStatus.toLowerCase() === "pending" && onMoveToDraft) ||
+              onDelete ? (
+                <ThreeDotButton onPress={() => setMenuVisible(true)} />
               ) : null}
             </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
 
-      <Modal
+      <BottomActionMenu
         visible={menuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setMenuVisible(false)}
-          className="flex-1 bg-black/30 justify-center items-center"
-        >
-          <View className="bg-white rounded-2xl p-4 w-4/5 max-w-xs">
-            <Text className="text-base font-semibold text-gray-900 mb-3">
-              Move to Draft
-            </Text>
-            <Text className="text-sm text-gray-600 mb-4">
-              This will move the invitation back to draft status.
-            </Text>
-            <View className="flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => setMenuVisible(false)}
-                className="flex-1 py-2.5 rounded-xl bg-gray-100 items-center"
-              >
-                <Text className="text-sm font-semibold text-gray-700">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setMenuVisible(false);
-                  onMoveToDraft?.();
-                }}
-                disabled={isMovingToDraft}
-                className="flex-1 py-2.5 rounded-xl bg-[#EE2B8C] items-center"
-              >
-                {isMovingToDraft ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text className="text-sm font-semibold text-white">Move</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        onClose={() => setMenuVisible(false)}
+        items={[
+          ...(effectiveStatus.toLowerCase() === "pending" && onMoveToDraft
+            ? [
+                {
+                  label: isMovingToDraft ? "Moving..." : "Move to Draft",
+                  icon: "return-down-back-outline" as const,
+                  onPress: () => {
+                    setMenuVisible(false);
+                    onMoveToDraft?.();
+                  },
+                  loading: isMovingToDraft,
+                  disabled: isMovingToDraft,
+                },
+              ]
+            : []),
+          ...(onDelete
+            ? [
+                {
+                  label: "Delete",
+                  icon: "trash-outline" as const,
+                  color: "#EF4444",
+                  iconBgClassName: "bg-red-50",
+                  onPress: () => {
+                    setMenuVisible(false);
+                    onDelete();
+                  },
+                },
+              ]
+            : []),
+        ]}
+      />
     </Fragment>
   );
 }
