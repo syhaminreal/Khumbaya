@@ -27,9 +27,10 @@ export const createBusinessApi = async (
 };
 
 export const getBusinessByIdApi = async (
-  id: number | string
+  id: number | string  ,
+  category?:string 
 ): Promise<BusinessWithAttribute> => {
-  const response = await api.get(`/business/${id}`);
+  const response = await api.get(`/business/${id}?category=${category}`);
   return response.data.data;
 };
 
