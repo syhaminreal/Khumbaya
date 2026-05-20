@@ -5,6 +5,7 @@ import {
   useDeletePaymentMutation,
   useExpenseById,
 } from "@/src/features/budget/hooks/use-budget";
+import { useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
@@ -23,6 +24,7 @@ type Expense = {
   categoryId: number;
   name: string;
   businessId: string | null;
+  subEventid?: number | null;
   allocatedAmount: number;
   nextDueDate: string;
   notes: string;
@@ -50,6 +52,7 @@ export default function ExpenseDetailScreen() {
   const router = useRouter();
   const { eventId, categoryId, expenseId } = useLocalSearchParams();
   const { data, isLoading } = useExpenseById(Number(expenseId));
+  const { data: subEventDetail } = useSubEventsOfEvent(Number(eventId));
   const [menuVisible, setMenuVisible] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -129,7 +132,7 @@ export default function ExpenseDetailScreen() {
     setMenuVisible(false);
     router.push({
       pathname:
-        `/(protected)/(client-stack)/events/${eventId}/(organizer)/edit-expense` as any,
+        `../../../budget/[eventId]/[categoryId]/[expenseId]/edit-expense` ,
       params: {
         expenseId: expenseId,
         categoryId: categoryId,
@@ -340,13 +343,35 @@ export default function ExpenseDetailScreen() {
               <Text variant="h1" className="text-[#181114] mb-2 text-2xl">
                 {data.name}
               </Text>
-              {data.businessId && (
-                <View className="flex-row items-center gap-2">
-                  <Text variant="caption" className="text-base">
-                    {data.businessId}
-                  </Text>
-                </View>
-              )}
+              <View className="gap-3">
+                {data.businessId && (
+                  <View className="flex-row items-center gap-2">
+                    <Text variant="caption" className="text-base">
+                      {data.businessId}
+                    </Text>
+                  </View>
+                )}
+                {data.subEventid && (() => {
+                  const subEvent = (subEventDetail || []).find((s: any) => s.id === data.subEventid);
+                  return subEvent ? (
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      className="self-start bg-pink-50 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-pink-200"
+                      onPress={() => {
+                        router.push({
+                          pathname: `/(protected)/(client-stack)/events/[eventId]/(shared)/(subevent)/[subEventId]/sub-event-detail`,
+                          params: { eventId: eventId?.toString(), subEventId: subEvent.id.toString() },
+                        });
+                      }}
+                    >
+                      <MaterialIcons name="local-activity" size={14} color="#ee2b8c" />
+                      <Text className="text-xs text-[#ee2b8c] font-semibold" variant="h2">
+                        {subEvent.title ?? subEvent.name ?? "Untitled sub-event"}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null;
+                })()}
+              </View>
             </View>
           </View>
 

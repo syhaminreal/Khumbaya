@@ -170,14 +170,6 @@ export default function AddBudgetItemScreen({
             {errors.name.message}
           </Text>
         )}
-        {/*
-          Adding the sub event list in this also 
-        */}
-        <Text className="text-sm  text-gray-700 mb-2" variant="h2">
-          Select Sub event
-        </Text>
-
-
         <Text className="text-sm  text-gray-700 mb-2" variant="h2">
           Allocated Budget
         </Text>

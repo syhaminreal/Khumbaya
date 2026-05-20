@@ -25,6 +25,7 @@ import {
 
 export default function EventBudgetScreen() {
   const [search, setSearch] = useState("");
+  //For the sub event also show the parent budget and the input from the parent thng in there 
   const [editBudgetVisible, setEditBudgetVisible] = useState(false);
   const { eventDraft } = useEventStore();
   const [budgetInput, setBudgetInput] = useState("");
@@ -48,6 +49,7 @@ export default function EventBudgetScreen() {
         No information about the event seems like its coming from the wrong route
       </>
     }
+    //Definiing the sub event from the draft if this is the sub event 
     effectiveEventId = isSubEventBoolean ? eventDraft.id : eventId;
   }
 
@@ -309,8 +311,8 @@ export default function EventBudgetScreen() {
                 onPress={() => {
                   router.push(
                     {
-                      pathname: `../budget/[categoryId]`,
-                      params: { categoryId: cat.id }
+                      pathname: `/events/[eventId]/budget/[categoryId]`,
+                      params: { categoryId: cat.id, eventId: effectiveEventId.toString(), navigationEventid: eventId.toString() }
                     }
                   );
                 }}
