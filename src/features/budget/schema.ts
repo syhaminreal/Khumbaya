@@ -23,6 +23,7 @@ export const expenseFormSchema = z.object({
       return !isNaN(num) && num > 0;
     }, "Allocated amount must be a positive number"),
   nextDueDate: z.string().optional().or(z.literal("")),
+  subEventid: z.number().optional(),
   notes: z.string().max(1000).optional().or(z.literal("")),
 });
 

@@ -101,6 +101,7 @@ export const useExpenseMutation = (categoryId: number, eventId: number) => {
       allocatedAmount: number;
       nextDueDate?: string;
       notes?: string;
+      subEventid?: number;
     }) => addExpenseToCategory(categoryId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -185,6 +186,7 @@ export const useUpdateExpenseMutation = (
       allocatedAmount?: number;
       nextDueDate?: string;
       notes?: string;
+      subEventid?: number;
     }) => updateExpense(expenseId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
