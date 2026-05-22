@@ -82,6 +82,13 @@ export const removeInvitation = async (eventId: number, guestId: number) => {
   return response.data.data;
 };
 
+export const moveToDraft = async (eventId: number, guestId: number) => {
+  const response = await api.patch(`/event/${eventId}/invitation/draft`, {
+    userId: guestId,
+  });
+  return response.data.data;
+};
+
 export const importGuestlist =async (fromEventId: number, toEventId: number) => {
   const response = await api.post(`/invitation/import-guest`, {
     fromEventId,

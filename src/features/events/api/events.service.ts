@@ -228,7 +228,7 @@ export const getEventById = async (id: number): Promise<Event> => {
 };
 
 export const getResponsesWithUser = async (eventId: number) => {
-  const response = await api.get(`invitation/event-responses/${eventId}`);
+  const response = await api.get(`/invitation/event-responses/${eventId}`);
   return response.data.data;
 };
 
@@ -236,7 +236,7 @@ export const submitRsvpResponseApi = async (
   eventId: number,
   payload: Partial<Invitation>
 ) => {
-  const response = await api.post(`invitation/responce/${eventId}`, payload);
+  const response = await api.post(`/invitation/responce/${eventId}`, payload);
   return response.data;
 };
 

@@ -67,7 +67,7 @@ export default function GuestListScreen() {
 
   const [draftAction, setDraftAction] = useState<{
     userId: number;
-    type: "send" | "delete";
+    type: "send" | "delete" | "moveToDraft";
   } | null>(null);
   const [activeTab, setActiveTab] = useState<GuestFilterTab>("pending");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -357,6 +357,112 @@ export default function GuestListScreen() {
     [eventId, removeInvitationMutation]
   );
 
+  const onMoveToDraft = useCallback(
+    async (guest: GuestDetailInterface) => {
+      if (!eventId || !guest?.user?.id) return;
+
+      setDraftAction({ userId: guest.user.id, type: "moveToDraft" });
+      try {
+        await submitRsvpMutation.mutateAsync({
+          userId: guest.user.id,
+          familyId: guest.eventGuest.familyId,
+          status: "draft",
+        });
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to move to draft.";
+        Alert.alert("Error", message);
+      } finally {
+        setDraftAction(null);
+      }
+    },
+    [eventId, submitRsvpMutation]
+  );
+
+  const onRemoveGuest = useCallback(
+    (guest: GuestDetailInterface) => {
+      if (!eventId || !guest?.user?.id) return;
+
+      const displayName =
+        guest.user.username?.trim() ||
+        guest.user.email ||
+        "this guest";
+
+      Alert.alert(
+        "Remove guest",
+        `Remove ${displayName}'s invitation from this event?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: async () => {
+              setDraftAction({ userId: guest.user.id, type: "delete" });
+              try {
+                await removeInvitationMutation.mutateAsync({
+                  eventId,
+                  guestId: guest.user.id,
+                });
+              } catch (error: any) {
+                const message =
+                  error?.response?.data?.message ||
+                  error?.message ||
+                  "Failed to remove guest. Please try again.";
+                Alert.alert("Error", message);
+              } finally {
+                setDraftAction(null);
+              }
+            },
+          },
+        ]
+      );
+    },
+    [eventId, removeInvitationMutation]
+  );
+
+  const onRemoveFamily = useCallback(
+    (family: FamilyGroup) => {
+      if (!eventId || family.members.length === 0) return;
+
+      Alert.alert(
+        "Remove family",
+        `Remove ${family.family_name}'s invitations from this event?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: async () => {
+              const primaryGuest = family.members[0];
+              setDraftAction({ userId: primaryGuest.user.id, type: "delete" });
+              try {
+                await Promise.all(
+                  family.members.map((member) =>
+                    removeInvitationMutation.mutateAsync({
+                      eventId,
+                      guestId: member.user.id,
+                    })
+                  )
+                );
+              } catch (error: any) {
+                const message =
+                  error?.response?.data?.message ||
+                  error?.message ||
+                  "Failed to remove family. Please try again.";
+                Alert.alert("Error", message);
+              } finally {
+                setDraftAction(null);
+              }
+            },
+          },
+        ]
+      );
+    },
+    [eventId, removeInvitationMutation]
+  );
+
   const onPressFamilyCard = (familyData: FamilyGroup) => {
     setFamilyGuest(familyData);
     push({
@@ -547,6 +653,10 @@ export default function GuestListScreen() {
           }
           renderItem={({ item, index }: { item: GroupedInvitation, index: number }) => {
             if (item.type === "family") {
+              const isPending = item.members.some(m => {
+                const s = m.eventGuest.status?.toLowerCase() ?? "";
+                return s === "pending" || s === "invited";
+              });
               return (
                 <Animated.View
                   layout={_layoutAnimation}
@@ -558,6 +668,19 @@ export default function GuestListScreen() {
                       onPressFamilyCard(item);
                     }}
                     style={''}
+                    onMoveToDraft={isPending ? () => {
+                      const primaryGuest = item.members[0];
+                      onMoveToDraft(primaryGuest);
+                    } : undefined}
+                    onDelete={
+                      activeTab === "pending"
+                        ? () => onRemoveFamily(item)
+                        : undefined
+                    }
+                    isMovingToDraft={
+                      draftAction?.type === "moveToDraft" &&
+                      item.members.some(m => m.user.id === draftAction.userId)
+                    }
                   />
                 </Animated.View>
               );
@@ -573,6 +696,16 @@ export default function GuestListScreen() {
                   onPress={() => {
                     onPressGuestCard(item.data);
                   }}
+                  onMoveToDraft={() => onMoveToDraft(item.data)}
+                  onDelete={
+                    activeTab === "pending"
+                      ? () => onRemoveGuest(item.data)
+                      : undefined
+                  }
+                  isMovingToDraft={
+                    draftAction?.type === "moveToDraft" &&
+                    draftAction.userId === item.data.user.id
+                  }
                 />
               </Animated.View>
             );

@@ -1,4 +1,8 @@
 import { Text } from "@/src/components/ui/Text";
+import {
+  BottomActionMenu,
+  ThreeDotButton,
+} from "@/src/components/event/guest/threedot";
 import { useSubmitRsvpResponse } from "@/src/features/events/hooks/use-event";
 import { useSubEventListStore } from "@/src/features/events/store/useEventStore";
 import {
@@ -40,6 +44,16 @@ const formatDisplayValue = (value?: string) => {
   if (!value) return "-";
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
+
+const getProfileText = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return "";
+};
+
 //TODO: Delete this
 
 
@@ -79,6 +93,7 @@ export default function ViewGuestDetail() {
   const [departureInfo, setDepartureInfo] = useState(initialDepartureInfo);
   const [category, setCategory] = useState(initialCategory);
   const [notes] = useState(initialNotes);
+  const [actionMenuVisible, setActionMenuVisible] = useState(false);
   // TODO: Review this is genearated code 
   const { subEventList } = useSubEventListStore();
   const unInvitedSubevents = guestDetail?.eventGuest?.unInvitedSubevent ?? [];
@@ -148,6 +163,72 @@ export default function ViewGuestDetail() {
 
   const headerTitle = guestDetail?.user?.username?.trim() || "Guest Detail";
   const isSaveDisabled = isPending || !hasAssignmentChanges;
+  const guestUser = guestDetail?.user;
+  const guestInfo =
+    guestUser?.info && typeof guestUser.info === "object"
+      ? (guestUser.info as Record<string, unknown>)
+      : {};
+  const guestProfile =
+    (guestUser as any)?.profile && typeof (guestUser as any).profile === "object"
+      ? ((guestUser as any).profile as Record<string, unknown>)
+      : guestInfo.profile && typeof guestInfo.profile === "object"
+        ? (guestInfo.profile as Record<string, unknown>)
+        : {};
+  const guestDob =
+    guestUser?.dob ??
+    guestProfile.dob ??
+    guestProfile.dateOfBirth ??
+    guestInfo.dob ??
+    guestInfo.dateOfBirth;
+  const formattedGuestDob =
+    guestDob instanceof Date || typeof guestDob === "string"
+      ? formatDate(toISODateString(guestDob))
+      : "";
+  const guestLocation = getProfileText(
+    guestUser?.location,
+    guestProfile.location,
+    guestInfo.location,
+    guestUser?.address,
+    [guestUser?.city, guestUser?.country].filter(Boolean).join(", ")
+  );
+  const guestProfileRows = [
+    {
+      label: "Gender",
+      icon: "person-outline" as const,
+      value: getProfileText(
+        (guestUser as any)?.gender,
+        guestProfile.gender,
+        guestInfo.gender
+      ),
+    },
+    {
+      label: "DOB",
+      icon: "calendar-outline" as const,
+      value: formattedGuestDob === "—" ? "" : formattedGuestDob,
+    },
+    {
+      label: "Email",
+      icon: "mail-outline" as const,
+      value: getProfileText(guestUser?.email),
+    },
+    {
+      label: "Location",
+      icon: "location-outline" as const,
+      value: guestLocation,
+    },
+    {
+      label: "Food Preference",
+      icon: "restaurant-outline" as const,
+      value: getProfileText(
+        guestUser?.foodPreference,
+        (guestUser as any)?.foodPreferences,
+        guestProfile.foodPreference,
+        guestProfile.foodPreferences,
+        guestInfo.foodPreference,
+        guestInfo.foodPreferences
+      ),
+    },
+  ].filter((row) => row.value);
 
   const handleSaveAssignments = () => {
     if (
@@ -183,6 +264,8 @@ export default function ViewGuestDetail() {
   };
 
   const handleDeleteGuest = () => {
+    setActionMenuVisible(false);
+
     if (!guestDetail?.user?.id || !eventId) {
       Alert.alert("Error", "Missing event or guest id.");
       return;
@@ -446,10 +529,8 @@ export default function ViewGuestDetail() {
                 className="items-center px-6 pt-8 pb-8"
               >
                 {!isConfirmed ? (
-                  <TouchableOpacity
-                    onPress={handleDeleteGuest}
+                  <View
                     className="absolute right-4 top-4 p-2 rounded-full bg-white"
-                    activeOpacity={0.8}
                     style={{
                       shadowColor: "#000",
                       shadowOpacity: 0.12,
@@ -457,8 +538,8 @@ export default function ViewGuestDetail() {
                       elevation: 3,
                     }}
                   >
-                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                  </TouchableOpacity>
+                    <ThreeDotButton onPress={() => setActionMenuVisible(true)} />
+                  </View>
                 ) : null}
 
                 <View className="relative">
@@ -533,6 +614,88 @@ export default function ViewGuestDetail() {
 
               <View className="px-6 pt-6 pb-10 gap-8">
                 <View>
+                  <View className="flex-row items-center justify-between mb-4">
+                    <View className="flex-row items-center gap-2">
+                      <View className="h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                        <Ionicons
+                          name="id-card-outline"
+                          size={18}
+                          color="#EE2B8C"
+                        />
+                      </View>
+                      <View>
+                        <Text
+                          variant="caption"
+                          className="text-xs font-bold uppercase tracking-widest text-slate-400"
+                        >
+                          Guest Details
+                        </Text>
+                        <Text className="mt-0.5 text-sm font-semibold text-slate-900">
+                          Profile information
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View className="rounded-full bg-slate-100 px-3 py-1">
+                      <Text className="text-[11px] font-semibold text-slate-500">
+                        {guestProfileRows.length} field
+                        {guestProfileRows.length === 1 ? "" : "s"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="rounded-2xl border border-slate-100 bg-white p-3">
+                    {guestProfileRows.length ? (
+                      <View className="gap-2">
+                        {guestProfileRows.map((row) => (
+                          <View
+                            key={row.label}
+                            className="flex-row items-center rounded-xl bg-slate-50 px-3 py-3"
+                            style={{ gap: 12 }}
+                          >
+                            <View className="h-9 w-9 items-center justify-center rounded-full bg-white">
+                              <Ionicons
+                                name={row.icon}
+                                size={17}
+                                color="#EE2B8C"
+                              />
+                            </View>
+                            <View className="flex-1">
+                              <Text className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                {row.label}
+                              </Text>
+                              <Text
+                                numberOfLines={2}
+                                className="mt-0.5 text-sm font-semibold text-slate-900"
+                              >
+                                {row.value}
+                              </Text>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <View className="items-center rounded-xl bg-slate-50 px-4 py-6">
+                        <View className="mb-3 h-11 w-11 items-center justify-center rounded-full bg-white">
+                          <Ionicons
+                            name="information-circle-outline"
+                            size={22}
+                            color="#94a3b8"
+                          />
+                        </View>
+                        <Text className="text-sm font-semibold text-slate-700">
+                          No profile details yet
+                        </Text>
+                        <Text className="mt-1 text-center text-xs text-slate-500">
+                          Details will appear here after the guest completes their profile.
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {isConfirmed && (
+                  <View>
                   <View className="flex-row items-center gap-2 mb-4">
                     <Ionicons
                       name="person-circle-outline"
@@ -663,7 +826,8 @@ export default function ViewGuestDetail() {
                       </View>
                     ))}
                   </View>
-                </View>
+                  </View>
+                )}
 
                 <View className="bg-white border border-slate-200 p-4 rounded-2xl mb-3">
                   <View className="flex-row justify-between items-start">
@@ -837,6 +1001,22 @@ export default function ViewGuestDetail() {
           </KeyboardAwareScrollView>
         </SafeAreaView>
       </KeyboardAvoidingView>
+
+      <BottomActionMenu
+        visible={actionMenuVisible}
+        onClose={() => setActionMenuVisible(false)}
+        items={[
+          {
+            label: removeInvitationMutation.isPending ? "Removing..." : "Remove",
+            icon: "trash-outline",
+            color: "#EF4444",
+            iconBgClassName: "bg-red-50",
+            disabled: removeInvitationMutation.isPending,
+            loading: removeInvitationMutation.isPending,
+            onPress: handleDeleteGuest,
+          },
+        ]}
+      />
     </>
   );
 }

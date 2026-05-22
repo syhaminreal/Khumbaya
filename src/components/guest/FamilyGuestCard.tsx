@@ -1,12 +1,15 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Fragment, useState } from "react";
 import { FamilyGroup } from "../../features/guests/types";
 import Animated from "react-native-reanimated";
+import { BottomActionMenu, ThreeDotButton } from "../event/guest/threedot";
 
 interface FamilyCardProps {
   family: FamilyGroup;
   onPress?: () => void;
   onDelete?: () => void;
+  onMoveToDraft?: () => void;
+  isMovingToDraft?: boolean;
   style?: any
 }
 
@@ -32,7 +35,10 @@ export default function FamilyCard({
   style,
   onPress,
   onDelete,
+  onMoveToDraft,
+  isMovingToDraft = false,
 }: FamilyCardProps) {
+  const [menuVisible, setMenuVisible] = useState(false);
   const members = family.members;
   const primaryMember = members[0];
   const effectiveStatus = getFamilyEffectiveStatus(members);
@@ -78,87 +84,120 @@ export default function FamilyCard({
     .toUpperCase()
     .slice(0, 2);
 
-  return (
-    <Animated.View className="mb-3 rounded-2xl bg-white" style={style}>
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={!onPress}
-        activeOpacity={onPress ? 0.7 : 1}
-        className="rounded-2xl"
-      >
-        <View className="min-h-[86px] flex-row items-center gap-3 px-4 py-3">
-          {/* Avatar with member count badge */}
-          <View className="relative">
-            {primaryMember.user.photo ? (
-              <Image
-                source={{ uri: primaryMember.user.photo }}
-                className="h-12 w-12 rounded-full"
-              />
-            ) : (
-              <View className="h-12 w-12 items-center justify-center rounded-full bg-[#EE2B8C]">
-                <Text className="text-base font-semibold text-white">
-                  {initials}
-                </Text>
-              </View>
-            )}
+return (
+    <Fragment>
+      <Animated.View className="mb-3 rounded-2xl bg-white" style={style}>
+        <TouchableOpacity
+          onPress={onPress}
+          disabled={!onPress}
+          activeOpacity={onPress ? 0.7 : 1}
+          className="rounded-2xl"
+        >
+          <View className="min-h-[86px] flex-row items-center gap-3 px-4 py-3">
+            {/* Avatar with member count badge */}
+            <View className="relative">
+              {primaryMember.user.photo ? (
+                <Image
+                  source={{ uri: primaryMember.user.photo }}
+                  className="h-12 w-12 rounded-full"
+                />
+              ) : (
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-[#EE2B8C]">
+                  <Text className="text-base font-semibold text-white">
+                    {initials}
+                  </Text>
+                </View>
+              )}
 
-            {/* Badge showing member count */}
-            {family.memberCount > 1 && (
-              <View className="absolute -bottom-1 -right-1 h-5 w-5 items-center justify-center rounded-full bg-[#EE2B8C]">
-                <Text className="text-[10px] font-bold text-white">
-                  +{family.memberCount - 1}
-                </Text>
-              </View>
-            )}
-          </View>
+              {/* Badge showing member count */}
+              {family.memberCount > 1 && (
+                <View className="absolute -bottom-1 -right-1 h-5 w-5 items-center justify-center rounded-full bg-[#EE2B8C]">
+                  <Text className="text-[10px] font-bold text-white">
+                    +{family.memberCount - 1}
+                  </Text>
+                </View>
+              )}
+            </View>
 
-          {/* Family info */}
-          <View className="flex-1">
-            <Text
-              numberOfLines={1}
-              className="text-base font-semibold text-gray-900"
-            >
-              {family.family_name}
-            </Text>
-
-            <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
-              {family.memberCount} member{family.memberCount !== 1 ? "s" : ""}
-            </Text>
-          </View>
-
-          <View className="items-end justify-center gap-2">
-            <View
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 12,
-                backgroundColor: getStatusBgColor(),
-                maxWidth: 120,
-              }}
-            >
+            {/* Family info */}
+            <View className="flex-1">
               <Text
                 numberOfLines={1}
-                style={{
-                  fontSize: 12,
-                  fontWeight: "600",
-                  color: getStatusColor(),
-                }}
+                className="text-base font-semibold text-gray-900"
               >
-                {displayStatus}
+                {family.family_name}
+              </Text>
+
+              <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
+                {family.memberCount} member{family.memberCount !== 1 ? "s" : ""}
               </Text>
             </View>
 
-            {onDelete ? (
-              <TouchableOpacity
-                onPress={onDelete}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            <View className="items-end justify-center gap-2">
+              <View
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 12,
+                  backgroundColor: getStatusBgColor(),
+                  maxWidth: 120,
+                }}
               >
-                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              </TouchableOpacity>
-            ) : null}
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: getStatusColor(),
+                  }}
+                >
+                  {displayStatus}
+                </Text>
+              </View>
+
+              {(effectiveStatus.toLowerCase() === "pending" && onMoveToDraft) ||
+              onDelete ? (
+                <ThreeDotButton onPress={() => setMenuVisible(true)} />
+              ) : null}
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
+        </TouchableOpacity>
+      </Animated.View>
+
+      <BottomActionMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        items={[
+          ...(effectiveStatus.toLowerCase() === "pending" && onMoveToDraft
+            ? [
+                {
+                  label: isMovingToDraft ? "Moving..." : "Move to Draft",
+                  icon: "return-down-back-outline" as const,
+                  onPress: () => {
+                    setMenuVisible(false);
+                    onMoveToDraft?.();
+                  },
+                  loading: isMovingToDraft,
+                  disabled: isMovingToDraft,
+                },
+              ]
+            : []),
+          ...(onDelete
+            ? [
+                {
+                  label: "Delete",
+                  icon: "trash-outline" as const,
+                  color: "#EF4444",
+                  iconBgClassName: "bg-red-50",
+                  onPress: () => {
+                    setMenuVisible(false);
+                    onDelete();
+                  },
+                },
+              ]
+            : []),
+        ]}
+      />
+    </Fragment>
   );
 }

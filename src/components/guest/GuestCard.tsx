@@ -4,16 +4,19 @@ import {
   Image,
   Pressable,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { Fragment, useState } from "react";
 import { GuestDetailInterface } from "../../features/guests/types";
+import { BottomActionMenu, ThreeDotButton } from "../event/guest/threedot";
 
 interface GuestCardProps {
   guest: GuestDetailInterface;
   onPress?: () => void;
   onDelete?: () => void;
   onDraftPress?: () => void;
+  onMoveToDraft?: () => void;
+  isMovingToDraft?: boolean;
   isDraftActionLoading?: boolean;
 }
 
@@ -22,8 +25,11 @@ export default function GuestCard({
   onPress,
   onDelete,
   onDraftPress,
+  onMoveToDraft,
+  isMovingToDraft = false,
   isDraftActionLoading = false,
 }: GuestCardProps) {
+  const [menuVisible, setMenuVisible] = useState(false);
   const displayStatus = (guest?.eventGuest?.status || "Pending").trim();
   const isDraft = displayStatus.toLowerCase() === "draft";
 
@@ -71,85 +77,118 @@ export default function GuestCard({
   const relation = guest.user.relation?.trim();
   const phone = guest.user.phone?.trim();
 
-  return (
-    <View className="mb-3 rounded-2xl bg-white">
-      <Pressable
-        onPress={onPress}
-        disabled={!onPress}
-        className="rounded-2xl"
-      >
-        <View className="min-h-[86px] flex-row items-center gap-3 px-4 py-3">
-          {guest.user.photo ? (
-            <Image
-              source={{ uri: guest.user.photo }}
-              className="h-12 w-12 rounded-full"
-            />
-          ) : (
-            <View className="h-12 w-12 items-center justify-center rounded-full bg-[#EE2B8C]">
-              <Text className="text-base font-semibold text-white">
-                {initials}
-              </Text>
-            </View>
-          )}
+return (
+    <Fragment>
+      <View className="mb-3 rounded-2xl bg-white">
+        <Pressable
+          onPress={onPress}
+          disabled={!onPress}
+          className="rounded-2xl"
+        >
+          <View className="min-h-[86px] flex-row items-center gap-3 px-4 py-3">
+            {guest.user.photo ? (
+              <Image
+                source={{ uri: guest.user.photo }}
+                className="h-12 w-12 rounded-full"
+              />
+            ) : (
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-[#EE2B8C]">
+                <Text className="text-base font-semibold text-white">
+                  {initials}
+                </Text>
+              </View>
+            )}
 
-          <View className="flex-1">
-            <Text
-              numberOfLines={1}
-              className="text-base font-semibold text-gray-900"
-            >
-              {displayName}
-            </Text>
-
-            {relation ? (
-              <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
-                {relation}
-              </Text>
-            ) : null}
-
-            {phone ? (
-              <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
-                {phone}
-              </Text>
-            ) : null}
-          </View>
-
-          <View className="items-end justify-center gap-2">
-            <View
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 12,
-                backgroundColor: getStatusBgColor(),
-                maxWidth: 120,
-              }}
-            >
+            <View className="flex-1">
               <Text
                 numberOfLines={1}
-                className="text-xs font-semibold"
-                style={{ color: getStatusColor() }}
+                className="text-base font-semibold text-gray-900"
               >
-                {displayStatus}
+                {displayName}
               </Text>
+
+              {relation ? (
+                <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
+                  {relation}
+                </Text>
+              ) : null}
+
+              {phone ? (
+                <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
+                  {phone}
+                </Text>
+              ) : null}
             </View>
 
-            {onDelete ? (
-              <TouchableOpacity
-                onPress={onDelete}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            <View className="items-end justify-center gap-2">
+              <View
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 12,
+                  backgroundColor: getStatusBgColor(),
+                  maxWidth: 120,
+                }}
               >
-                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              </TouchableOpacity>
-            ) : null}
+                <Text
+                  numberOfLines={1}
+                  className="text-xs font-semibold"
+                  style={{ color: getStatusColor() }}
+                >
+                  {displayStatus}
+                </Text>
+              </View>
+
+              {(displayStatus.toLowerCase() === "pending" && onMoveToDraft) ||
+              onDelete ? (
+                <ThreeDotButton onPress={() => setMenuVisible(true)} />
+              ) : null}
+            </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+
+        <BottomActionMenu
+          visible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+          items={[
+            ...(displayStatus.toLowerCase() === "pending" && onMoveToDraft
+              ? [
+                  {
+                    label: isMovingToDraft ? "Moving..." : "Move to Draft",
+                    icon: "return-down-back-outline" as const,
+                    onPress: () => {
+                      setMenuVisible(false);
+                      onMoveToDraft?.();
+                    },
+                    loading: isMovingToDraft,
+                    disabled: isMovingToDraft,
+                  },
+                ]
+              : []),
+            ...(onDelete
+              ? [
+                  {
+                    label: "Delete",
+                    icon: "trash-outline" as const,
+                    color: "#EF4444",
+                    iconBgClassName: "bg-red-50",
+                    onPress: () => {
+                      setMenuVisible(false);
+                      onDelete();
+                    },
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </View>
 
       {isDraft && onDraftPress ? (
         <View className="px-4 pb-3">
           <Pressable
             onPress={onDraftPress}
             disabled={isDraftActionLoading}
-      
+   
             className="h-10 flex-row items-center justify-center rounded-xl border border-[#EE2B8C] bg-[#EE2B8C]/10"
           >
             {isDraftActionLoading ? (
@@ -165,6 +204,6 @@ export default function GuestCard({
           </Pressable>
         </View>
       ) : null}
-    </View>
+    </Fragment>
   );
 }

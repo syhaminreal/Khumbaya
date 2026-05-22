@@ -37,6 +37,13 @@ const FOOD_OPTIONS = [
 
 const BIO_MAX = 500;
 
+const toDateInputValue = (value?: string | Date | null) => {
+  if (!value) return "";
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+};
+
 interface ProfileForm {
   name: string;
   email: string;
@@ -109,7 +116,7 @@ export default function EditProfileScreen() {
         city: user.city || "",
         address: user.address || "",
         zip: user.zip || "",
-        dob: user.dob ? formatDate(user.dob.toString()) : "",
+        dob: toDateInputValue(user.dob),
       });
       if (user.phone) {
         setSelectedCountry(resolveCountryFromPhone(user.phone));
@@ -156,7 +163,7 @@ export default function EditProfileScreen() {
         city: form.city.trim() || undefined,
         address: form.address.trim() || undefined,
         zip: form.zip.trim() || undefined,
-        dob: form.dob.trim() || undefined,
+        dob: toDateInputValue(form.dob) || undefined,
         familyId: user?.familyId ?? undefined,
       };
 
@@ -208,7 +215,7 @@ export default function EditProfileScreen() {
 
     if (!pickedDate) return;
 
-    set("dob", pickedDate.toISOString());
+    set("dob", toDateInputValue(pickedDate));
     setShowDobPicker(false);
   };
 

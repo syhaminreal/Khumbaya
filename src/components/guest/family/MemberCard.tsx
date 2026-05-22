@@ -3,12 +3,7 @@ import { Text } from "@/src/components/ui/Text";
 import { formatDateTime, shadowStyle } from "@/src/utils/helper";
 import { MemberRsvpCardProp, RSVPStatus } from "@/src/utils/type/rsvp";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Image,
-  Pressable,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, Pressable, TouchableOpacity, View } from "react-native";
 const statusConfig: Record<
   RSVPStatus,
   { label: string; wrapperClass: string; textClass: string }
@@ -44,8 +39,10 @@ const MemberCard = ({
   const { label, wrapperClass, textClass } = statusConfig[member.status];
   const isAttending = member.status === "Attending";
   const isPending = member.status === "Pending";
+  const eventGuest = member.eventGuest;
   const shouldShowEmail =
-    !!member.user.email && !member.user.email.toLowerCase().startsWith("guest_");
+    !!member.user.email &&
+    !member.user.email.toLowerCase().startsWith("guest_");
 
   return (
     <Card className="p-4 bg-background-secondary">
@@ -92,7 +89,11 @@ const MemberCard = ({
 
               {shouldShowEmail ? (
                 <View className="flex-row items-center gap-2">
-                  <Ionicons name="mail-open-outline" size={13} color="#64748b" />
+                  <Ionicons
+                    name="mail-open-outline"
+                    size={13}
+                    color="#64748b"
+                  />
                   <Text className="text-sm text-slate-500">
                     {member.user.email}
                   </Text>
@@ -101,30 +102,31 @@ const MemberCard = ({
             </View>
           </View>
 
-          {isAttending && (
+          {isAttending && eventGuest && (
             <View className="mt-2 gap-1">
-              {member.eventGuest.arrivalDatetime && (
+              {eventGuest.arrivalDatetime && (
                 <View className="flex-row items-center gap-2">
                   <Ionicons name="calendar-outline" size={13} color="#64748b" />
                   <Text className="text-sm text-slate-500">
-                    {formatDateTime(member.eventGuest.arrivalDatetime.toString())}
+                    {formatDateTime(eventGuest.arrivalDatetime.toString())}
                   </Text>
                 </View>
               )}
-              {member.eventGuest.isAccomodation && (
+              {eventGuest.isAccomodation && (
                 <View className="flex-row items-center gap-2">
                   <Ionicons name="bed-outline" size={13} color="#64748b" />
                   <Text className="text-sm text-slate-500">
                     Room:{" "}
                     <Text variant="caption" className="text-slate-800 text-sm">
-                      {member.eventGuest.assignedRoom && member.eventGuest.assignedRoom.length > 0
-                        ? member.eventGuest.assignedRoom
+                      {eventGuest.assignedRoom &&
+                      eventGuest.assignedRoom.length > 0
+                        ? eventGuest.assignedRoom
                         : "Not Assigned"}
                     </Text>
                   </Text>
                 </View>
               )}
-              {member.eventGuest.notes && (
+              {eventGuest.notes && (
                 <View className="flex-row items-center gap-2">
                   <Ionicons
                     name="chatbubble-outline"
@@ -132,7 +134,7 @@ const MemberCard = ({
                     color="#64748b"
                   />
                   <Text className="text-sm text-slate-500" numberOfLines={2}>
-                    {member.eventGuest.notes}
+                    {eventGuest.notes}
                   </Text>
                 </View>
               )}
@@ -145,10 +147,7 @@ const MemberCard = ({
       <View className="w-full mt-4 pt-4 border-t border-slate-100 flex flex-row gap-2">
         <TouchableOpacity
           className="flex-1 py-2.5 rounded-md items-center justify-center"
-          style={
-            shadowStyle &&
-            { backgroundColor: "#ee2b8c" }
-          }
+          style={shadowStyle && { backgroundColor: "#ee2b8c" }}
           activeOpacity={0.85}
           onPress={onPressRsvp}
         >
@@ -161,7 +160,6 @@ const MemberCard = ({
           </Text>
         </TouchableOpacity>
         {!isOrganizerView && !isPending && (
-
           <Pressable
             className="flex-1 py-2.5 bg-white rounded-md items-center justify-center border border-primary "
             style={shadowStyle}
@@ -175,7 +173,7 @@ const MemberCard = ({
           </Pressable>
         )}
       </View>
-    </Card >
+    </Card>
   );
 };
 export default MemberCard;
