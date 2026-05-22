@@ -3,22 +3,22 @@ import { User } from "@/src/store/AuthStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Invitation } from "../../guests/types";
 import {
-  acceptRsvpInvitationApi,
-  CREATEEVENT,
-  createEventApi,
-  duplicateEventApi,
-  getCompletedEventsApi,
-  getEventById,
-  getEventOwners,
-  getInvitedEvent,
-  getResponsesWithUser,
-  getSubEventOfEvent,
-  getUpcomingEventsApi,
-  makeEventMember,
-  MakeEventMemberType,
-  removeEventMember,
-  submitRsvpResponseApi,
-  updateEventApi,
+    acceptRsvpInvitationApi,
+    CREATEEVENT,
+    createEventApi,
+    duplicateEventApi,
+    getCompletedEventsApi,
+    getEventById,
+    getEventOwners,
+    getInvitedEvent,
+    getResponsesWithUser,
+    getSubEventOfEvent,
+    getUpcomingEventsApi,
+    makeEventMember,
+    MakeEventMemberType,
+    removeEventMember,
+    submitRsvpResponseApi,
+    updateEventApi,
 } from "../api/events.service";
 
 export const useCreateEvent = () => {
@@ -173,6 +173,7 @@ export const useSubEventsOfEvent = (eventId: number) => {
       const subEvents = await getSubEventOfEvent(eventId);
       return subEvents;
     },
+    enabled: !!eventId,
   });
 };
 
@@ -228,6 +229,8 @@ export const useUpdateEvent = (eventId: number) => {
       updateEventApi(eventId, updatedEvent),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["sub-events", eventId] });
+
       queryClient.invalidateQueries({ queryKey: ["events/upcoming"] });
       queryClient.invalidateQueries({ queryKey: ["events/completed"] });
       queryClient.invalidateQueries({ queryKey: ["events/with-role"] });

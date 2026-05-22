@@ -7,6 +7,11 @@ import {
   type Event,
 } from "@/src/constants/event";
 import {
+  useGetBusinessById,
+  useGetBusinessList,
+} from "@/src/features/business/hooks/use-business";
+
+import {
   useEventById,
   useUpdateEvent,
 } from "@/src/features/events/hooks/use-event";
@@ -32,6 +37,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type EditEventForm = {
@@ -43,7 +49,9 @@ type EditEventForm = {
   endDateTime: Date;
   rsvpDeadline: Date;
   city: string;
-  venue: string;
+  businessId: string | null;
+  venueId: string | null;
+  venueName: string;
   theme: string;
   dressCode: string;
   budget: string;
@@ -66,7 +74,9 @@ const buildInitialForm = (draft?: Event | null): EditEventForm => {
     endDateTime: parseDate(draft?.endDateTime) ?? today,
     rsvpDeadline: parseDate(draft?.rsvpDeadline) ?? today,
     city: draft?.location ?? "",
-    venue: draft?.venue ?? "",
+    businessId: null,
+    venueId: draft?.venueId != null ? String(draft.venueId) : null,
+    venueName: draft?.venue ?? "",
     theme: draft?.theme ?? "",
     dressCode: draft?.dressCode ?? "",
     budget: typeof draft?.budget === "number" ? String(draft?.budget) : "",
@@ -107,6 +117,15 @@ type FieldProps = {
   numberOfLines?: number;
   keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
 };
+
+const dropdownStyle = {
+  height: 56,
+  borderWidth: 1,
+  borderColor: "#e2e8f0",
+  borderRadius: 6,
+  paddingHorizontal: 16,
+  backgroundColor: "#fff",
+} as const;
 
 function LabeledField({
   label,
@@ -198,11 +217,27 @@ export default function EditEventScreen() {
   const rsvpDeadline = watch("rsvpDeadline");
   const selectedEventType = watch("eventType");
   const currentTitle = watch("title");
+  const selectedBusinessId = watch("businessId");
+
+  const { data: businessList = [] } = useGetBusinessList();
+  const venueBusinesses = businessList.filter((b) => b.category === "Venue");
+  const { data: selectedBusiness, isLoading: isLoadingVenues } = useGetBusinessById(selectedBusinessId ?? "");
+  const venueOptions = selectedBusiness?.venueInformation ?? [];
+
   const [isTitlePinned, setIsTitlePinned] = useState(false);
   const [showRsvpPicker, setShowRsvpPicker] = useState(false);
   const [rsvpPickerMode, setRsvpPickerMode] = useState<"date" | "time">(
     "date"
   );
+  const [changeVenue, setChangeVenue] = useState<boolean>(() => {
+    const hasVenue = !!(fullEvent ?? eventDraft)?.venue;
+    return !hasVenue; // if there's no existing venue, show dropdowns by default
+  });
+
+  useEffect(() => {
+    const hasVenue = !!(fullEvent ?? eventDraft)?.venue;
+    setChangeVenue(!hasVenue);
+  }, [fullEvent, eventDraft]);
 
   const handleRangeChange = (range: {
     startDateTime: Date;
@@ -259,7 +294,7 @@ export default function EditEventScreen() {
     }
   };
 
-  const handleUpdate = handleSubmit((values) => {
+  const handleUpdate = handleSubmit(async (values) => {
     console.log(eventId);
     if (!eventId) {
       Alert.alert("Error", "Missing event id.");
@@ -291,13 +326,13 @@ export default function EditEventScreen() {
       startDateTime: values.startDateTime.toISOString(),
       endDateTime: values.endDateTime.toISOString(),
       location: values.city.trim() || undefined,
-      venue: values.venue.trim() || undefined,
+      venue: values.venueName.trim() || undefined,
+      venueId: values.venueId ? Number(values.venueId) : null,
       dressCode: values.dressCode || undefined,
       theme: values.theme.trim(),
       budget: values.budget ? Number(values.budget) : undefined,
       rsvpDeadline: values.rsvpDeadline.toISOString(),
     };
-    console.log("This is the payload of the event in the event section", payload);
 
     updateEvent(payload, {
       onSuccess: () => {
@@ -526,18 +561,94 @@ export default function EditEventScreen() {
                   />
                 )}
               />
-              <Controller
-                control={control}
-                name="venue"
-                render={({ field: { value, onChange } }) => (
-                  <LabeledField
-                    label="Venue Name"
-                    placeholder="The Leela Palace"
-                    value={value}
-                    onChangeText={onChange}
+
+              <View className="gap-2">
+                <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
+                  Business (Venue)
+                </Text>
+
+                {/* Show dropdowns when changeVenue is active OR when there's no existing venue; otherwise show venue info with Edit trigger */}
+                {changeVenue || !(fullEvent ?? eventDraft)?.venue ? (
+                  <Controller
+                    control={control}
+                    name="businessId"
+                    render={({ field: { value, onChange } }) => (
+                      <Dropdown
+                        style={dropdownStyle}
+                        data={venueBusinesses.map((b) => ({ label: b.businessName, value: String(b.id) }))}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Select a venue business"
+                        placeholderStyle={{ color: "#94a3b8", fontSize: 15 }}
+                        selectedTextStyle={{ color: "#111827", fontSize: 15 }}
+                        activeColor="#fdf2f8"
+                        value={value}
+                        onChange={(item) => {
+                          onChange(item.value);
+                          setValue("venueId", null);
+                          setValue("venueName", "");
+                        }}
+                      />
+                    )}
                   />
+                ) : (
+                  <View className="flex-row items-center justify-between">
+                    <TouchableOpacity
+                      onPress={() => setChangeVenue(true)}
+                      activeOpacity={0.8}
+                      className="flex-1 bg-white rounded-md px-4 py-3 border border-pink-100"
+                    >
+                      <Text className="text-sm font-medium text-slate-800">{fullEvent?.venue ?? eventDraft?.venue}</Text>
+                      <Text className="text-xs text-slate-500">{fullEvent?.location ?? eventDraft?.location}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setChangeVenue((v) => !v)}
+                      activeOpacity={0.8}
+                      className="ml-3 px-3 py-2 rounded-md bg-pink-50 border border-pink-100"
+                    >
+                      <Text className="text-pink-600">{changeVenue ? "Cancel" : "Edit"}</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
-              />
+              </View>
+
+              {changeVenue && selectedBusinessId && (
+                <View className="gap-2">
+                  <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
+                    Venue Type
+                  </Text>
+                  {isLoadingVenues ? (
+                    <Text className="text-sm text-slate-400 px-1">Loading venues...</Text>
+                  ) : venueOptions.length === 0 ? (
+                    <Text className="text-sm text-slate-400 px-1">No venue types found for this business.</Text>
+                  ) : (
+                    <Controller
+                      control={control}
+                      name="venueId"
+                      render={({ field: { value, onChange } }) => (
+                        <Dropdown
+                          style={dropdownStyle}
+                          data={venueOptions.map((v) => ({
+                            label: v.venueName ?? v.venueType ?? `Venue ${v.venueId}`,
+                            value: String(v.venueId),
+                          }))}
+                          labelField="label"
+                          valueField="value"
+                          placeholder="Select venue type"
+                          placeholderStyle={{ color: "#94a3b8", fontSize: 15 }}
+                          selectedTextStyle={{ color: "#111827", fontSize: 15 }}
+                          activeColor="#fdf2f8"
+                          value={value}
+                          onChange={(item) => {
+                            onChange(item.value);
+                            setValue("venueName", item.label);
+                          }}
+                        />
+                      )}
+                    />
+                  )}
+                </View>
+              )}
             </SectionCard>
             {/* <View className="h-28 w-full overflow-hidden rounded-md border border-slate-200">
                 <Image

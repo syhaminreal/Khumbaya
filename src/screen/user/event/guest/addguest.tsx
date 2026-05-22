@@ -741,7 +741,7 @@ const AddGuestScreen = () => {
                 </Pressable>
 
                 <Pressable
-                  className="flex-1 flex-row items-center justify-center rounded-md bg-[#ee2b8c] py-4"
+                  className="flex-1 flex-row items-center justify-center rounded-md !bg-[#ee2b8c] py-4"
                   style={{ gap: 8, ...shadowStyle }}
                   disabled={isFindingUser || !phoneDigits}
                   onPress={handleSubmit(onValidDraftSubmit, onInvalidSubmit)}

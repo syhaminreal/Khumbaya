@@ -74,7 +74,7 @@ export default function FamilyRsvpManagementScreen() {
         </Text>
         {members.map((member, index) => (
           <MemberCard
-            key={`${member.eventGuest?.id ?? member.user.id}_${index}`}
+            key={`${member.eventGuest?.id}_${index}`}
             member={member}
             onPressRsvp={() => handleMemberRsvp(member)}
             onPressDetails={() => handleMemberDetails(member)}

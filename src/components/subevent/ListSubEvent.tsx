@@ -152,7 +152,6 @@ export default function ListSubEvent() {
                   item={item.item}
                   event={eventDraft!}
                   isGuestView={isGuestView}
-                  showMenu={!isGuestView}
                   onMenuPress={() => setMenuItem(item.item)}
                 />
               </View>

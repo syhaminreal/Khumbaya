@@ -94,7 +94,7 @@ const EventDetail = () => {
     { id: "checklist", name: "Checklist", icon: "checkmark-circle-outline", color: "#EC4899", route: "./tasklist" as RelativePathString, isVisiblity: true },
     { id: "catering", name: "Catering", icon: "restaurant", color: "#F43F5E", route: "./catering" as RelativePathString, isVisiblity: true , isSubEventView },
     { id: "hotel-management", name: "Hotel Management", icon: "bed-outline", color: "#F59E0B", route: "./hotel" as RelativePathString, isVisiblity: true , isSubEventView },
-    { id: "logistics", name: "logistics", icon: "cube-outline", color: "#10B981", route: "./(logistics)" as RelativePathString, isVisiblity: true , isSubEventView },
+    { id: "logistics", name: "Logistics", icon: "cube-outline", color: "#10B981", route: "./(logistics)" as RelativePathString, isVisiblity: true , isSubEventView },
     { id: "vendors", name: "Vendors", icon: "business", color: "#3B82F6", route: "./vendor" as RelativePathString, isVisiblity: true , isSubEventView },
   ];
 

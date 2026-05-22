@@ -1,20 +1,21 @@
 import { InfoIcon } from "@/src/components/ui/InfoIcon";
 import { Text } from "@/src/components/ui/Text";
 import {
-  useCategoryDetails,
-  useDeleteCategoryMutation,
+    useCategoryDetails,
+    useDeleteCategoryMutation,
 } from "@/src/features/budget/hooks/use-budget";
+import { useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Modal,
+    Pressable,
+    ScrollView,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface Expense {
@@ -22,6 +23,7 @@ interface Expense {
   categoryId: number;
   name: string;
   businessId: string | null;
+  subEventid?: number | null;
   allocatedAmount: number;
   nextDueDate: string;
   notes: string;
@@ -45,8 +47,10 @@ interface CategoryDetailsData {
 
 export default function CategoryDetailsScreen() {
   const router = useRouter();
-  const { eventId, categoryId } = useLocalSearchParams();
+  const { eventId, categoryId, navigationEventid } = useLocalSearchParams();
+  const subEventid = eventId != navigationEventid ? navigationEventid : undefined;
   const { data, isLoading, isError } = useCategoryDetails(Number(categoryId));
+  const { data: subEventDetail } = useSubEventsOfEvent(Number(eventId));
   const deleteMutation = useDeleteCategoryMutation(
     Number(categoryId || 0),
     Number(eventId || 0)
@@ -55,16 +59,16 @@ export default function CategoryDetailsScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
 
   const handleAddExpensePress = () => {
-    router.push(
-      `/(protected)/(client-stack)/events/${eventId}/(organizer)/budget/${categoryId}/add-expense`
-    );
+    router.push({
+      pathname: `/(protected)/(client-stack)/events/[eventId]/(organizer)/budget/[categoryId]/add-expense`,
+      params: { eventId: eventId?.toString(), categoryId: (categoryId).toString(), subEventid: subEventid?.toString() },
+    });
   };
 
   const handleEditCategory = () => {
     setMenuVisible(false);
     router.push({
-      pathname:
-        `./edit-budget-category` ,
+      pathname: `./edit-budget-category`,
       params: {
         categoryId: categoryId,
       },
@@ -150,10 +154,7 @@ export default function CategoryDetailsScreen() {
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <Pressable
-          className="flex-1 bg-black/50"
-          onPress={() => setMenuVisible(false)}
-        >
+        <Pressable className="flex-1 bg-black/50" onPress={() => setMenuVisible(false)}>
           <View className="absolute bottom-0 bg-white shadow-lg w-full pb-4">
             <TouchableOpacity
               onPress={handleEditCategory}
@@ -177,18 +178,11 @@ export default function CategoryDetailsScreen() {
         </Pressable>
       </Modal>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-24"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView className="flex-1" contentContainerClassName="pb-24" showsVerticalScrollIndicator={false}>
         <View className="mx-5 mt-5 bg-white rounded-md p-6 shadow-sm border border-gray-100 overflow-hidden">
           {/* Allocated Budget Header */}
           <View className="mb-6 py-3 border-b border-gray-100">
-            <Text
-              className="text-[10px] text-gray-400 mb-1 uppercase tracking-widest"
-              variant="h2"
-            >
+            <Text className="text-[10px] text-gray-400 mb-1 uppercase tracking-widest" variant="h2">
               Total Budget
             </Text>
             <Text className="text-2xl text-[#181114] font-bold" variant="h1">
@@ -200,10 +194,7 @@ export default function CategoryDetailsScreen() {
           <View className="flex-row gap-4 justify-between p-4 bg-[#f8f6f7] rounded-md">
             <View className="items-center flex-1">
               <View className="flex-row items-center gap-1.5 mb-1">
-                <Text
-                  className="text-[10px] text-gray-500 uppercase"
-                  variant="h2"
-                >
+                <Text className="text-[10px] text-gray-500 uppercase" variant="h2">
                   Spend
                 </Text>
                 <InfoIcon
@@ -212,21 +203,14 @@ export default function CategoryDetailsScreen() {
                   iconStyle="!text-gray-400"
                 />
               </View>
-              <Text
-                className="text-sm text-[#ee2b8c] text-center"
-                variant="h2"
-                style={{ flexShrink: 1 }}
-              >
+              <Text className="text-sm text-[#ee2b8c] text-center" variant="h2" style={{ flexShrink: 1 }}>
                 Rs. {categoryData.spent.toLocaleString()}
               </Text>
             </View>
 
             <View className="items-center flex-1">
               <View className="flex-row items-center gap-1.5 mb-1">
-                <Text
-                  className="text-[10px] text-gray-500 uppercase"
-                  variant="h2"
-                >
+                <Text className="text-[10px] text-gray-500 uppercase" variant="h2">
                   Remaining
                 </Text>
                 <InfoIcon
@@ -236,11 +220,10 @@ export default function CategoryDetailsScreen() {
                 />
               </View>
               <Text
-                className={`text-sm text-center ${
-                  categoryData.remaining >= 0
-                    ? "text-emerald-600"
-                    : "text-red-600"
-                }`}
+                className={`text-sm text-center ${categoryData.remaining >= 0
+                  ? "text-emerald-600"
+                  : "text-red-600"
+                  }`}
                 style={{ flexShrink: 1 }}
                 variant="h2"
               >
@@ -259,56 +242,63 @@ export default function CategoryDetailsScreen() {
         {/* Expenses List */}
         {categoryData?.expenses && categoryData.expenses.length > 0 ? (
           <View className="px-5 gap-3">
-            {categoryData.expenses.map((expense: Expense) => (
-              <TouchableOpacity
-                key={expense.id}
-                activeOpacity={0.7}
-                className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex-row items-start gap-4"
-                onPress={() => {
-                  router.push(
-                    `/(protected)/(client-stack)/events/${eventId}/(organizer)/budget/${categoryId}/${expense.id}`
-                  );
-                }}
-              >
-                <View className="flex-1">
-                  <View className="flex-row justify-between items-start mb-2">
-                    <Text
-                      className="text-base text-[#181114] flex-1"
-                      variant="h2"
-                    >
-                      {expense.name}
-                    </Text>
-                  </View>
-                  <View className="gap-1">
-                    <View className="flex-row gap-2">
-                      <Text className="text-xs text-gray-500" variant="h2">
-                        Allocated:
-                      </Text>
-                      <Text className="text-xs text-[#181114]" variant="h2">
-                        Rs. {expense.allocatedAmount.toLocaleString()}
+            {categoryData.expenses.map((expense: Expense) => {
+              const subEvent = (subEventDetail || []).find((s: any) => s.id === expense.subEventid);
+              return (
+                <TouchableOpacity
+                  key={expense.id}
+                  activeOpacity={0.7}
+                  className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex-row items-start gap-4"
+                  onPress={() => {
+                    router.push(`/(protected)/(client-stack)/events/${eventId}/(organizer)/budget/${categoryId}/${expense.id}`);
+                  }}
+                >
+                  <View className="flex-1">
+                    <View className="flex-row justify-between items-start mb-2">
+                      <Text className="text-base text-[#181114] flex-1" variant="h2">
+                        {expense.name}
                       </Text>
                     </View>
-                    {expense.notes && (
+                    <View className="gap-1">
                       <View className="flex-row gap-2">
                         <Text className="text-xs text-gray-500" variant="h2">
-                          Notes:
+                          Allocated:
                         </Text>
-                        <Text className="text-xs text-[#181114] " variant="h2">
-                          {expense.notes}
+                        <Text className="text-xs text-[#181114]" variant="h2">
+                          Rs. {expense.allocatedAmount.toLocaleString()}
                         </Text>
                       </View>
-                    )}
-                    <Text
-                      className="text-[10px] text-gray-400 mt-1"
-                      variant="h2"
-                    >
-                      Due {new Date(expense.nextDueDate).toLocaleDateString()}
-                    </Text>
+                      {expense.notes && (
+                        <View className="flex-row gap-2">
+                          <Text className="text-xs text-gray-500" variant="h2">
+                            Notes:
+                          </Text>
+                          <Text className="text-xs text-[#181114] " variant="h2">
+                            {expense.notes}
+                          </Text>
+                        </View>
+                      )}
+                      {subEvent && (
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          className="mt-1 self-start bg-pink-50 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-pink-200"
+                         
+                        >
+                          <MaterialIcons name="local-activity" size={14} color="#ee2b8c" />
+                          <Text className="text-xs text-[#ee2b8c] font-semibold" variant="h2">
+                            {subEvent.title ?? subEvent.name ?? "Untitled sub-event"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      <Text className="text-[10px] text-gray-400 mt-1" variant="h2">
+                        Due {new Date(expense.nextDueDate).toLocaleDateString()}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={24} color="#d1d5db" />
-              </TouchableOpacity>
-            ))}
+                  <MaterialIcons name="chevron-right" size={24} color="#d1d5db" />
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ) : (
           <View className="mx-5 bg-white rounded-2xl p-8 items-center gap-3">
