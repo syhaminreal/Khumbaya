@@ -1,8 +1,8 @@
-import { Text } from "@/src/components/ui/Text";
 import {
   BottomActionMenu,
   ThreeDotButton,
 } from "@/src/components/event/guest/threedot";
+import { Text } from "@/src/components/ui/Text";
 import { useSubmitRsvpResponse } from "@/src/features/events/hooks/use-event";
 import { useSubEventListStore } from "@/src/features/events/store/useEventStore";
 import {
@@ -11,7 +11,6 @@ import {
   useRemoveInvitation,
 } from "@/src/features/guests/api/use-guests";
 import { useGuestDetailStore } from "@/src/features/guests/store/useGuestDetailStore";
-import { useAuthStore } from "@/src/store/AuthStore";
 import { formatDate, formatTime, toISODateString } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -54,13 +53,24 @@ const getProfileText = (...values: unknown[]) => {
   return "";
 };
 
+const getAgeFromDob = (dob: Date) => {
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age -= 1;
+  }
+
+  return age;
+};
+
 //TODO: Delete this
 
 
 export default function ViewGuestDetail() {
   const router = useRouter();
   const guestDetail = useGuestDetailStore((state) => state.guestDraft);
-  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
 
   const statusValue = guestDetail?.eventGuest?.status?.toLowerCase?.() ?? "";
   const isConfirmed = statusValue === "accepted" || statusValue === "confirmed";
@@ -101,9 +111,6 @@ export default function ViewGuestDetail() {
   const [unInvitedSubeventIds, setUnInvitedSubeventIds] = useState<number[]>(
     unInvitedSubevents
   );
-  const [unInvitedUpdatedBy, setUnInvitedUpdatedBy] = useState<number | null>(
-    currentUserId
-  );
 
   useEffect(() => {
     setUnInvitedSubeventIds(unInvitedSubevents);
@@ -117,10 +124,7 @@ export default function ViewGuestDetail() {
     setUnInvitedSubeventIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-    setUnInvitedUpdatedBy(currentUserId);
   };
-
-  console.log('This is the Guest invitation responce on the user interface 🦄🦄🦄🦄🦄🦄🦄🦄🦄🦄', guestDetail?.eventGuest, subEventList);
 
   const categoryOptions = useMemo(
     () =>
@@ -174,16 +178,18 @@ export default function ViewGuestDetail() {
       : guestInfo.profile && typeof guestInfo.profile === "object"
         ? (guestInfo.profile as Record<string, unknown>)
         : {};
-  const guestDob =
+  const guestDob: any =
     guestUser?.dob ??
     guestProfile.dob ??
     guestProfile.dateOfBirth ??
     guestInfo.dob ??
     guestInfo.dateOfBirth;
-  const formattedGuestDob =
-    guestDob instanceof Date || typeof guestDob === "string"
-      ? formatDate(toISODateString(guestDob))
-      : "";
+  const parsedGuestDob = guestDob ? new Date(guestDob) : null;
+  const isValidDob = parsedGuestDob instanceof Date && !Number.isNaN(parsedGuestDob.getTime());
+  const formattedGuestDob = isValidDob
+    ? formatDate(toISODateString(parsedGuestDob))
+    : "";
+  const guestAge = isValidDob ? getAgeFromDob(parsedGuestDob) : null;
   const guestLocation = getProfileText(
     guestUser?.location,
     guestProfile.location,
@@ -205,6 +211,11 @@ export default function ViewGuestDetail() {
       label: "DOB",
       icon: "calendar-outline" as const,
       value: formattedGuestDob === "—" ? "" : formattedGuestDob,
+    },
+    {
+      label: "Age",
+      icon: "hourglass-outline" as const,
+      value: guestAge !== null ? String(guestAge) : "",
     },
     {
       label: "Email",
@@ -574,7 +585,7 @@ export default function ViewGuestDetail() {
                 </Text>
                 <Text variant="h2" className="text-primary text-sm mt-1">
                   {isConfirmed ? "Confirmed" : "Pending"} •{" "}
-                  {category || guestDetail?.eventGuest.category || "Guest"}
+                  {category || guestDetail?.eventGuest?.category || "Guest"}
                 </Text>
                 <View className="flex-row items-center mt-2" style={{ gap: 6 }}>
                   <Ionicons name="call-outline" size={14} color="#64748b" />
@@ -626,12 +637,9 @@ export default function ViewGuestDetail() {
                       <View>
                         <Text
                           variant="caption"
-                          className="text-xs font-bold uppercase tracking-widest text-slate-400"
+                          className="text-xs font-bold uppercase tracking-widest"
                         >
                           Guest Details
-                        </Text>
-                        <Text className="mt-0.5 text-sm font-semibold text-slate-900">
-                          Profile information
                         </Text>
                       </View>
                     </View>
@@ -644,7 +652,7 @@ export default function ViewGuestDetail() {
                     </View>
                   </View>
 
-                  <View className="rounded-2xl border border-slate-100 bg-white p-3">
+                  <View className="rounded-2xl border border-slate-100 bg-white ">
                     {guestProfileRows.length ? (
                       <View className="gap-2">
                         {guestProfileRows.map((row) => (
@@ -660,7 +668,7 @@ export default function ViewGuestDetail() {
                                 color="#EE2B8C"
                               />
                             </View>
-                            <View className="flex-1">
+                            <View className="flex-1 flex-row justify-between items-center">
                               <Text className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                                 {row.label}
                               </Text>
@@ -696,136 +704,136 @@ export default function ViewGuestDetail() {
 
                 {isConfirmed && (
                   <View>
-                  <View className="flex-row items-center gap-2 mb-4">
-                    <Ionicons
-                      name="person-circle-outline"
-                      size={20}
-                      color="#EE2B8C"
-                    />
-                    <Text
-                      variant="caption"
-                      className="text-xs font-bold uppercase tracking-widest"
-                    >
-                      Guest Requirements
-                    </Text>
-                  </View>
-                  <View className="bg-slate-50 rounded-2xl px-4">
-                    {[
-                      {
-                        label: "Category",
-                        value:
-                          category ||
-                          guestDetail?.eventGuest?.category ||
-                          "Uncategorized",
-                        pill: true,
-                      },
-                      {
-                        label: "Arrival Time",
-                        value: guestDetail?.eventGuest?.arrivalDatetime
-                          ? formatTime(
-                            toISODateString(guestDetail?.eventGuest?.arrivalDatetime) ??
-                            undefined
-                          )
-                          : "",
-                        pill: false,
-                      },
-                      {
-                        label: "Arrival Date",
-                        value: formatDate(
-                          toISODateString(guestDetail?.eventGuest?.arrivalDatetime) ?? undefined
-                        ),
-                        pill: false,
-                      },
-                      {
-                        label: "Arrival Location",
-                        value:
-                          guestDetail?.eventGuest?.arrivalLocation ||
-                          guestDetail?.eventGuest?.arrivalInfo ||
-                          "",
-                        pill: false,
-                      },
-                      {
-                        label: "Departure Time",
-                        value: guestDetail?.eventGuest?.departureDatetime
-                          ? formatTime(
+                    <View className="flex-row items-center gap-2 mb-4">
+                      <Ionicons
+                        name="person-circle-outline"
+                        size={20}
+                        color="#EE2B8C"
+                      />
+                      <Text
+                        variant="caption"
+                        className="text-xs font-bold uppercase tracking-widest"
+                      >
+                        Guest Requirements
+                      </Text>
+                    </View>
+                    <View className="bg-slate-50 rounded-2xl px-4">
+                      {[
+                        {
+                          label: "Category",
+                          value:
+                            category ||
+                            guestDetail?.eventGuest?.category ||
+                            "Uncategorized",
+                          pill: true,
+                        },
+                        {
+                          label: "Arrival Time",
+                          value: guestDetail?.eventGuest?.arrivalDatetime
+                            ? formatTime(
+                              toISODateString(guestDetail?.eventGuest?.arrivalDatetime) ??
+                              undefined
+                            )
+                            : "",
+                          pill: false,
+                        },
+                        {
+                          label: "Arrival Date",
+                          value: formatDate(
+                            toISODateString(guestDetail?.eventGuest?.arrivalDatetime) ?? undefined
+                          ),
+                          pill: false,
+                        },
+                        {
+                          label: "Arrival Location",
+                          value:
+                            guestDetail?.eventGuest?.arrivalLocation ||
+                            guestDetail?.eventGuest?.arrivalInfo ||
+                            "",
+                          pill: false,
+                        },
+                        {
+                          label: "Departure Time",
+                          value: guestDetail?.eventGuest?.departureDatetime
+                            ? formatTime(
+                              toISODateString(guestDetail?.eventGuest?.departureDatetime) ??
+                              undefined
+                            )
+                            : "",
+                          pill: false,
+                        },
+                        {
+                          label: "Departure Date",
+                          value: formatDate(
                             toISODateString(guestDetail?.eventGuest?.departureDatetime) ??
                             undefined
-                          )
-                          : "",
-                        pill: false,
-                      },
-                      {
-                        label: "Departure Date",
-                        value: formatDate(
-                          toISODateString(guestDetail?.eventGuest?.departureDatetime) ??
-                          undefined
-                        ),
-                        pill: false,
-                      },
-                      {
-                        label: "Departure Location",
-                        value:
-                          guestDetail?.eventGuest?.departureLocation ||
-                          guestDetail?.eventGuest?.departureInfo ||
-                          "",
-                        pill: false,
-                      },
-                      {
-                        label: "Accommodation",
-                        value: `${guestDetail?.eventGuest.isAccomodation ? "Room Needed" : "Room not needed"}`,
-                        pill: true,
-                      },
-                      {
-                        label: "Arrival Pickup",
-                        value: `${guestDetail?.eventGuest.isArrivalPickupRequired ? "Required" : "Not Required"}`,
-                        pill: true,
-                      },
-                      {
-                        label: "Departure Pickup",
-                        value: `${guestDetail?.eventGuest.isDeparturePickupRequired ? "Required" : "Not Required"}`,
-                        pill: true,
-                      },
+                          ),
+                          pill: false,
+                        },
+                        {
+                          label: "Departure Location",
+                          value:
+                            guestDetail?.eventGuest?.departureLocation ||
+                            guestDetail?.eventGuest?.departureInfo ||
+                            "",
+                          pill: false,
+                        },
+                        {
+                          label: "Accommodation",
+                          value: `${guestDetail?.eventGuest?.isAccomodation ? "Room Needed" : "Room not needed"}`,
+                          pill: true,
+                        },
+                        {
+                          label: "Arrival Pickup",
+                          value: `${guestDetail?.eventGuest?.isArrivalPickupRequired ? "Required" : "Not Required"}`,
+                          pill: true,
+                        },
+                        {
+                          label: "Departure Pickup",
+                          value: `${guestDetail?.eventGuest?.isDeparturePickupRequired ? "Required" : "Not Required"}`,
+                          pill: true,
+                        },
 
-                    ].map((row, i, arr) => (
-                      <View
-                        key={i}
-                        className={`flex-row justify-between items-center py-3 ${i < arr.length - 1 ? "border-b border-slate-100" : ""}`}
-                      >
-                        <Text variant="body" className="text-slate-500 text-sm">
-                          {row.label}
-                        </Text>
-                        {row.pill ? (
-                          <View className="flex-row items-center" style={{ gap: 8 }}>
-                            <View className="bg-primary/10 px-3 py-1 rounded-full">
-                              <Text variant="h2" className="text-primary text-xs">
-                                {formatDisplayValue(row.value)}
-                              </Text>
-                            </View>
-
-                            {row.label === "Category" && (
-                              <Pressable
-                                onPress={() => {
-                                  setNewCategoryTitle(category || "");
-                                  setCategoryModalVisible(true);
-                                }}
-                                className="flex-row items-center rounded-full border border-primary/25 px-2.5 py-1"
-                                style={{ gap: 4 }}
-                              >
-                                <Ionicons name="create-outline" size={13} color="#EE2B8C" />
-                                <Text className="text-[11px] font-semibold text-primary">
-                                  Edit
-                                </Text>
-                              </Pressable>
-                            )}
-                          </View>
-                        ) : (
-                          <Text variant="h2" className="text-slate-900 text-sm">
-                            {formatDisplayValue(row.value)}
+                      ].map((row, i, arr) => (
+                        <View
+                          key={i}
+                          className={`flex-row justify-between items-center py-3 ${i < arr.length - 1 ? "border-b border-slate-100" : ""}`}
+                        >
+                          <Text variant="body" className="text-slate-500 text-sm">
+                            {row.label}
                           </Text>
-                        )}
-                      </View>
-                    ))}
-                  </View>
+                          {row.pill ? (
+                            <View className="flex-row items-center" style={{ gap: 8 }}>
+                              <View className="bg-primary/10 px-3 py-1 rounded-full">
+                                <Text variant="h2" className="text-primary text-xs">
+                                  {formatDisplayValue(row.value)}
+                                </Text>
+                              </View>
+
+                              {row.label === "Category" && (
+                                <Pressable
+                                  onPress={() => {
+                                    setNewCategoryTitle(category || "");
+                                    setCategoryModalVisible(true);
+                                  }}
+                                  className="flex-row items-center rounded-full border border-primary/25 px-2.5 py-1"
+                                  style={{ gap: 4 }}
+                                >
+                                  <Ionicons name="create-outline" size={13} color="#EE2B8C" />
+                                  <Text className="text-[11px] font-semibold text-primary">
+                                    Edit
+                                  </Text>
+                                </Pressable>
+                              )}
+                            </View>
+                          ) : (
+                            <Text variant="h2" className="text-slate-900 text-sm">
+                              {formatDisplayValue(row.value)}
+                            </Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
                   </View>
                 )}
 
