@@ -218,11 +218,18 @@ export default function EditEventScreen() {
   const selectedEventType = watch("eventType");
   const currentTitle = watch("title");
   const selectedBusinessId = watch("businessId");
+  const selectedVenueId = watch("venueId");
 
   const { data: businessList = [] } = useGetBusinessList();
   const venueBusinesses = businessList.filter((b) => b.category === "Venue");
-  const { data: selectedBusiness, isLoading: isLoadingVenues } = useGetBusinessById(selectedBusinessId ?? "");
+  const businessLookupId =
+    selectedBusinessId && selectedBusinessId !== "other"
+      ? selectedBusinessId
+      : "";
+  const { data: selectedBusiness, isLoading: isLoadingVenues } =
+    useGetBusinessById(businessLookupId);
   const venueOptions = selectedBusiness?.venueInformation ?? [];
+  const isCustomBusiness = selectedBusinessId === "other";
 
   const [isTitlePinned, setIsTitlePinned] = useState(false);
   const [showRsvpPicker, setShowRsvpPicker] = useState(false);
@@ -238,6 +245,24 @@ export default function EditEventScreen() {
     const hasVenue = !!(fullEvent ?? eventDraft)?.venue;
     setChangeVenue(!hasVenue);
   }, [fullEvent, eventDraft]);
+
+  useEffect(() => {
+    if (!selectedBusinessId || isCustomBusiness) return;
+    if (selectedVenueId) return;
+    const businessName = selectedBusiness?.businessInformation?.businessName;
+    if (!businessName) return;
+
+    setValue("venueName", businessName, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [
+    selectedBusinessId,
+    selectedVenueId,
+    selectedBusiness?.businessInformation?.businessName,
+    isCustomBusiness,
+    setValue,
+  ]);
 
   const handleRangeChange = (range: {
     startDateTime: Date;
@@ -319,6 +344,15 @@ export default function EditEventScreen() {
       values.eventType as keyof typeof EVENT_TYPE_TO_BACKEND
       ];
 
+    const resolvedBusinessId =
+      values.businessId && values.businessId !== "other"
+        ? Number(values.businessId)
+        : null;
+    const resolvedBusinessName =
+      values.businessId === "other"
+        ? undefined : selectedBusiness?.businessInformation?.businessName?.trim();
+    const resolvedVenueName = (values.venueId && values.businessId) ? resolvedBusinessName ?? "" + values.venueName.trim() : undefined;
+
     const payload = {
       title: values.title.trim(),
       description: values.description.trim(),
@@ -326,8 +360,13 @@ export default function EditEventScreen() {
       startDateTime: values.startDateTime.toISOString(),
       endDateTime: values.endDateTime.toISOString(),
       location: values.city.trim() || undefined,
-      venue: values.venueName.trim() || undefined,
-      venueId: values.venueId ? Number(values.venueId) : null,
+      businessId: resolvedBusinessId ?? undefined,
+      business: resolvedBusinessName || undefined,
+      venue: resolvedVenueName || undefined,
+      venueId:
+        values.venueId && values.businessId !== "other"
+          ? Number(values.venueId)
+          : undefined,
       dressCode: values.dressCode || undefined,
       theme: values.theme.trim(),
       budget: values.budget ? Number(values.budget) : undefined,
@@ -575,7 +614,13 @@ export default function EditEventScreen() {
                     render={({ field: { value, onChange } }) => (
                       <Dropdown
                         style={dropdownStyle}
-                        data={venueBusinesses.map((b) => ({ label: b.businessName, value: String(b.id) }))}
+                        data={[
+                          ...venueBusinesses.map((b) => ({
+                            label: b.businessName,
+                            value: String(b.id),
+                          })),
+                          { label: "Other", value: "other" },
+                        ]}
                         labelField="label"
                         valueField="value"
                         placeholder="Select a venue business"
@@ -585,8 +630,18 @@ export default function EditEventScreen() {
                         value={value}
                         onChange={(item) => {
                           onChange(item.value);
-                          setValue("venueId", null);
-                          setValue("venueName", "");
+                          setValue("venueId", undefined);
+                          if (item.value === "other") {
+                            setValue("venueName", "", {
+                              shouldDirty: true,
+                              shouldValidate: false,
+                            });
+                          } else {
+                            setValue("venueName", item.label, {
+                              shouldDirty: true,
+                              shouldValidate: false,
+                            });
+                          }
                         }}
                       />
                     )}
@@ -612,7 +667,22 @@ export default function EditEventScreen() {
                 )}
               </View>
 
-              {changeVenue && selectedBusinessId && (
+              {changeVenue && isCustomBusiness && (
+                <Controller
+                  control={control}
+                  name="venueName"
+                  render={({ field: { value, onChange } }) => (
+                    <LabeledField
+                      label="Venue Name"
+                      placeholder="Enter venue name"
+                      value={value}
+                      onChangeText={onChange}
+                    />
+                  )}
+                />
+              )}
+
+              {changeVenue && selectedBusinessId && !isCustomBusiness && (
                 <View className="gap-2">
                   <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
                     Venue Type
