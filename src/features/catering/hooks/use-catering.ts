@@ -81,6 +81,12 @@ export const useAddExpenseToCateringMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["sub-event-detail", variables.subEventId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["budget-summary", variables.eventId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["category-details"],
+      });
     },
   });
 }
@@ -94,13 +100,28 @@ export const useUpdateCateringMutation = (cateringId: number) => {
     mutationKey: ["update-catering", cateringId],
     mutationFn: (payload: UpdateCateringPayload) =>
       updateCatering(cateringId, payload),
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate catering detail and list queries
+      console.log('This is the data in the update of the catering in the hook: 😈😈😈😈😈😈', data);
       queryClient.invalidateQueries({
         queryKey: ["catering-detail", cateringId],
       });
       queryClient.invalidateQueries({
         queryKey: ["catering-list"],
+      });
+      if (data?.eventId) {
+        queryClient.invalidateQueries({
+          queryKey: ["catering-list", data.eventId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["budget-summary", data.eventId],
+        });
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["category-details"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["expense-details"],
       });
     },
   });
