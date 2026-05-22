@@ -5,6 +5,8 @@ export interface MenuItemColumn {
   name: string;
   description: string;
   cateringId: number;
+  guestCount?:number ; 
+  note?: string;
   type: string;
   menuType: string;
   createdAt: Date | string;
@@ -21,8 +23,9 @@ export interface MenuListResponse {
 export interface CreateMenuPayload {
   name: string;
   description: string;
+  guestCount?: number
+  note?: string;
   type: string;
-  menuType: string;
 }
 
 export interface UpdateMenuPayload {
@@ -32,6 +35,6 @@ export interface UpdateMenuPayload {
   menuType?: string;
 }
 
-export interface CreateMenuResponse extends MenuItemColumn {}
+export interface CreateMenuResponse extends MenuItemColumn { }
 
-export interface UpdateMenuResponse extends MenuItemColumn {}
+export interface UpdateMenuResponse extends MenuItemColumn { }

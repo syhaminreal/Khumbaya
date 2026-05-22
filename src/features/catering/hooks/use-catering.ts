@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  addExpenseToCatering,
   createCatering,
   deleteCatering,
   getCateringById,
@@ -42,6 +43,7 @@ export const useCateringById = (
 /**
  * Hook to create a new catering plan
  */
+
 export const useCreateCateringMutation = (eventId: number) => {
   const queryClient = useQueryClient();
 
@@ -50,14 +52,38 @@ export const useCreateCateringMutation = (eventId: number) => {
     mutationFn: (payload: CreateCateringPayload) =>
       createCatering(eventId, payload),
     onSuccess: () => {
-      // Invalidate catering list queries for this event
+      // Refresh catering and budget data after creating
       queryClient.invalidateQueries({
         queryKey: ["catering-list"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["catering-list", eventId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["add-budget-category", eventId],
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["budget-summary", eventId] 
       });
     },
   });
 };
-
+export const useAddExpenseToCateringMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["add-expense-to-catering"],
+    mutationFn: (payload: { cateringId: number; subEventId: number , eventId: number }) =>
+      addExpenseToCatering(payload.cateringId, payload.subEventId , payload.eventId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["catering-detail", variables.cateringId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["sub-event-detail", variables.subEventId],
+      });
+    },
+  });
+}
 /**
  * Hook to update catering plan
  */

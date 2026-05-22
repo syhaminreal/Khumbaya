@@ -59,3 +59,12 @@ export const deleteCatering = async (cateringId: number) => {
   );
   return response.data.data;
 };
+
+
+export const addExpenseToCatering = async (cateringId:number , subEventId:number , eventId:number) => {
+  const response = await api.post<{ data: { success: boolean } }>(
+    `/catering/expense/${cateringId}`,
+    { subEventid:subEventId , eventId:eventId }
+  );
+  return response.data.data ; 
+}
