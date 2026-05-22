@@ -227,7 +227,7 @@ export default function CategoryDetailsScreen() {
                 style={{ flexShrink: 1 }}
                 variant="h2"
               >
-                Rs. {Math.abs(categoryData.remaining).toLocaleString()}
+                Rs. {categoryData.remaining.toLocaleString()}
               </Text>
             </View>
           </View>

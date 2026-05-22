@@ -19,21 +19,6 @@ import {
   View,
 } from "react-native";
 
-type Expense = {
-  id: number;
-  categoryId: number;
-  name: string;
-  businessId: string | null;
-  subEventid?: number | null;
-  allocatedAmount: number;
-  nextDueDate: string;
-  notes: string;
-  spent: number;
-  balance: number;
-  payments: Payment[];
-  createdAt: string;
-  updatedAt: string;
-};
 
 type Payment = {
   id: number;
@@ -137,6 +122,18 @@ export default function ExpenseDetailScreen() {
         expenseId: expenseId,
         categoryId: categoryId,
         eventId: eventId,
+      },
+    });
+  };
+
+  const handleViewCatering = () => {
+    if (!data?.cateringId) return;
+    router.push({
+      pathname:
+        `/(protected)/(client-stack)/events/[eventId]/(shared)/catering/[cateringId]`,
+      params: {
+        eventId: eventId?.toString(),
+        cateringId: data.cateringId.toString(),
       },
     });
   };
@@ -343,6 +340,17 @@ export default function ExpenseDetailScreen() {
               <Text variant="h1" className="text-[#181114] mb-2 text-2xl">
                 {data.name}
               </Text>
+              {data.cateringId ? (
+                <TouchableOpacity
+                  onPress={handleViewCatering}
+                  activeOpacity={0.7}
+                  className="self-start rounded-full border border-pink-200 bg-pink-50 px-3 py-1"
+                >
+                  <Text className="text-[11px] font-semibold text-[#9d1759]">
+                    View Catering
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
               <View className="gap-3">
                 {data.businessId && (
                   <View className="flex-row items-center gap-2">
