@@ -50,7 +50,7 @@ type EditEventForm = {
   rsvpDeadline: Date;
   city: string;
   businessId: string | null;
-  venueId: string | null;
+  venueId: string | undefined;
   venueName: string;
   theme: string;
   dressCode: string;
@@ -75,7 +75,7 @@ const buildInitialForm = (draft?: Event | null): EditEventForm => {
     rsvpDeadline: parseDate(draft?.rsvpDeadline) ?? today,
     city: draft?.location ?? "",
     businessId: null,
-    venueId: draft?.venueId != null ? String(draft.venueId) : null,
+    venueId: draft?.venueId != null ? String(draft.venueId) : undefined,
     venueName: draft?.venue ?? "",
     theme: draft?.theme ?? "",
     dressCode: draft?.dressCode ?? "",

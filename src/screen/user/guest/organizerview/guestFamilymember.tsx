@@ -42,7 +42,7 @@ export default function GuestFamilyMember() {
   const liveFamilyMembers = useMemo(() => {
     if (!invitations || familyId == null) return [];
     return (invitations as GuestDetailInterface[]).filter(
-      (inv) => inv.eventGuest.familyId === familyId
+      (inv) => inv.eventGuest?.familyId === familyId
     );
   }, [invitations, familyId]);
 
@@ -63,7 +63,7 @@ export default function GuestFamilyMember() {
     console.log('Opening the guest with the guest detail ', guest)
     push({
       pathname: "./[guestDetailId]",
-      params: { guestDetailId: guest.eventGuest.id },
+      params: { guestDetailId: guest.eventGuest?.id },
     });
   };
 
