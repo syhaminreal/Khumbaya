@@ -311,7 +311,16 @@ export default function CreateCateringScreen() {
     );
     setValue("startDateTime", new Date(cateringDetail.startDateTime));
     setValue("endDateTime", new Date(cateringDetail.endDateTime));
-  }, [cateringDetail, isEdit, setValue]);
+
+    const detailEventId = Number(cateringDetail.eventId);
+    if (Number.isFinite(detailEventId) && detailEventId !== budgetEventId) {
+      setShowSubEvent(true);
+      setSelectedSubEventId(detailEventId);
+    } else {
+      setShowSubEvent(false);
+      setSelectedSubEventId(null);
+    }
+  }, [cateringDetail, isEdit, budgetEventId, setValue]);
 
   return (
     <KeyboardAvoidingView
