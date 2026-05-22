@@ -1,7 +1,6 @@
-import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { router, Stack, useLocalSearchParams } from "expo-router";
-import { Pressable, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router, Stack } from "expo-router";
+import { TouchableOpacity } from "react-native";
 
 const headerBackButton = () => (
   <TouchableOpacity
