@@ -3,6 +3,7 @@ import { AvailableSpacesSection } from "@/src/components/vendor/AvailableSpacesS
 import { ServiceInfoSection } from "@/src/components/vendor/ServiceInfoSection";
 import { WriteReviewModal } from "@/src/components/vendor/WriteReviewModal";
 import { useGetBusinessById, useGetEventVendor } from "@/src/features/business/hooks/use-business";
+import { useToggleFavourite } from "@/src/features/favourite/hooks/use-favourite";
 import { BusinessCategory, OtherServiceAttribute } from "@/src/features/business/types";
 import { useAuthStore } from "@/src/store/AuthStore";
 import { shadowStyle } from "@/src/utils/helper";
@@ -69,6 +70,7 @@ export default function VendorDetailed() {
 
   const { data: businessWithAttribute, isLoading, isError } = useGetBusinessById(resolvedId);
   const { data: eventVendorData } = useGetEventVendor(resolvedEventId, resolvedId);
+  const { isFavourite, toggle } = useToggleFavourite(Number(resolvedId));
   const eventStatus = eventVendorData?.status ?? null;
 
   useEffect(() => {
@@ -147,8 +149,8 @@ export default function VendorDetailed() {
         <View className="relative w-full">
           <ImageBackground source={{ uri: headerImage }} style={{ width: "100%", height: 280 }} resizeMode="cover">
             <View className="flex-row justify-end items-center px-4 pt-12">
-              <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-black/30">
-                <MaterialIcons name="favorite-border" size={20} color="#ffffff" />
+              <Pressable onPress={() => toggle()} className="h-10 w-10 items-center justify-center rounded-full bg-black/30">
+                <MaterialIcons name={isFavourite ? "favorite" : "favorite-border"} size={20} color="#ffffff" />
               </Pressable>
             </View>
           </ImageBackground>

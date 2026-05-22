@@ -189,6 +189,7 @@ const Account = () => (
 const Info = () => (
   <View className="mx-6 mt-4">
     <Row icon="person" title="Edit Profile" href="/profile/edit-profile" />
+    <Row icon="favorite" title="My Favourites" href="/profile/favourites" />
     <Row icon="group" title="Family Members" href="/profile/family-members" />
     <Row icon="lock" title="Change Password" href="/profile/change-password" />
   </View>

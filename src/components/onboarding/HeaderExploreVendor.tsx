@@ -1,6 +1,6 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Modal, TextInput, TouchableOpacity, View } from "react-native";
+import { Modal, Switch, TextInput, TouchableOpacity, View } from "react-native";
 import { useState } from "react";
 import { Text } from "../ui/Text";
 
@@ -10,6 +10,9 @@ type Props = {
   cities: string[];
   selectedCity: string;
   onCityChange: (city: string) => void;
+  showFavouritesOnly: boolean;
+  onFavouritesChange: (value: boolean) => void;
+  isLoggedIn: boolean;
 };
 
 export function HeaderExploreVendor({
@@ -18,10 +21,13 @@ export function HeaderExploreVendor({
   cities,
   selectedCity,
   onCityChange,
+  showFavouritesOnly,
+  onFavouritesChange,
+  isLoggedIn,
 }: Props) {
   const [showPicker, setShowPicker] = useState(false);
-  const showCityFilter = cities.length > 1;
-  const hasActiveFilter = selectedCity !== "All";
+  const showFilterButton = cities.length > 1 || isLoggedIn;
+  const hasActiveFilter = selectedCity !== "All" || showFavouritesOnly;
 
   return (
     <View className="pt-6 pb-2 bg-gray-50">
@@ -53,10 +59,11 @@ export function HeaderExploreVendor({
           />
         </View>
 
-        {showCityFilter && (
+        {showFilterButton && (
           <TouchableOpacity
             onPress={() => setShowPicker(true)}
             className="h-12 w-12 bg-white border border-gray-200 rounded-xl items-center justify-center"
+            accessibilityLabel="Open filters"
           >
             <View className="items-center">
               <Ionicons name="funnel-outline" size={18} color="#374151" />
@@ -71,7 +78,7 @@ export function HeaderExploreVendor({
       <Modal
         visible={showPicker}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setShowPicker(false)}
       >
         <View className="flex-1 bg-black/35 justify-end">
@@ -80,17 +87,51 @@ export function HeaderExploreVendor({
             onPress={() => setShowPicker(false)}
             className="absolute inset-0"
           />
-          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-7">
-            <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-3" />
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-base text-gray-900" variant="h2">
-                Filter by city
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10">
+            <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-4" />
+
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-lg text-gray-900" variant="h2">
+                Filters
               </Text>
-              <TouchableOpacity onPress={() => setShowPicker(false)}>
-                <Ionicons name="close" size={20} color="#6B7280" />
+              <TouchableOpacity
+                onPress={() => setShowPicker(false)}
+                className="h-8 w-8 items-center justify-center rounded-full bg-gray-100"
+                accessibilityLabel="Close filters"
+              >
+                <Ionicons name="close" size={18} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
+            {isLoggedIn && (
+              <>
+                <Text className="text-xs text-gray-400 uppercase tracking-widest mb-2 px-1">
+                  My Favourites
+                </Text>
+                <View className="flex-row items-center justify-between px-4 py-3.5 rounded-xl border border-gray-200 bg-white mb-5">
+                  <View className="flex-row items-center gap-3">
+                    <Ionicons
+                      name={showFavouritesOnly ? "heart" : "heart-outline"}
+                      size={18}
+                      color={showFavouritesOnly ? "#EC4899" : "#6B7280"}
+                    />
+                    <Text className={`text-sm ${showFavouritesOnly ? "text-primary" : "text-gray-800"}`}>
+                      Show favourites only
+                    </Text>
+                  </View>
+                  <Switch
+                    value={showFavouritesOnly}
+                    onValueChange={onFavouritesChange}
+                    trackColor={{ false: "#E5E7EB", true: "#FBCFE8" }}
+                    thumbColor={showFavouritesOnly ? "#EC4899" : "#9CA3AF"}
+                  />
+                </View>
+              </>
+            )}
+
+            <Text className="text-xs text-gray-400 uppercase tracking-widest mb-2 px-1">
+              City
+            </Text>
             {cities.map((city) => {
               const isActive = selectedCity === city;
               return (
