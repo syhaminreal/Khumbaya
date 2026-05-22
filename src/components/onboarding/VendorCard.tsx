@@ -1,6 +1,6 @@
+import { useToggleFavourite } from "@/src/features/favourite/hooks/use-favourite";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import { Image, Pressable, View } from "react-native";
 import { Text } from "../ui/Text";
 import type { Vendor } from "@/src/utils/type/vendor";
@@ -8,10 +8,9 @@ import type { Vendor } from "@/src/utils/type/vendor";
 export function VendorCard({ vendor }: { vendor: Vendor }) {
   const router = useRouter();
   const goToVendorDetail = () => {
-    // Navigate to vendor detail page in shared folder
     router.push(`/(shared)/explore/${vendor.id}`);
   };
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavourite, toggle } = useToggleFavourite(Number(vendor.id));
 
   return (
     <Pressable
@@ -26,11 +25,11 @@ export function VendorCard({ vendor }: { vendor: Vendor }) {
         />
 
         <Pressable
-          onPress={() => setIsFavorite(!isFavorite)}
+          onPress={() => toggle()}
           className="absolute top-3 right-3 bg-white/20 rounded-full p-2"
         >
           <MaterialIcons
-            name={isFavorite ? "favorite" : "favorite-border"}
+            name={isFavourite ? "favorite" : "favorite-border"}
             size={20}
             color="white"
           />
