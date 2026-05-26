@@ -196,7 +196,7 @@ const AddGuestScreen = () => {
         return;
       }
 
-      const resolvedName = foundUser?.username || values.fullName.trim() || values.phone.trim() || values.invitation_name.trim();
+      const resolvedName = foundUser?.username || values.fullName.trim() || values.phone.trim();
 
       if (!resolvedName) {
         Alert.alert(
@@ -211,8 +211,8 @@ const AddGuestScreen = () => {
         await inviteGuestMutation.mutateAsync({
           eventId,
           payload: {
-            invitation_name: values.invitation_name.trim() || resolvedName || currentPhone,
-            numberOfGuests: Number(values.numberOfGuests),
+            invitation_name: values.invitation_name.trim() || "",
+            numberOfGuests: inviteWithFamily ? Number(values.numberOfGuests) : 1,
             phone: fullGuestPhone,
             fullName: values.fullName.trim() ?? resolvedName,
             isDraft,
@@ -613,35 +613,6 @@ const AddGuestScreen = () => {
               </>
             )}
 
-            <View style={{ gap: 8 }}>
-              <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
-                NUMBER OF GUESTS
-              </Text>
-              <Controller
-                control={control}
-                name="numberOfGuests"
-                rules={{
-                  validate: (value) => {
-                    const guestCount = Number(value);
-                    return (
-                      (Number.isInteger(guestCount) && guestCount > 0) ||
-                      "Please enter a valid number of guests"
-                    );
-                  },
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    className="h-14 w-full rounded-md border border-slate-200 bg-white px-4 text-base text-slate-900"
-                    placeholder="e.g. 2"
-                    placeholderTextColor="#94a3b8"
-                    keyboardType="number-pad"
-                    value={value}
-                    onChangeText={(text) => onChange(text.replace(/\D/g, ""))}
-                  />
-                )}
-              />
-            </View>
-
             <View
               className="rounded-md border border-[#ee2b8c]/10 p-5"
               style={{ backgroundColor: "rgba(238,43,140,0.05)", gap: 16 }}
@@ -692,13 +663,43 @@ const AddGuestScreen = () => {
                       for each family member during their digital RSVP process.
                     </Text>
                   </View>
+
+                  <View style={{ gap: 8 }}>
+                    <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
+                      NUMBER OF GUESTS
+                    </Text>
+                    <Controller
+                      control={control}
+                      name="numberOfGuests"
+                      rules={{
+                        validate: (value) => {
+                          if (!inviteWithFamily) return true;
+                          const guestCount = Number(value);
+                          return (
+                            (Number.isInteger(guestCount) && guestCount > 0) ||
+                            "Please enter a valid number of guests"
+                          );
+                        },
+                      }}
+                      render={({ field: { onChange, value } }) => (
+                        <TextInput
+                          className="h-14 w-full rounded-md border border-slate-200 bg-white px-4 text-base text-slate-900"
+                          placeholder="e.g. 2"
+                          placeholderTextColor="#94a3b8"
+                          keyboardType="number-pad"
+                          value={value}
+                          onChangeText={(text) => onChange(text.replace(/\D/g, ""))}
+                        />
+                      )}
+                    />
+                  </View>
                 </View>
               )}
             </View>
 
             <View style={{ gap: 8 }}>
               <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
-                INVITATION NAME
+                INVITATION NAME (OPTIONAL)
               </Text>
               <Controller
                 control={control}
