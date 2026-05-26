@@ -3,8 +3,9 @@ import FamilyCard from "@/src/components/guest/FamilyGuestCard";
 import GuestCard from "@/src/components/guest/GuestCard";
 import { Text } from "@/src/components/ui/Text";
 import { useSubEventsOfEvent, useSubmitRsvpResponse } from "@/src/features/events/hooks/use-event";
-import { useSubEventListStore } from "@/src/features/events/store/useEventStore";
+import { useEventStore, useSubEventListStore } from "@/src/features/events/store/useEventStore";
 import {
+  useCreateEventGuestCategory,
   useGetInvitationsForEvent,
   useRemoveInvitation,
 } from "@/src/features/guests/api/use-guests";
@@ -18,6 +19,7 @@ import {
   type GuestDetailInterface,
   groupInvitationsByFamily,
 } from "@/src/features/guests/types";
+
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { cn } from "@/src/utils/cn";
 import { _layoutAnimation } from "@/src/utils/helper";
@@ -36,16 +38,44 @@ import {
 import { TextInput } from "react-native-gesture-handler";
 import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-type GuestFilterTab = "accepted" | "pending" | "draft";
+
+type GuestFilterTab = "accepted" | "pending" | "draft" | "Un-Invited"
 
 export default function GuestListScreen() {
-
+const {eventDraft} = useEventStore();
   const { push } = useThrottledRouter();
-  const params = useLocalSearchParams();
-  const eventId = Number(params.eventId);
+ 
+  const { eventId, isGuest, isSubEvent } = useLocalSearchParams();
+  console.log('This is the event id', eventId , 'Ths is the sub event of the business' , isSubEvent  , 'This is the is gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲est in the invitation ' ,isGuest )
+const isSubEventBoolean = isSubEvent ==="true";
+  const subEventIdParam = useMemo(() => {
+    if (eventId && !isNaN(Number(eventId))) {
+      return Number(eventId);
+    }
+    return null;
+  }, [eventId]);
+  const effectiveEventId = useMemo(() => {
+    if (isSubEventBoolean) {
+      if (eventDraft?.id) {
+        return Number(eventDraft.id);
+      }
+      if (subEventIdParam) {
+        return subEventIdParam;
+      }
+      return null;
+    }
+    if (subEventIdParam) {
+      return subEventIdParam;
+    }
+    if (eventDraft?.id) {
+      return Number(eventDraft.id);
+    }
+    return null;
+  } , [ eventDraft?.id, isSubEventBoolean, subEventIdParam])
+
   const {
     data: subEventsResponse,
-  } = useSubEventsOfEvent(Number(eventId));
+  } = useSubEventsOfEvent(Number(effectiveEventId));
   const { setSubEventList } = useSubEventListStore();
 
   useEffect(() => {
@@ -60,10 +90,15 @@ export default function GuestListScreen() {
   const clearFamilyGuest = useFamilyGuestStore(
     (state) => state.clearFamilyGroup
   );
-
-  const { data: invitations, isLoading } = useGetInvitationsForEvent(eventId);
-  const submitRsvpMutation = useSubmitRsvpResponse(eventId ?? 0);
+console.log('This is the sub event ')
+  const { data: invitations, isLoading } = useGetInvitationsForEvent(effectiveEventId);
+  const submitRsvpMutation = useSubmitRsvpResponse(effectiveEventId ?? 0);
   const removeInvitationMutation = useRemoveInvitation();
+  const createCategoryMutation = useCreateEventGuestCategory();
+  const giftEventId = useMemo(
+    () => (effectiveEventId == null ? Number.NaN : effectiveEventId),
+    [effectiveEventId]
+  );
 
   const [draftAction, setDraftAction] = useState<{
     userId: number;
@@ -72,12 +107,28 @@ export default function GuestListScreen() {
   const [activeTab, setActiveTab] = useState<GuestFilterTab>("pending");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+  const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
+  const [isAddCategoryModalVisible, setIsAddCategoryModalVisible] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isAddGiftModalVisible, setIsAddGiftModalVisible] = useState(false);
+  const [newGiftName, setNewGiftName] = useState("");
 
-  const tabs: { label: string; value: GuestFilterTab }[] = [
-    { label: "Pending", value: "pending" },
-    { label: "Accepted", value: "accepted" },
-    { label: "Draft", value: "draft" },
-  ];
+
+  const tabs: { label: string; value: GuestFilterTab }[] = useMemo(
+    () =>
+      isSubEventBoolean
+        ? [
+          { label: "Pending", value: "pending" },
+          { label: "Accepted", value: "accepted" },
+          { label: "Un-Invited", value: "Un-Invited" },
+        ]
+        : [
+          { label: "Pending", value: "pending" },
+          { label: "Accepted", value: "accepted" },
+          { label: "Draft", value: "draft" },
+        ],
+    [isSubEventBoolean]
+  );
 
   const getNormalizedCategory = useCallback(
     (category?: string | null) =>
@@ -99,23 +150,47 @@ export default function GuestListScreen() {
         case "accepted":
           return status === "accepted";
         case "draft":
-        default:
           return status === "draft";
+        case "Un-Invited":
+        default:
+          return false;
       }
     },
     []
   );
 
+  const isGuestUninvitedFromSubEvent = useCallback(
+    (guest: GuestDetailInterface) => {
+      if (!isSubEventBoolean || !subEventIdParam) return false;
+      const unInvited = guest.eventGuest?.unInvitedSubevent ?? [];
+      return Array.isArray(unInvited) && unInvited.includes(subEventIdParam);
+    },
+    [isSubEventBoolean, subEventIdParam]
+  );
+
   const tabFilteredInvitations = useMemo(() => {
     if (!invitations) return [] as GuestDetailInterface[];
 
+    if (activeTab === "Un-Invited") {
+      return invitations.filter(isGuestUninvitedFromSubEvent);
+    }
+
     return invitations.filter((invitation: GuestDetailInterface) => {
-      const status = String(invitation.eventGuest.status ?? "pending")
+      if (isSubEventBoolean && isGuestUninvitedFromSubEvent(invitation)) {
+        return false;
+      }
+      const status = String(invitation?.eventGuest?.status ?? "pending")
         .trim()
         .toLowerCase();
       return matchesTabStatus(status, activeTab);
     });
-  }, [invitations, activeTab, matchesTabStatus]);
+  }, [
+    invitations,
+    activeTab,
+    matchesTabStatus,
+    isGuestUninvitedFromSubEvent,
+    isSubEventBoolean,
+  ]);
 
   const categoryStats = useMemo(() => {
     const categoryCountMap = new Map<string, number>();
@@ -165,7 +240,7 @@ export default function GuestListScreen() {
     (guest: GuestDetailInterface) => {
       if (selectedCategory === "all") return true;
       return (
-        getNormalizedCategory(guest.eventGuest.category) === selectedCategory
+        getNormalizedCategory(guest.eventGuest?.category) === selectedCategory
       );
     },
     [getNormalizedCategory, selectedCategory]
@@ -174,12 +249,12 @@ export default function GuestListScreen() {
   const getFamilyEffectiveStatus = useCallback(
     (members: GuestDetailInterface[]): string => {
       const hasAccepted = members.some(
-        (m) => m.eventGuest.status?.toLowerCase() === "accepted"
+        (m) => m.eventGuest?.status?.toLowerCase() === "accepted"
       );
       if (hasAccepted) return "accepted";
 
       const hasPendingOrInvited = members.some((m) => {
-        const status = m.eventGuest.status?.toLowerCase() ?? "";
+        const status = m.eventGuest?.status?.toLowerCase() ?? "";
         return status === "pending" || status === "invited";
       });
       if (hasPendingOrInvited) return "pending";
@@ -188,15 +263,35 @@ export default function GuestListScreen() {
     },
     []
   );
-
+//  TODO: Have this in the backend 
   const groupedInvitations = useMemo(() => {
     if (!invitations) return [];
     return groupInvitationsByFamily(invitations);
   }, [invitations]);
 
+  // TODO : Have this in the backend 
   const filteredGroupedInvitations = useMemo(() => {
     return groupedInvitations.filter((item: GroupedInvitation) => {
+      if (activeTab === "Un-Invited") {
+        if (item.type === "family") {
+          return item.members.some((member) =>
+            isGuestUninvitedFromSubEvent(member) &&
+            matchesSelectedCategory(member)
+          );
+        }
+        return (
+          isGuestUninvitedFromSubEvent(item.data) &&
+          matchesSelectedCategory(item.data)
+        );
+      }
+
       if (item.type === "family") {
+        if (isSubEventBoolean) {
+          const hasUninvitedMember = item.members.some((member) =>
+            isGuestUninvitedFromSubEvent(member)
+          );
+          if (hasUninvitedMember) return false;
+        }
         const effectiveStatus = getFamilyEffectiveStatus(item.members);
         const matchesStatus = matchesTabStatus(effectiveStatus, activeTab);
 
@@ -204,7 +299,10 @@ export default function GuestListScreen() {
         return item.members.some((member) => matchesSelectedCategory(member));
       }
 
-      const status = String(item.data.eventGuest.status ?? "pending")
+      if (isSubEventBoolean && isGuestUninvitedFromSubEvent(item.data)) {
+        return false;
+      }
+      const status = String(item.data.eventGuest?.status ?? "pending")
         .trim()
         .toLowerCase();
       if (!matchesTabStatus(status, activeTab)) return false;
@@ -235,11 +333,13 @@ export default function GuestListScreen() {
     matchesSelectedCategory,
     matchesTabStatus,
     getFamilyEffectiveStatus,
+    isGuestUninvitedFromSubEvent,
+    isSubEventBoolean,
   ]);
 
   const draftInvitations = useMemo(() => {
     return tabFilteredInvitations.filter((invitation: GuestDetailInterface) => {
-      const status = String(invitation.eventGuest.status ?? "pending")
+      const status = String(invitation.eventGuest?.status ?? "pending")
         .trim()
         .toLowerCase();
       return status === "draft" && matchesSelectedCategory(invitation);
@@ -255,6 +355,7 @@ export default function GuestListScreen() {
   const selectedCategoryLabel =
     selectedCategory === "all" ? "All" : formatCategoryLabel(selectedCategory);
 
+    // UPTO HERE upper part is all what should be done in the backend 
   const categoryPickerOptions = useMemo(
     () => [
       {
@@ -266,6 +367,7 @@ export default function GuestListScreen() {
     ],
     [categoryStats, tabFilteredInvitations.length]
   );
+
 
   const openAddGuestScreen = useCallback(() => {
     if (!eventId) return;
@@ -286,16 +388,29 @@ export default function GuestListScreen() {
     push(`./guests/import-guests` as RelativePathString);
   }, [eventId]);
 
+  const openImportExcelScreen = useCallback(() => {
+    if (!eventId) return;
+    push(`./guests/import-excel` as RelativePathString);
+  }, [eventId]);
+
+  const openAddGuestCategoryModal = useCallback(() => {
+    setIsAddCategoryModalVisible(true);
+  }, []);
+
+  const openAddGiftModal = useCallback(() => {
+    setIsAddGiftModalVisible(true);
+  }, []);
+
   const onPressGuestCard = (guest: GuestDetailInterface) => {
     setGuestDetail(guest);
     //TODO: Draft the detail of the guest instead of using the params in this 
     push({
       pathname:
         `./guests/[guestDetailId]`,
-      params: { guestDetailId: guest.user.id },
+      params: { eventId: effectiveEventId, guestDetailId: guest.user.id },
     });
   };
-
+// TODO: handle the case of the not available event guest int he list screen insterad  o using the ? in the file 
   const onPressDraftSend = useCallback(
     async (guest: GuestDetailInterface) => {
       if (!eventId || !guest?.user?.id) return;
@@ -304,7 +419,7 @@ export default function GuestListScreen() {
       try {
         await submitRsvpMutation.mutateAsync({
           userId: guest.user.id,
-          familyId: guest.eventGuest.familyId,
+          familyId: guest.eventGuest?.familyId,
           status: "pending",
         });
       } catch (error: any) {
@@ -319,6 +434,14 @@ export default function GuestListScreen() {
     },
     [eventId, submitRsvpMutation]
   );
+
+    if(!effectiveEventId || effectiveEventId === -1 || effectiveEventId === null) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center">
+        <Text className="text-gray-500">Event not found.</Text>
+      </SafeAreaView>
+    );
+  }
 
   const onDeleteDraft = useCallback(
     (guest: GuestDetailInterface) => {
@@ -338,7 +461,7 @@ export default function GuestListScreen() {
             setDraftAction({ userId: guest.user.id, type: "delete" });
             try {
               await removeInvitationMutation.mutateAsync({
-                eventId,
+                eventId:effectiveEventId,
                 guestId: guest.user.id,
               });
             } catch (error: any) {
@@ -365,7 +488,7 @@ export default function GuestListScreen() {
       try {
         await submitRsvpMutation.mutateAsync({
           userId: guest.user.id,
-          familyId: guest.eventGuest.familyId,
+          familyId: guest.eventGuest?.familyId,
           status: "draft",
         });
       } catch (error: any) {
@@ -402,7 +525,7 @@ export default function GuestListScreen() {
               setDraftAction({ userId: guest.user.id, type: "delete" });
               try {
                 await removeInvitationMutation.mutateAsync({
-                  eventId,
+                  eventId: effectiveEventId,
                   guestId: guest.user.id,
                 });
               } catch (error: any) {
@@ -422,6 +545,7 @@ export default function GuestListScreen() {
     [eventId, removeInvitationMutation]
   );
 
+  //Have the family Removal invitation api 
   const onRemoveFamily = useCallback(
     (family: FamilyGroup) => {
       if (!eventId || family.members.length === 0) return;
@@ -441,7 +565,7 @@ export default function GuestListScreen() {
                 await Promise.all(
                   family.members.map((member) =>
                     removeInvitationMutation.mutateAsync({
-                      eventId,
+                      eventId: effectiveEventId,
                       guestId: member.user.id,
                     })
                   )
@@ -464,9 +588,11 @@ export default function GuestListScreen() {
   );
 
   const onPressFamilyCard = (familyData: FamilyGroup) => {
+    console.log('this is the familyCard and the data in the draft set just now is the😑the😑the😑the😑the😑the😑the😑the😑the😑the😑' , familyData) ; 
     setFamilyGuest(familyData);
     push({
       pathname: "./guests/familymember",
+      params: { eventId: effectiveEventId },
     });
   };
 
@@ -476,6 +602,7 @@ export default function GuestListScreen() {
       clearGuestDetail();
     };
   }, [clearFamilyGuest, clearGuestDetail]);
+  
   const [tabWidth, setTabWidth] = useState(0);
   const indicatorX = useSharedValue(0);
 
@@ -491,9 +618,22 @@ export default function GuestListScreen() {
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
   }));
+
   return (
-    <SafeAreaView className="p-4 h-full" edges={[]}>
+    <SafeAreaView className="p-4 h-full" edges={["top"]}>
       <View>
+        <View className="flex-row items-center justify-between mt-2 mb-3 border-b border-gray-300 pb-3">
+          <View className="w-10" />
+          <Text className="flex-1 text-center text-lg font-jakarta-bold text-[#181114]">
+            Guest Management
+          </Text>
+          <TouchableOpacity
+            onPress={() => setIsActionsModalVisible(true)}
+            className="h-10 w-10 rounded-full bg-white border border-gray-200 items-center justify-center"
+          >
+            <Ionicons name="add" size={20} color="#EE2B8C" />
+          </TouchableOpacity>
+        </View>
         <View className="my-2 flex-row items-center gap-2 ">
           <View className="h-14 rounded-md flex-1">
             <TextInput
@@ -563,51 +703,9 @@ export default function GuestListScreen() {
         </Text>
       </View>
 
-      <TouchableOpacity
-        className="absolute right-6 bottom-52 w-14 h-14 rounded-full bg-white border border-[#EE2B8C] items-center justify-center z-50"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.12,
-          shadowRadius: 4,
-          elevation: 4,
-        }}
-        onPress={openImportGuestScreen}
-      >
-        <Ionicons name="cloud-download-outline" size={22} color="#EE2B8C" />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className="absolute right-6 bottom-32 w-14 h-14 rounded-full bg-white border border-[#EE2B8C] items-center justify-center z-50"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.12,
-          shadowRadius: 4,
-          elevation: 4,
-        }}
-        onPress={openContactPickerScreen}
-      >
-        <Ionicons name="people-outline" size={24} color="#EE2B8C" />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className="absolute right-6 bottom-12 w-14 h-14 rounded-full bg-[#EE2B8C] items-center justify-center z-50"
-        style={{
-          shadowColor: "#EE2B8C",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.35,
-          shadowRadius: 8,
-          elevation: 8,
-        }}
-        onPress={openAddGuestScreen}
-      >
-        <Ionicons name="add-outline" size={28} color="#fff" />
-      </TouchableOpacity>
-
       {isLoading ? (
         <Text>Loading invitations...</Text>
-      ) : activeTab === "draft" ? (
+      ) : activeTab === "draft" && !isSubEventBoolean ? (
         <Animated.FlatList
           data={draftInvitations}
           keyExtractor={(item: GuestDetailInterface) =>
@@ -654,7 +752,7 @@ export default function GuestListScreen() {
           renderItem={({ item, index }: { item: GroupedInvitation, index: number }) => {
             if (item.type === "family") {
               const isPending = item.members.some(m => {
-                const s = m.eventGuest.status?.toLowerCase() ?? "";
+                const s = m.eventGuest?.status?.toLowerCase() ?? "";
                 return s === "pending" || s === "invited";
               });
               return (
@@ -726,6 +824,89 @@ export default function GuestListScreen() {
       )}
 
       <Modal
+        visible={isActionsModalVisible}
+        transparent
+        allowSwipeDismissal
+        animationType="slide"
+        onRequestClose={() => setIsActionsModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/35 justify-end">
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setIsActionsModalVisible(false)}
+            className="absolute inset-0"
+          />
+
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-7">
+            <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-3" />
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="font-jakarta-bold text-base text-[#181114]">
+                Quick actions
+              </Text>
+              <TouchableOpacity onPress={() => setIsActionsModalVisible(false)}>
+                <Ionicons name="close" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                setIsActionsModalVisible(false);
+                openAddGuestScreen();
+              }}
+              className="flex-row items-center justify-between px-4 py-3.5 rounded-xl border mb-2 border-gray-200"
+            >
+              <Text className="font-jakarta-semibold text-sm text-[#181114]">Add guest</Text>
+              <Ionicons name="person-add-outline" size={18} color="#EE2B8C" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setIsActionsModalVisible(false);
+                openAddGiftModal();
+              }}
+              className="flex-row items-center justify-between px-4 py-3.5 rounded-xl border mb-2 border-gray-200"
+            >
+              <Text className="font-jakarta-semibold text-sm text-[#181114]">Add gift</Text>
+              <Ionicons name="gift-outline" size={18} color="#EE2B8C" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setIsActionsModalVisible(false);
+                openContactPickerScreen();
+              }}
+              className="flex-row items-center justify-between px-4 py-3.5 rounded-xl border mb-2 border-gray-200"
+            >
+              <Text className="font-jakarta-semibold text-sm text-[#181114]">Import contact</Text>
+              <Ionicons name="call-outline" size={18} color="#EE2B8C" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setIsActionsModalVisible(false);
+                openImportExcelScreen();
+              }}
+              className="flex-row items-center justify-between px-4 py-3.5 rounded-xl border mb-2 border-gray-200"
+            >
+              <Text className="font-jakarta-semibold text-sm text-[#181114]">Import excel</Text>
+              <Ionicons name="document-text-outline" size={18} color="#EE2B8C" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setIsActionsModalVisible(false);
+                openAddGuestCategoryModal();
+              }}
+              className="flex-row items-center justify-between px-4 py-3.5 rounded-xl border border-gray-200"
+            >
+              <Text className="font-jakarta-semibold text-sm text-[#181114]">Add category</Text>
+              <Ionicons name="pricetag-outline" size={18} color="#EE2B8C" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={isCategoryModalVisible}
         transparent
         allowSwipeDismissal
@@ -786,6 +967,159 @@ export default function GuestListScreen() {
                 </TouchableOpacity>
               );
             })}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isAddCategoryModalVisible}
+        transparent
+        allowSwipeDismissal
+        animationType="fade"
+        onRequestClose={() => setIsAddCategoryModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/35 justify-end">
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setIsAddCategoryModalVisible(false)}
+            className="absolute inset-0"
+          />
+
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-7">
+            <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-3" />
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="font-jakarta-bold text-base text-[#181114]">
+                Add guest category
+              </Text>
+              <TouchableOpacity
+                onPress={() => setIsAddCategoryModalVisible(false)}
+              >
+                <Ionicons name="close" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              className="h-12 rounded-xl border border-gray-200 px-4 text-sm text-gray-900"
+              placeholder="Category name"
+              placeholderTextColor="#9CA3AF"
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+            />
+
+            <View className="flex-row items-center justify-end gap-3 mt-5">
+              <TouchableOpacity
+                onPress={() => {
+                  setNewCategoryName("");
+                  setIsAddCategoryModalVisible(false);
+                }}
+                className="px-4 py-2"
+              >
+                <Text className="text-sm text-gray-600">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  const trimmedTitle = newCategoryName.trim();
+                  if (!trimmedTitle) return;
+                  if (!effectiveEventId) {
+                    Alert.alert("Error", "Invalid event.");
+                    return;
+                  }
+                  try {
+                    await createCategoryMutation.mutateAsync({
+                      eventId: effectiveEventId,
+                      payload: {
+                        category_title: trimmedTitle,
+                        priority: 1,
+                      },
+                    });
+                    Alert.alert("Success", "Guest category created.");
+                    setNewCategoryName("");
+                    setIsAddCategoryModalVisible(false);
+                  } catch (error: any) {
+                    const message =
+                      error?.response?.data?.message ||
+                      error?.message ||
+                      "Failed to create guest category.";
+                    Alert.alert("Error", message);
+                  }
+                }}
+                disabled={createCategoryMutation.isPending}
+                className="px-4 py-2 rounded-lg bg-primary"
+              >
+                <Text className="text-sm text-white">
+                  {createCategoryMutation.isPending ? "Saving..." : "Save"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isAddGiftModalVisible}
+        transparent
+        allowSwipeDismissal
+        animationType="fade"
+        onRequestClose={() => setIsAddGiftModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/35 justify-end">
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setIsAddGiftModalVisible(false)}
+            className="absolute inset-0"
+          />
+
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-7">
+            <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-3" />
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="font-jakarta-bold text-base text-[#181114]">
+                Add gift
+              </Text>
+              <TouchableOpacity
+                onPress={() => setIsAddGiftModalVisible(false)}
+              >
+                <Ionicons name="close" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              className="h-12 rounded-xl border border-gray-200 px-4 text-sm text-gray-900"
+              placeholder="Gift name"
+              placeholderTextColor="#9CA3AF"
+              value={newGiftName}
+              onChangeText={setNewGiftName}
+            />
+
+            <View className="mt-4">
+              <Text className="text-xs text-gray-600 mb-2">Category</Text>
+             
+            </View>
+
+            <View className="flex-row items-center justify-end gap-3 mt-5">
+              <TouchableOpacity
+                onPress={() => {
+                  setNewGiftName("");
+                  setIsAddGiftModalVisible(false);
+                }}
+                className="px-4 py-2"
+              >
+                <Text className="text-sm text-gray-600">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!newGiftName.trim()) return;
+                  Alert.alert(
+                    "Gift saved",
+                    "Hook this to the backend when ready."
+                  );
+                  setNewGiftName("");
+                  setIsAddGiftModalVisible(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-primary"
+              >
+                <Text className="text-sm text-white">Save</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

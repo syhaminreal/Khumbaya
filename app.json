@@ -44,7 +44,7 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Khumbaya to use your location to show your business on the map.",
           "locationWhenInUsePermission": "Allow Khumbaya to use your location to show your business on the map."
         }
-      ],
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -60,7 +60,19 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.aaditya_lamichhane.khumbaya"
+      "package": "com.aaditya_lamichhane.khumbaya",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2fc43e7a-14bc-48b0-93f2-b96986ee5427"
     }
   }
 }

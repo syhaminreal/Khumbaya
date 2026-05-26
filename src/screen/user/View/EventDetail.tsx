@@ -86,10 +86,10 @@ const EventDetail = () => {
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     { useNativeDriver: false } // navigation.setOptions updates are not native-driven
   );
-
+console.log('thiis is the navigation context in the event detail page to be deleted in the futur😂futur😂futur😂futur😂futur😂futur😂futur😂futur😂e' , eventId , isSubEvent , isSubEventView)
   const manageActions = [
     { id: "subevents", name: "Sub Events", icon: "layers-outline", color: "#F97316", route: "./(subevent)" as RelativePathString, isVisiblity: isSubEvent === "true" ? false : true },
-    { id: "guests", name: "Guest Management", icon: "people", color: "#8B5CF6", route: "./guests" as RelativePathString, isVisiblity: true },
+    { id: "guests", name: "Guest Management", icon: "people", color: "#8B5CF6", route: "./guests" as RelativePathString, isVisiblity: true  , isSubEventView },
     { id: "budget", name: "Budget", icon: "wallet", color: "#10B981", route: "./budget" as RelativePathString, isVisiblity: true, isSubEventView },
     { id: "checklist", name: "Checklist", icon: "checkmark-circle-outline", color: "#EC4899", route: "./tasklist" as RelativePathString, isVisiblity: true },
     { id: "catering", name: "Catering", icon: "restaurant", color: "#F43F5E", route: "./catering" as RelativePathString, isVisiblity: true, isSubEventView },

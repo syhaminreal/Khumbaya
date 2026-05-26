@@ -208,15 +208,15 @@ const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRY_DA
                 rules={{
                   required: "Password is required",
                   minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters",
+                    value: 8,
+                    message: "Password must be at least 8 characters",
                   },
                 }}
                 render={({ field: { value, onChange: onFieldChange } }) => (
                   <TextInput
                     value={value}
                     onChangeText={onFieldChange}
-                    placeholder="At least 6 characters"
+                    placeholder="At least 8 characters"
                     placeholderTextColor="#896175"
                     secureTextEntry={!showPassword}
                     className="flex-1 py-4 text-base text-text-light"
