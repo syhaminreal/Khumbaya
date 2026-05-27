@@ -164,12 +164,7 @@ export default function VendorDetailed() {
               </View>
               {/* Badges */}
               <View className="flex-row gap-2 pb-1">
-                <View className="flex-row items-center gap-1 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
-                  <MaterialIcons name="verified" size={13} color="#16a34a" />
-                  <Text className="text-[10px] font-semibold text-green-700 uppercase tracking-wider">
-                    {biz.isVerified ? "Verified" : "Unverified"}
-                  </Text>
-                </View>
+                
                 <Pressable
                   className="flex-row items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100"
                   onPress={() => router.push(`/(shared)/explore/${resolvedId}/vendorcomparision`)}

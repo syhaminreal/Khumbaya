@@ -1,5 +1,6 @@
 import { useThrottledRouter } from '@/src/hooks/useThrottledRouter';
-import { useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Navigation, Plus, Truck } from 'lucide-react-native';
 import { ActivityIndicator, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,6 +35,7 @@ const toAvailabilityText = (value?: Date | null | string) => {
 
 const LogisticsHomepage = () => {
   const {push} =useThrottledRouter();
+  const router = useRouter();
   const { eventId, isGuest } = useLocalSearchParams();
   const isGuestView = isGuest === "true";
   const setDraft = useEventvehicleStore((state) => state.setDraft);
@@ -99,8 +101,11 @@ const LogisticsHomepage = () => {
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
         {/* Custom Top Bar */}
-        <View className="px-6 pb-2 pt-4 flex-row justify-between items-center bg-white">
-          <Text className="text-2xl font-jakarta-bold text-gray-900">Logistics</Text>
+        <View className="px-6 pb-2 pt-4 flex-row items-center bg-white">
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} className="bg-white rounded-full p-2 shadow">
+            <Ionicons name="chevron-back" size={22} color="#ee2b8c" />
+          </TouchableOpacity>
+          <Text className="flex-1 text-center text-xl font-jakarta-bold text-gray-900">Logistics</Text>
           {!isGuestView && (
             <TouchableOpacity
               onPress={handleAddVehicle}
