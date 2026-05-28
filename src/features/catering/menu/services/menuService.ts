@@ -9,8 +9,8 @@ import {
 
 export const menuService = {
   getMenuList: async (cateringId: number, page = 1, limit = 10) => {
-    const response = await api.get(`/catering/${cateringId}/menu`, {
-      params: { page, limit },
+    const response = await api.get<{ data: MenuItemColumn[] }>(`/catering/${cateringId}/menu`, {
+      params: { page, limit }
     });
     return response.data.data;
   },

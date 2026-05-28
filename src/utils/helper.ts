@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { Platform } from "react-native";
-import { Easing, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { useEffect, useState } from "react";
+import { Modal, Platform } from "react-native";
+import Animated, { Easing, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
 
 
 type DateTimePickerChangeEvent = { type?: string };
@@ -169,6 +168,33 @@ export const formatTimeRange = (
   return fallbackText;
 };
 
+/**
+ * Friendly date + time range formatter used by UI screens.
+ * Example: "May 21 · 3:00 PM – 4:00 PM"
+ */
+export const formatDateTimeRangeVerbose = (
+  startDateTime?: string | null,
+  endDateTime?: string | null
+): string => {
+  if (!startDateTime && !endDateTime) return "—";
+
+  const start = startDateTime ? new Date(startDateTime) : null;
+  const end = endDateTime ? new Date(endDateTime) : null;
+
+  if (start && Number.isNaN(start.getTime())) return "—";
+  if (end && Number.isNaN(end.getTime())) return "—";
+
+  if (start && end) {
+    return `${formatShort(start)} · ${formatTime(startDateTime ?? undefined)} – ${formatTime(
+      endDateTime ?? undefined
+    )}`;
+  }
+
+  if (start) return `${formatShort(start)} · ${formatTime(startDateTime ?? undefined)}`;
+  if (end) return `${formatShort(end)} · ${formatTime(endDateTime ?? undefined)}`;
+  return "—";
+};
+
 type ChecklistDueMeta = {
   label: string;
   badgeClassName: string;
@@ -316,4 +342,4 @@ export const shadowStyle = {
 
 
 
-  
+export const AnimatedModal  = Animated.createAnimatedComponent(Modal);

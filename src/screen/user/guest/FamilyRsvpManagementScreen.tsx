@@ -8,10 +8,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-
-
-
-
 export default function FamilyRsvpManagementScreen() {
   const router = useRouter();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -23,9 +19,9 @@ export default function FamilyRsvpManagementScreen() {
     Number(eventId)
   );
 
-  const fallbackMembers: MemberRsvpCardProp[] = (eventResponses?.responses ?? []).map(
-    (item: GuestDetailInterface) => mapToMemberRsvpProp(item)
-  );
+  const fallbackMembers: MemberRsvpCardProp[] = (
+    eventResponses?.responses ?? []
+  ).map((item: GuestDetailInterface) => mapToMemberRsvpProp(item));
 
   const members: MemberRsvpCardProp[] = draftMembers?.length
     ? draftMembers.map((m) => mapToMemberRsvpProp(m))
@@ -44,7 +40,9 @@ export default function FamilyRsvpManagementScreen() {
 
   const handleMemberRsvp = (member: MemberRsvpCardProp) => {
     if (!draftMembers) {
-      setDraftMembers(eventResponses?.responses as GuestDetailInterface[]);
+      setDraftMembers(
+        (eventResponses?.responses ?? []) as GuestDetailInterface[]
+      );
     }
     setSelectedUserId(member.user.id);
     router.push(`/(protected)/(client-stack)/events/${eventId}/(guest)/rsvp`);
@@ -52,13 +50,15 @@ export default function FamilyRsvpManagementScreen() {
 
   const handleMemberDetails = (member: MemberRsvpCardProp) => {
     if (!draftMembers) {
-      setDraftMembers(eventResponses?.responses as GuestDetailInterface[]);
+      setDraftMembers(
+        (eventResponses?.responses ?? []) as GuestDetailInterface[]
+      );
     }
     setSelectedUserId(member.user.id);
-    router.push(`/(protected)/(client-stack)/events/${eventId}/(guest)/[guestDetail]`);
+    router.push(
+      `/(protected)/(client-stack)/events/${eventId}/(guest)/[guestDetail]`
+    );
   };
-
-
 
   return (
     <SafeAreaView className="flex-1 bg-background-tertairy" edges={["bottom"]}>
@@ -74,7 +74,7 @@ export default function FamilyRsvpManagementScreen() {
         </Text>
         {members.map((member, index) => (
           <MemberCard
-            key={`${member.eventGuest.id}_${index}`}
+            key={`${member.eventGuest?.id}_${index}`}
             member={member}
             onPressRsvp={() => handleMemberRsvp(member)}
             onPressDetails={() => handleMemberDetails(member)}

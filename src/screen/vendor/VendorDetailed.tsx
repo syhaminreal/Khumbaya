@@ -1,7 +1,8 @@
 import { Text } from "@/src/components/ui/Text";
 import { AvailableSpacesSection } from "@/src/components/vendor/AvailableSpacesSection";
 import { ServiceInfoSection } from "@/src/components/vendor/ServiceInfoSection";
-import { useGetBusinessById } from "@/src/features/business/hooks/use-business";
+import { useGetBusinessById, useGetEventVendor } from "@/src/features/business/hooks/use-business";
+import { useToggleFavourite } from "@/src/features/favourite/hooks/use-favourite";
 import {
   BusinessCategory,
   OtherServiceAttribute,
@@ -69,6 +70,8 @@ export default function VendorDetailed() {
   const businessId = Number(resolvedId);
 
   const { data: businessWithAttribute, isLoading, isError } = useGetBusinessById(resolvedId);
+  const { data: eventVendorData } = useGetEventVendor(resolvedId, resolvedId);
+  const eventStatus = eventVendorData?.status ?? null;
 
   useEffect(() => {
     const biz = businessWithAttribute?.businessInformation;
@@ -163,11 +166,7 @@ export default function VendorDetailed() {
           >
             <View className="flex-row justify-end items-center px-4 pt-12">
               <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-black/30">
-                <MaterialIcons
-                  name="favorite-border"
-                  size={20}
-                  color="#ffffff"
-                />
+                <MaterialIcons name="favorite-border" size={20} color="#ffffff" />
               </Pressable>
             </View>
           </ImageBackground>
@@ -201,12 +200,7 @@ export default function VendorDetailed() {
 
               {/* Badges */}
               <View className="flex-row gap-2 pb-1">
-                <View className="flex-row items-center gap-1 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
-                  <MaterialIcons name="verified" size={13} color="#16a34a" />
-                  <Text className="text-[10px] font-semibold text-green-700 uppercase tracking-wider">
-                    {biz.isVerified ? "Verified" : "Unverified"}
-                  </Text>
-                </View>
+                
                 <Pressable
                   className="flex-row items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100"
                   onPress={() =>

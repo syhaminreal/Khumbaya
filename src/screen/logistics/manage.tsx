@@ -705,12 +705,12 @@ export default function ManageVehicleScreen() {
             </View>
 
             {/* Content */}
-              <View className="gap-5 mb-6">
+            <View className="gap-5 mb-6">
               <View className="gap-3">
                 <Text className="text-[9px] font-jakarta-bold text-gray-400 uppercase">
                   {autoLocationLabel}
                 </Text>
-                 <View className="border border-gray-200 rounded-md overflow-hidden bg-white">
+                <View className="border border-gray-200 rounded-md overflow-hidden bg-white">
                   <TextInput
                     placeholder={fromPlaceholder}
                     className="px-4 py-3 font-jakarta-medium text-sm text-gray-900"
@@ -736,7 +736,7 @@ export default function ManageVehicleScreen() {
                       <Text className="text-sm font-jakarta-semibold text-gray-900">
                         {fromTimeDisplay}
                       </Text>
-                  
+
                     </View>
                     <Ionicons name="time-outline" size={18} color="#ee2b8c" />
                   </TouchableOpacity>

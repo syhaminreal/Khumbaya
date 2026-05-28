@@ -2,7 +2,7 @@ import { User } from "@/src/store/AuthStore";
 
 export interface Invitation {
   id: number; // non Changeble by the organizer and the guest 
-  userId: number ;  // Non changable at al 
+  userId: number;  // Non changable at al 
   hasCheckedIn: boolean | null; // By both 
   hasCheckedOut: boolean | null; // By both 
   eventId: number; // Non changable at all
@@ -34,7 +34,7 @@ export interface Invitation {
 
 export interface GuestDetailInterface {
   user: User;
-  eventGuest: Invitation;
+  eventGuest: Invitation | null;
   familyName: string | null;
 }
 
@@ -61,8 +61,11 @@ export function groupInvitationsByFamily(
   const individuals: GuestDetailInterface[] = [];
 
   invitations.forEach((invitation) => {
+    if (!invitation.eventGuest) {
+      return []
+    }
     if (invitation.eventGuest.familyId !== null) {
-      const familyId = invitation.eventGuest.familyId;
+      const familyId = invitation.eventGuest?.familyId;
       if (!familyMap.has(familyId)) {
         familyMap.set(familyId, []);
       }

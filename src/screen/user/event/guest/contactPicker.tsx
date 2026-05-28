@@ -160,7 +160,7 @@ export default function ContactPickerScreen() {
       }
       return next;
     });
-  }, []);
+  }, [contacts]);
 
   const handleImport = useCallback(async () => {
     if (!eventId) {
@@ -174,76 +174,29 @@ export default function ContactPickerScreen() {
 
     setIsInviting(true);
     const selectedContacts = contacts.filter((c) => selected.has(c.id));
-    let successCount = 0;
-    const failed: string[] = [];
+    const payload = selectedContacts.map((contact) => ({
+      id: contact.id,
+      name: contact.name,
+      phone: contact.phone,
+    }));
 
-    for (const contact of selectedContacts) {
-      try {
-        const normalizedPhone = normalizePhone(contact.phone);
-        if (!normalizedPhone) {
-          failed.push(contact.name);
-          continue;
-        }
-
-        let finalPhone = normalizedPhone;
-
-        if (!normalizedPhone.startsWith("+")) {
-          const shouldAdd = await confirmCountryCode(contact.name);
-          if (!shouldAdd) {
-            failed.push(contact.name);
-            continue;
-          }
-          finalPhone = buildPhoneWithCountry(normalizedPhone);
-        } else {
-          finalPhone = formatPhoneWithCountryDash(normalizedPhone);
-        }
-
-        await inviteGuestMutation.mutateAsync({
-          eventId,
-          payload: {
-            invitation_name: contact.name,
-            phone: finalPhone,
-            fullName: contact.name,
-            isFamily: inviteWithFamily,
-            isDraft: false,
-            role: "Guest",
-            category: "Friend",
-            status: "pending",
-            isAccomodation: false,
-          },
-        });
-        successCount++;
-      } catch {
-        failed.push(contact.name);
-      }
-    }
-
+    router.push({
+      pathname: "/(protected)/(client-stack)/events/[eventId]/(organizer)/guests/contact-review",
+      params: {
+        eventId: String(eventId),
+        inviteWithFamily: String(inviteWithFamily),
+        dialCode: selectedCountry.dialCode,
+        contacts: JSON.stringify(payload),
+      },
+    });
     setIsInviting(false);
-
-    if (failed.length > 0) {
-      Alert.alert(
-        "Partial Success",
-        `${successCount} invited. Failed: ${failed.join(", ")}`,
-        [{ text: "OK", onPress: () => successCount > 0 && router.back() }]
-      );
-    } else {
-      Alert.alert(
-        "Success",
-        `${successCount} guest${successCount > 1 ? "s" : ""} invited!`,
-        [{ text: "OK", onPress: () => router.back() }]
-      );
-    }
   }, [
     eventId,
     selected,
     contacts,
-    inviteGuestMutation,
     router,
-    normalizePhone,
-    confirmCountryCode,
-    buildPhoneWithCountry,
-    formatPhoneWithCountryDash,
     inviteWithFamily,
+    selectedCountry.dialCode,
   ]);
 
   const renderItem = useCallback(
@@ -289,7 +242,7 @@ export default function ContactPickerScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={[]}>
       {/* Header */}
-      <View className="flex-row items-center px-5 pt-4 pb-2">
+      {/* <View className="flex-row items-center px-5 pt-4 pb-2">
         <TouchableOpacity
           onPress={() => router.back()}
           className="mr-3 p-1"
@@ -307,7 +260,7 @@ export default function ContactPickerScreen() {
             </Text>
           </View>
         )}
-      </View>
+      </View> */}
 
       {/* Search */}
       <View className="px-5 pb-3">
@@ -383,7 +336,7 @@ export default function ContactPickerScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 120 }}
           ListEmptyComponent={
             <View className="flex-1 items-center mt-16">
               <Ionicons name="people-outline" size={48} color="#D1D5DB" />
@@ -430,7 +383,7 @@ export default function ContactPickerScreen() {
                 >
                   {selected.size === 0
                     ? "Select contacts to invite"
-                    : `Invite ${selected.size} contact${selected.size > 1 ? "s" : ""}`}
+                    : `Review ${selected.size} contact${selected.size > 1 ? "s" : ""}`}
                 </Text>
               </>
             )}

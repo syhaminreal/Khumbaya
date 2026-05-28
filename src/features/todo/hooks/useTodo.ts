@@ -106,7 +106,7 @@ export const useBulkUpdateTodoStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (updates: Array<{ todoId: number; isDone: boolean; status: string }>) =>
+    mutationFn: (updates: Array<{ todoId: number; isDone: boolean; }>) =>
       bulkUpdateTodoStatusApi(updates),
     onMutate: async (updates) => {
       await queryClient.cancelQueries({ queryKey: ["todos"] });
@@ -117,7 +117,7 @@ export const useBulkUpdateTodoStatus = () => {
         if (!old) return old;
         const newList = old.map((t: TodoColumn) => {
           const update = updates.find((u) => u.todoId === t.id);
-          return update ? { ...t, isDone: update.isDone, status: update.status } : t;
+          return update ? { ...t, isDone: update.isDone } : t;
         });
         return Array.isArray(old) ? newList : { ...old, data: newList };
       });

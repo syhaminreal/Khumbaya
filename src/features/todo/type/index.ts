@@ -1,4 +1,4 @@
-import { TODO_CATEGORIES, type TodoCategory } from "@/src/constants/todo";
+import { TODO_CATEGORIES } from "@/src/constants/todo";
 import { User } from "@/src/store/AuthStore";
 import { z } from "zod";
 
@@ -6,14 +6,14 @@ export interface TodoColumn {
   id?: number;
   eventId: number | null;
   task: string | null;
-  isDone: boolean | null;
-  category: TodoCategory |undefined;
-  assignedTo: number | undefined | null;
-  assignedUser: User | null | undefined;
-  title: string;
+  doneByuserIds?: number[] | null;
+  assignedTo?: number | null;
+  title: string | null;
+  assignedGroup:"Guest" | "Planning Committee" | "Vendor" | null; 
+  assignedUser?: User | null;
   parentId: number | null;
+  category: string | null;
   dueDate: Date | string | null;
-  status: string | null;
   createdAt?: Date | string | null;
   updatedAt?: Date | string | null;
 }
@@ -24,11 +24,12 @@ export interface TODOListResponse {
 }
 
 
-export const todoValidationSchema = z.object({
+export const CreatetodoValidationSchema = z.object({
   eventId: z.number().optional().nullable(),
   task: z.string().max(200).optional().nullable(),
   isDone: z.boolean().optional().nullable(),
   assignedTo: z.number().optional().nullable(),
+  assignedGroup: z.enum(["Guest", "Planning Committee", "Vendor"]).optional().nullable(),
   title: z.string().optional().nullable(),
   category: z.enum(TODO_CATEGORIES).optional(),
   parentId: z.number().optional().nullable(),
@@ -36,8 +37,8 @@ export const todoValidationSchema = z.object({
   status: z.string().max(30).optional().nullable(),
 });
 
-const updateTodoValidationSchema = todoValidationSchema.partial() ; 
+const updateTodoValidationSchema = CreatetodoValidationSchema.partial();
 
-export type updateTodoValidationSchema  = z.infer<typeof updateTodoValidationSchema>;
-export type CreateTodoInput = z.infer<typeof todoValidationSchema>;
+export type updateTodoValidationSchema = z.infer<typeof updateTodoValidationSchema>;
+export type CreateTodoInput = z.infer<typeof CreatetodoValidationSchema>;
 export type CreateTodoPayload = Omit<TodoColumn, "id" | "createdAt" | "updatedAt">;  

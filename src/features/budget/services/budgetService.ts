@@ -30,6 +30,7 @@ export const addExpenseToCategory = async (
     allocatedAmount: number;
     nextDueDate?: string;
     notes?: string;
+    subEventid?: number;
   }
 ) => {
   const response = await api.post(
@@ -87,6 +88,7 @@ export const updateExpense = async (
     allocatedAmount?: number;
     nextDueDate?: string;
     notes?: string;
+    subEventid?: number;
   }
 ) => {
   const response = await api.patch(`/expense/${expenseId}`, payload);

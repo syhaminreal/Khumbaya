@@ -13,6 +13,7 @@ export interface CREATEEVENT {
   parentId?: number;
   location?: string;
   venue?: string;
+  venueId?: number | null;
   role?: string;
   imageUrl?: string;
   rsvpDeadline?: string;
@@ -33,6 +34,7 @@ export interface EVENT {
   parentId?: number;
   location?: string;
   venue?: string | null;
+  venueId?: number | null;
   role?: string;
   status?: string;
   organizer?: number;
@@ -226,7 +228,7 @@ export const getEventById = async (id: number): Promise<Event> => {
 };
 
 export const getResponsesWithUser = async (eventId: number) => {
-  const response = await api.get(`invitation/event-responses/${eventId}`);
+  const response = await api.get(`/invitation/event-responses/${eventId}`);
   return response.data.data;
 };
 
@@ -234,7 +236,7 @@ export const submitRsvpResponseApi = async (
   eventId: number,
   payload: Partial<Invitation>
 ) => {
-  const response = await api.post(`invitation/responce/${eventId}`, payload);
+  const response = await api.post(`/invitation/responce/${eventId}`, payload);
   return response.data;
 };
 
@@ -250,6 +252,10 @@ export const makeEventMember = async (
   const response = await api.post(`/event/${eventId}/member`, data);
   return response.data;
 };
+export const removeEventMember = async (eventId:number , userId:number) => {
+  const response = await api.delete(`/event/${eventId}/member/${userId}`);
+  return response.data;
+}
 export const getEventCategory = async () => {
   const responce = await api.get("/general-category");
   return responce;

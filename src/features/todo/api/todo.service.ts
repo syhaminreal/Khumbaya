@@ -39,8 +39,14 @@ export const updateTodoApi = async (
 export const bulkUpdateTodoStatusApi = async (updates: Array<{
   todoId: number;
   isDone: boolean;
-  status: string;
 }>) => {
-  const response = await api.post("/todo/bulk", updates);
+  const todos = updates.map((data) => ({
+    ...data,
+    isDone: Boolean(data.isDone)
+  }))
+  const response = await api.post("/todo/bulk", {
+    todos: todos
+  });
+
   return response.data;
 };

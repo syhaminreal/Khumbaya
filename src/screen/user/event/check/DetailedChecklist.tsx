@@ -1,37 +1,27 @@
 import { Text } from "@/src/components/ui/Text";
+import type { SubEvent } from "@/src/constants/event";
 import { TODO_CATEGORY_OPTIONS, type TodoCategory } from "@/src/constants/todo";
-import { useGetEventOwner } from "@/src/features/events/hooks/use-event";
+import { useGetEventOwner, useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
 import { useCreateTodo, useDeleteTodo, useUpdateTodo } from "@/src/features/todo/hooks/useTodo";
 import { useTodoDraftStore } from "@/src/features/todo/store";
-import { todoValidationSchema } from "@/src/features/todo/type";
+import { CreatetodoValidationSchema, TodoColumn } from "@/src/features/todo/type";
+import { _entering, _exiting, _layoutAnimation } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { CheckSquare, Square } from "lucide-react-native";
 import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView,
-  Platform, ScrollView, TextInput, TouchableOpacity, View,
+  Platform, Pressable, ScrollView, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
+import Animated from "react-native-reanimated";
 
-type TodoFormValues = {
-  title: string;
-  task: string;
-  category: TodoCategory | "";
-  dueDate: Date | null;
-  assignedTo: number | null;
-};
 
 type ScreenMode = "view" | "edit" | "create";
 
-const EMPTY_FORM: TodoFormValues = {
-  title: "",
-  task: "",
-  category: "",
-  dueDate: null,
-  assignedTo: null,
-};
 
 export default function DetailedChecklist() {
   const router = useRouter();
@@ -44,6 +34,7 @@ export default function DetailedChecklist() {
 
   const draft = useTodoDraftStore((state) => state.todoDraft);
   const parsedTaskId = taskId ? Number(taskId) : null;
+  const parsedEventId = Number(eventId);
 
   // ── derive mode once, everything else flows from this ──────────────────
   const mode: ScreenMode =
@@ -73,10 +64,7 @@ export default function DetailedChecklist() {
     );
   }
 
-  // ── defaultValues — draft is guaranteed to exist in edit/view mode here ─
-  // ── RHF reads defaultValues once at mount, store is already set ─────────
-  // ── by the time router.push fires, so no useEffect reset needed ──────────
-  const defaultValues: TodoFormValues =
+  const defaultValues: Partial<TodoColumn> =
     draft
       ? {
         title: draft.title ?? "",
@@ -84,14 +72,21 @@ export default function DetailedChecklist() {
         category: (draft.category as TodoCategory) ?? "",
         dueDate: draft.dueDate ? new Date(draft.dueDate) : null,
         assignedTo: draft.assignedTo ?? null,
+        assignedGroup: draft.assignedGroup ?? null,
       }
-      : EMPTY_FORM;
+      : {};
+
+  const defaultSubEventId =
+    (draft?.eventId && draft.eventId !== parsedEventId)
+      ? draft.eventId
+      : null;
 
   return (
     <DetailedChecklistForm
       mode={mode}
       isReadOnly={isReadOnly}
       defaultValues={defaultValues}
+      defaultSubEventId={defaultSubEventId}
       parsedTaskId={parsedTaskId}
       eventId={eventId}
     />
@@ -104,12 +99,14 @@ function DetailedChecklistForm({
   mode,
   isReadOnly,
   defaultValues,
+  defaultSubEventId,
   parsedTaskId,
   eventId,
 }: {
   mode: ScreenMode;
   isReadOnly: boolean;
-  defaultValues: TodoFormValues;
+  defaultValues: Partial<TodoColumn>;
+  defaultSubEventId: number | null;
   parsedTaskId: number | null;
   eventId: string;
 }) {
@@ -118,8 +115,17 @@ function DetailedChecklistForm({
   const { mutate: updateTodo, isPending: isUpdating } = useUpdateTodo();
   const { mutate: deleteTodo, isPending: isDeleting } = useDeleteTodo();
   const { data: eventOwners } = useGetEventOwner(eventId);
+  const { data: subEvents } = useSubEventsOfEvent(Number(eventId));
 
-  const { control, handleSubmit, setValue } = useForm<TodoFormValues>({ defaultValues });
+  const { control, handleSubmit, setValue } = useForm<
+    TodoColumn & { subEventId?: number | null }
+  >({
+    defaultValues: { ...defaultValues, subEventId: defaultSubEventId },
+  });
+
+  const [showSubEvent, setShowSubEvent] = useState(!!defaultSubEventId);
+  const [showAssignedGroup, setShowAssignedGroup] = useState(!!defaultValues.assignedGroup);
+  const [showAssignedUser, setShowAssignedUser] = useState(!!defaultValues.assignedTo);
 
   const dueDate = useWatch({ control, name: "dueDate" });
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -128,26 +134,28 @@ function DetailedChecklistForm({
   const isBusy = isCreating || isUpdating || isDeleting;
 
   const handleSave = handleSubmit((data) => {
-    if (!data.title.trim()) {
+    if (!data.title?.trim()) {
       Alert.alert("Error", "Please enter a task title");
       return;
     }
 
+    const effectiveEventId =
+      typeof data.subEventId === "number" ? data.subEventId : Number(eventId);
+
     const payload = {
-      eventId: Number(eventId),
+      eventId: effectiveEventId,
       title: data.title.trim(),
-      task: data.task.trim(),
-      category: data.category || undefined,
+      task: data.task?.trim() ?? null,
+      category: data.category ?? null,
       dueDate: data.dueDate,
       assignedTo: data.assignedTo ?? null,
-      isDone: false,
-      status: "pending",
+      assignedGroup: data.assignedGroup ?? null,
       assignedUser: null,
       parentId: null,
     };
 
     if (mode === "create") {
-      const validation = todoValidationSchema.safeParse(payload);
+      const validation = CreatetodoValidationSchema.safeParse(payload);
       if (!validation.success) {
         const message = validation.error.issues
           .map((issue) => issue.message)
@@ -194,15 +202,26 @@ function DetailedChecklistForm({
     value: owner.user.id,
   }));
 
+  const subEventOptions = (subEvents || []).map((subEvent: SubEvent) => ({
+    label: subEvent.title,
+    value: Number(subEvent.id),
+  }));
+
+  const assignedGroupOptions = [
+    { label: "Guest", value: "Guest" },
+    { label: "Planning Committee", value: "Planning Committee" },
+    { label: "Vendor", value: "Vendor" },
+  ];
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
       <View className="flex-1 bg-surface">
         <ScrollView
           className="flex-1"
-          contentContainerClassName="px-6 pt-8 pb-32"
+          contentContainerClassName="px-3 pt-8 pb-32"
           showsVerticalScrollIndicator={false}
         >
-          <View className="mb-8">
+          <View className="mb-2">
             <Text className="text-3xl font-jakarta-bold text-text-primary">
               {mode === "create" ? "New Task" : "Task Details"}
             </Text>
@@ -215,7 +234,7 @@ function DetailedChecklistForm({
             </Text>
           </View>
 
-          <View className="bg-white rounded-md p-6 shadow-sm border border-border gap-6 mb-8">
+          <Animated.View className="bg-white rounded-md p-2 px-4 shadow-sm  order gap-6 mb-8" layout={_layoutAnimation}>
             <View className="gap-2">
               <Text className="text-sm font-jakarta-semibold text-text-secondary ml-1">Task Title</Text>
               <Controller
@@ -228,7 +247,7 @@ function DetailedChecklistForm({
                       className="w-full h-14 bg-surface-secondary px-4 rounded-md text-text-primary border border-border focus:border-primary"
                       placeholder="e.g., Book the caterer"
                       placeholderTextColor="#94a3b8"
-                      value={value}
+                      value={value ?? ""}
                       onChangeText={onChange}
                       editable={!isReadOnly}
                     />
@@ -258,7 +277,6 @@ function DetailedChecklistForm({
                 )}
               />
             </View>
-
             <View className="gap-2">
               <Text className="text-sm font-jakarta-semibold text-text-secondary ml-1">Category</Text>
               <Controller
@@ -278,31 +296,6 @@ function DetailedChecklistForm({
                     disable={isReadOnly}
                     renderLeftIcon={() => (
                       <MaterialIcons name="label-outline" size={20} color="#64748b" style={{ marginRight: 8 }} />
-                    )}
-                  />
-                )}
-              />
-            </View>
-
-            <View className="gap-2">
-              <Text className="text-sm font-jakarta-semibold text-text-secondary ml-1">Assigned To</Text>
-              <Controller
-                control={control}
-                name="assignedTo"
-                render={({ field: { onChange, value } }) => (
-                  <Dropdown
-                    style={{ height: 56, backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: "#e2e8f0" }}
-                    placeholderStyle={{ color: "#94a3b8", fontSize: 14 }}
-                    selectedTextStyle={{ color: "#1e293b", fontSize: 14, fontWeight: "600" }}
-                    data={assigneeData}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Select an assignee"
-                    value={value}
-                    onChange={(item: { value: number }) => onChange(item.value)}
-                    disable={isReadOnly}
-                    renderLeftIcon={() => (
-                      <MaterialIcons name="person-outline" size={20} color="#64748b" style={{ marginRight: 8 }} />
                     )}
                   />
                 )}
@@ -357,11 +350,167 @@ function DetailedChecklistForm({
                 />
               )}
             </View>
-          </View>
+
+            <View className="gap-2">
+              <View className="flex-row flex-wrap gap-3">
+                <Animated.View layout={_layoutAnimation} style={{ width: "48%" }}>
+                  <Pressable
+                    onPress={() => {
+                      if (isReadOnly) return;
+                      setShowSubEvent((prev) => {
+                        const next = !prev;
+                        if (!next) setValue("subEventId", null, { shouldDirty: true });
+                        return next;
+                      });
+                    }}
+                    className={`h-14 flex-row items-center gap-3 p-3 rounded-md border-2 ${showSubEvent ? "border-pink-200" : "border-transparent"}`}
+                  >
+                    {showSubEvent ? (
+                      <CheckSquare size={20} color="#ee2b8c" />
+                    ) : (
+                      <Square size={20} color="#cbd5e1" />
+                    )}
+                    <Text variant="h1" className="text-xs text-slate-900">
+                      Add Subevent
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+
+                <Animated.View layout={_layoutAnimation} style={{ width: "48%" }}>
+                  <Pressable
+                    onPress={() => {
+                      if (isReadOnly) return;
+                      setShowAssignedGroup((prev) => {
+                        const next = !prev;
+                        if (!next) setValue("assignedGroup", null, { shouldDirty: true });
+                        return next;
+                      });
+                    }}
+                    className={`h-14 flex-row items-center gap-3 p-3 rounded-md border-2 ${showAssignedGroup ? "border-pink-200" : "border-transparent"}`}
+                  >
+                    {showAssignedGroup ? (
+                      <CheckSquare size={20} color="#ee2b8c" />
+                    ) : (
+                      <Square size={20} color="#cbd5e1" />
+                    )}
+                    <Text variant="h1" className="text-xs text-slate-900">
+                      Assign to group
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+
+                <Animated.View layout={_layoutAnimation} style={{ width: "48%" }}>
+                  <Pressable
+                    onPress={() => {
+                      if (isReadOnly) return;
+                      setShowAssignedUser((prev) => {
+                        const next = !prev;
+                        if (!next) setValue("assignedTo", null, { shouldDirty: true });
+                        return next;
+                      });
+                    }}
+                    className={`h-14 flex-row items-center gap-3 p-3 rounded-md border-2 ${showAssignedUser ? "border-pink-200" : "border-transparent"}`}
+                  >
+                    {showAssignedUser ? (
+                      <CheckSquare size={20} color="#ee2b8c" />
+                    ) : (
+                      <Square size={20} color="#cbd5e1" />
+                    )}
+                    <Text variant="h1" className="text-xs text-slate-900">
+                      Assign to user
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              </View>
+
+              {showSubEvent && (
+                <Animated.View className="mt-2" entering={_entering} exiting={_exiting} layout={_layoutAnimation}>
+                  <Text className="text-sm font-jakarta-semibold text-text-secondary ml-1">Add to Sub event</Text>
+                  <Controller
+                    control={control}
+                    name="subEventId"
+                    render={({ field: { onChange, value } }) => (
+                      <Dropdown
+                        style={{ height: 56, backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: "#e2e8f0" }}
+                        placeholderStyle={{ color: "#94a3b8", fontSize: 14 }}
+                        selectedTextStyle={{ color: "#1e293b", fontSize: 14, fontWeight: "600" }}
+                        data={subEventOptions}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Select a sub-event"
+                        value={value ?? null}
+                        onChange={(item: { value: number }) => onChange(item.value)}
+                        disable={isReadOnly}
+                        renderLeftIcon={() => (
+                          <MaterialIcons name="event-seat" size={20} color="#64748b" style={{ marginRight: 8 }} />
+                        )}
+                      />
+                    )}
+                  />
+                </Animated.View>
+              )}
+
+              {showAssignedGroup && (
+                <Animated.View className="mt-2" entering={_entering} exiting={_exiting} layout={_layoutAnimation}>
+                  <Text className="text-sm font-jakarta-semibold text-text-secondary ml-1">Assign Group</Text>
+                  <Controller
+                    control={control}
+                    name="assignedGroup"
+                    render={({ field: { onChange, value } }) => (
+                      <Dropdown
+                        style={{ height: 56, backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: "#e2e8f0" }}
+                        placeholderStyle={{ color: "#94a3b8", fontSize: 14 }}
+                        selectedTextStyle={{ color: "#1e293b", fontSize: 14, fontWeight: "600" }}
+                        data={assignedGroupOptions}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Select a group"
+                        value={value ?? null}
+                        onChange={(item: { value: "Guest" | "Planning Committee" | "Vendor" }) => onChange(item.value)}
+                        disable={isReadOnly}
+                        renderLeftIcon={() => (
+                          <MaterialIcons name="group" size={20} color="#64748b" style={{ marginRight: 8 }} />
+                        )}
+                      />
+                    )}
+                  />
+                </Animated.View>
+              )}
+
+              {showAssignedUser && (
+                <Animated.View className="mt-2" entering={_entering} exiting={_exiting} layout={_layoutAnimation}>
+                  <Text className="text-sm font-jakarta-semibold text-text-secondary ml-1">Assign User</Text>
+                  <Controller
+                    control={control}
+                    name="assignedTo"
+                    render={({ field: { onChange, value } }) => (
+                      <Dropdown
+                        style={{ height: 56, backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: "#e2e8f0" }}
+                        placeholderStyle={{ color: "#94a3b8", fontSize: 14 }}
+                        selectedTextStyle={{ color: "#1e293b", fontSize: 14, fontWeight: "600" }}
+                        dropdownPosition="bottom"
+                        data={assigneeData}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Select an assignee"
+                        value={value ?? null}
+                        onChange={(item: { value: number }) => onChange(item.value)}
+                        disable={isReadOnly}
+                        renderLeftIcon={() => (
+                          <MaterialIcons name="person-outline" size={20} color="#64748b" style={{ marginRight: 8 }} />
+                        )}
+                      />
+                    )}
+                  />
+                </Animated.View>
+              )}
+            </View>
+          </Animated.View>
 
           {/* Actions — hidden in view mode */}
           {!isReadOnly && (
-            <View className="gap-4">
+            <Animated.View className="gap-4"
+            layout={_layoutAnimation}>
               <TouchableOpacity
                 onPress={handleSave}
                 disabled={isBusy}
@@ -397,10 +546,10 @@ function DetailedChecklistForm({
                     )}
                 </TouchableOpacity>
               )}
-            </View>
+            </Animated.View>
           )}
         </ScrollView>
-      </View>
-    </KeyboardAvoidingView>
+      </View >
+    </KeyboardAvoidingView >
   );
 }

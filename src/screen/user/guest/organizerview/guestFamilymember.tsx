@@ -15,11 +15,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GuestFamilyMember() {
   const { push } = useThrottledRouter();
-  const { eventId, family } = useLocalSearchParams<{
+  const { eventId, family , isSubEvent } = useLocalSearchParams<{
     eventId: string;
     family?: string;
+    isSubEvent?: string;
   }>();
-
   const familyGroupFromStore = useFamilyGuestStore(
     (state) => state.familyGroup
   );
@@ -41,8 +41,8 @@ export default function GuestFamilyMember() {
 
   const liveFamilyMembers = useMemo(() => {
     if (!invitations || familyId == null) return [];
-    return (invitations as GuestDetailInterface[]).filter(
-      (inv) => inv.eventGuest.familyId === familyId
+    return (familyGroupFromStore?.members || []).filter(
+      (inv) => inv.eventGuest?.familyId === familyId
     );
   }, [invitations, familyId]);
 
@@ -63,7 +63,7 @@ export default function GuestFamilyMember() {
     console.log('Opening the guest with the guest detail ', guest)
     push({
       pathname: "./[guestDetailId]",
-      params: { guestDetailId: guest.eventGuest.id },
+      params: { guestDetailId: guest.eventGuest?.id },
     });
   };
 

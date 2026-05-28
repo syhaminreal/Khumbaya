@@ -4,15 +4,9 @@ import { useRsvpStore } from "@/src/store/useRsvpStore";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 import { useLocalSearchParams } from "expo-router";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  View
-} from "react-native";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-
-
 
 const RsvpResponcePage = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -26,7 +20,10 @@ const RsvpResponcePage = () => {
 
   const userId = activeMember?.user.id;
   const fallbackEventGuest = activeMember?.eventGuest;
-  const familyId = fallbackEventGuest?.familyId;
+  const familyId =
+    fallbackEventGuest?.familyId ??
+    draftMembers?.find((member) => member.eventGuest?.familyId != null)
+      ?.eventGuest?.familyId;
   const memberName = activeMember?.user?.username;
 
   return (
@@ -75,13 +72,16 @@ const RsvpResponcePage = () => {
             status={fallbackEventGuest?.status ?? "accepted"}
             isAccomodation={fallbackEventGuest?.isAccomodation ?? false}
             notes={fallbackEventGuest?.notes ?? ""}
-            isArrivalPickupRequired={fallbackEventGuest?.isArrivalPickupRequired ?? false}
-            isDeparturePickupRequired={fallbackEventGuest?.isDeparturePickupRequired ?? false}
+            isArrivalPickupRequired={
+              fallbackEventGuest?.isArrivalPickupRequired ?? false
+            }
+            isDeparturePickupRequired={
+              fallbackEventGuest?.isDeparturePickupRequired ?? false
+            }
             arrivalLocation={fallbackEventGuest?.arrivalLocation ?? ""}
             departureLocation={fallbackEventGuest?.departureLocation ?? ""}
             arrivalDatetime={fallbackEventGuest?.arrivalDatetime ?? null}
             departureDatetime={fallbackEventGuest?.departureDatetime ?? null}
-
           />
         </ScrollView>
       </KeyboardAwareScrollView>

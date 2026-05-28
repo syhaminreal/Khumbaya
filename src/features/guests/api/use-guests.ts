@@ -105,12 +105,32 @@ export const useInviteGuest = () => {
   });
 };
 
+import { moveToDraft } from "./service";
+
 export const useRemoveInvitation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ eventId, guestId }: { eventId: number; guestId: number }) =>
       removeInvitation(eventId, guestId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["event-invitations", variables.eventId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["event-guests", variables.eventId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
+};
+
+export const useMoveToDraft = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ eventId, guestId }: { eventId: number; guestId: number }) =>
+      moveToDraft(eventId, guestId),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["event-invitations", variables.eventId],

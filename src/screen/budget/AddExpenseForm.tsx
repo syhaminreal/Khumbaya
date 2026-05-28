@@ -5,11 +5,12 @@ import {
   useUpdateExpenseMutation,
 } from "@/src/features/budget/hooks/use-budget";
 import { expenseFormSchema } from "@/src/features/budget/schema";
+import { useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
 import { MaterialIcons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -21,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
 import { z } from "zod";
 
 type ExpenseFormData = z.infer<typeof expenseFormSchema>;
@@ -33,8 +35,32 @@ export default function AddExpenseScreen({
   editMode = false,
 }: AddExpenseScreenProps) {
   const router = useRouter();
-  const { categoryId, eventId, expenseId } = useLocalSearchParams();
+  const { categoryId, eventId, expenseId, subEventid } = useLocalSearchParams();
+
+  const parsedEventId = useMemo(() => {
+    return eventId ? Number(JSON.parse(eventId.toString())) : 0;
+  }, [eventId]);
+
+  const parsedCategoryId = useMemo(() => {
+    return categoryId ? Number(JSON.parse(categoryId.toString())) : 0;
+
+  }, [categoryId])
+  const { data: subEvents } = useSubEventsOfEvent(parsedEventId);
+
+  const resolvedSubEventId = useMemo(() => {
+    return subEventid ? Number(JSON.parse(subEventid.toString())) : undefined;
+  }, [subEventid]);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const subEventOptions = useMemo(
+    () =>
+      (subEvents || []).map
+        ((item: { title?: string; name?: string; id: number }) => ({
+          label: `${item.title ?? "Untitled sub-event"} `,
+          value: String(item.id),
+        })),
+    [subEvents]
+  );
 
   // Fetch expense data in edit mode
   const { data: expenseData, isLoading: isExpenseLoading } = useExpenseById(
@@ -43,14 +69,14 @@ export default function AddExpenseScreen({
   );
 
   const expenseMutation = useExpenseMutation(
-    Number(categoryId),
-    Number(eventId)
+    parsedCategoryId,
+    parsedEventId
   );
 
   const updateMutation = useUpdateExpenseMutation(
     Number(expenseId || 0),
-    Number(categoryId),
-    Number(eventId)
+    parsedCategoryId,
+    parsedEventId
   );
 
   const {
@@ -65,6 +91,7 @@ export default function AddExpenseScreen({
       name: "",
       allocatedAmount: "",
       nextDueDate: "",
+      subEventid: resolvedSubEventId,
       notes: "",
     },
   });
@@ -80,8 +107,14 @@ export default function AddExpenseScreen({
       );
       setValue("nextDueDate", expenseData.nextDueDate || "");
       setValue("notes", expenseData.notes || "");
+      if (typeof expenseData.subEventid === "number") {
+        setValue("subEventid", expenseData.subEventid);
+      }
     }
   }, [editMode, expenseData, setValue]);
+
+
+  //Use call back function to get the data
 
   const handleDateChange = (event: any, date: Date | undefined) => {
     setShowDatePicker(false);
@@ -93,11 +126,13 @@ export default function AddExpenseScreen({
 
   const onSubmit = async (data: ExpenseFormData) => {
     try {
+      console.log('This is the kdhfkajhdf ', data);
       const payload = {
         name: data.name,
         allocatedAmount: parseFloat(data.allocatedAmount),
         nextDueDate: data.nextDueDate || undefined,
         notes: data.notes || undefined,
+        subEventid: data.subEventid ?? resolvedSubEventId,
       };
 
       const mutation = editMode ? updateMutation : expenseMutation;
@@ -171,6 +206,47 @@ export default function AddExpenseScreen({
                     </View>
                   )}
                 />
+              </View>
+              <View className="gap-2">
+                <Text className="text-sm text-gray-600 ml-1" variant="h2">
+                  Sub Event
+                </Text>
+                <Controller
+                  control={control}
+                  name="subEventid"
+                  render={({ field: { onChange, value } }) => (
+                    <Dropdown
+                      style={{
+                        height: 56,
+                        borderWidth: 1,
+                        borderColor: "#e5e7eb",
+                        borderRadius: 6,
+                        paddingHorizontal: 16,
+                        backgroundColor: "#f8f6f7",
+                      }}
+                      data={subEventOptions}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Select sub-event"
+                      value={typeof value === "number" ? String(value) : null}
+                      onChange={(item) => onChange(Number(item.value))}
+                      selectedTextStyle={{
+                        color: "#181114",
+                        fontSize: 15,
+                        fontWeight: "600",
+                      }}
+                      placeholderStyle={{ color: "#9CA3AF", fontSize: 15 }}
+                      itemTextStyle={{ color: "#181114", fontSize: 15 }}
+                      activeColor="#fdf2f8"
+                      disable={subEventOptions.length === 0}
+                    />
+                  )}
+                />
+                {subEventOptions.length === 0 && (
+                  <Text className="text-xs text-gray-400 ml-1" variant="h2">
+                    No sub-events found for this event.
+                  </Text>
+                )}
               </View>
 
               <View className="gap-6">

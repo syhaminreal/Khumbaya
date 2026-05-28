@@ -8,7 +8,7 @@ import { budgetCategoryFormSchema } from "@/src/features/budget/schema";
 import { useCategory } from "@/src/features/general-category/use-category";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -170,30 +170,6 @@ export default function AddBudgetItemScreen({
             {errors.name.message}
           </Text>
         )}
-        {/*
-          Adding the sub event list in this also 
-        */}
-        <Text className="text-sm  text-gray-700 mb-2" variant="h2">
-          Select Sub event
-        </Text>
-
-        <View className="bg-white rounded-sm px-4 h-14 shadow-sm border border-gray-100 mb-6">
-          <Controller
-            control={control}
-            name="subEventId"
-            render={({ field: { value, onChange } }) => (
-              <TextInput
-                className="flex-1 text-sm font-medium text-[#181114]"
-                placeholder="Sub EventId"
-                placeholderTextColor="#9ca3af"
-                value={value?.toString()}
-                onChangeText={onChange}
-                keyboardType="numeric"
-              />
-            )}
-          />
-        </View>
-
         <Text className="text-sm  text-gray-700 mb-2" variant="h2">
           Allocated Budget
         </Text>

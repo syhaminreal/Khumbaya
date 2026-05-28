@@ -9,7 +9,6 @@ type SubEventCardProps = {
   item: SubEvent;
   event: Event;
   isGuestView: boolean;
-  showMenu?: boolean;
   onMenuPress?: () => void;
 };
 
@@ -78,7 +77,6 @@ export default function SubEventCard({
   item,
   event,
   isGuestView,
-  showMenu = false,
   onMenuPress,
 }: SubEventCardProps) {
   const { push } = useThrottledRouter();
@@ -129,7 +127,7 @@ export default function SubEventCard({
                 {statusMeta.label}
               </Text>
             </View>
-            {showMenu && (
+            {!isGuestView && (
               <Pressable
                 onPress={onMenuPress}
                 className="h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/20"
@@ -168,8 +166,8 @@ export default function SubEventCard({
           <View className="flex-1">
             {/* location */}
             <Text className="text-sm font-semibold text-gray-900">
-              {item.location && item.location !== ""
-                ? item.location
+              {item.venue && item.venue !== ""
+                ? item.venue
                 : ""}
             </Text>
             <Text className="text-xs text-[#896175]">

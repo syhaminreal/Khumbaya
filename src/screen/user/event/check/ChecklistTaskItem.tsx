@@ -1,5 +1,6 @@
 import { Text } from "@/src/components/ui/Text";
 import type { TodoColumn } from "@/src/features/todo/type";
+import { useAuthStore } from "@/src/store/AuthStore";
 import { formatDate, getChecklistDueMeta } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -29,16 +30,18 @@ const ChecklistTaskItem = ({
   isDeleting,
 }: TaskItemProps) => {
   const [showActions, setShowActions] = useState(false);
+  const {user} = useAuthStore();
   const taskDueDate = task.dueDate instanceof Date
     ? task.dueDate.toISOString()
     : (task.dueDate as string | null);
-
+const userId = user?.id ?? 0;
   const dueMeta = getChecklistDueMeta(taskDueDate);
   const isUrgent = Boolean(dueMeta);
+  const isCompleted = task.doneByuserIds?.includes(userId) 
 
   return (
     <Pressable
-      className={`${task.isDone
+      className={`${task.doneByuserIds?.includes(user?.id ?? 0)
         ? "bg-surface-secondary  flex-row items-start p-5 rounded-xl mb-4"
         : "bg-surface  flex-row items-start p-5 rounded-xl mb-4"
         }`}
@@ -49,31 +52,31 @@ const ChecklistTaskItem = ({
           event.stopPropagation?.();
           onToggleComplete();
         }}
-        className={`mt-0.5 w-8 h-8 rounded-md border-2 flex items-center justify-center mr-4 ${task.isDone
+        className={`mt-0.5 w-8 h-8 rounded-md border-2 flex items-center justify-center mr-4 ${isCompleted
           ? "bg-success-500 border-success-500"
           : "border-primary/20 active:border-primary active:bg-primary/5"
           }`}
         disabled={isUpdating}
       >
-        {task.isDone ? (
+        {isCompleted ? (
           <MaterialIcons name="check" size={22} color="white" />
         ) : null}
       </Pressable>
 
       <View className="flex-1">
         <Text
-          className={`font-jakarta-semibold text-base leading-snug mb-3 ${task.isDone
+          className={`font-jakarta-semibold text-base leading-snug mb-3 ${isCompleted
             ? "text-text-tertiary line-through"
             : "text-text-light"
             }`}
         >
-          {task.title ?? task.task ?? "Untitled task"}
+          {task.title}
         </Text>
 
         <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2 mb-4">
           {task.category ? (
             <View
-              className={`flex-row items-center px-2.5 py-1 rounded-full border ${task.isDone
+              className={`flex-row items-center px-2.5 py-1 rounded-full border ${task.doneByuserIds?.includes(userId)
                 ? "bg-gray-100 border-gray-200"
                 : "bg-primary/5 border-primary/20"
                 }`}
@@ -81,10 +84,10 @@ const ChecklistTaskItem = ({
               <MaterialIcons
                 name="label-outline"
                 size={14}
-                color={task.isDone ? "#94a3b8" : "#ee2b8c"}
+                color={task.doneByuserIds?.includes(userId) ? "#94a3b8" : "#ee2b8c"}
               />
               <Text
-                className={`text-xs font-jakarta-bold ml-1.5 ${task.isDone
+                className={`text-xs font-jakarta-bold ml-1.5 ${task.doneByuserIds?.includes(user?.id ?? 0)
                   ? "text-text-disabled"
                   : "text-primary"
                   }`}
@@ -102,14 +105,14 @@ const ChecklistTaskItem = ({
               </Text>
             </View>
           ) : (
-            <View className={`flex-row items-center ${task.isDone ? "opacity-50" : ""}`}>
+            <View className={`flex-row items-center ${isCompleted ? "opacity-50" : ""}`}>
               <MaterialIcons
                 name="calendar-month"
                 size={16}
                 color="#9CA3AF"
               />
               <Text
-                className={`text-xs font-jakarta-semibold ml-1.5 ${task.isDone
+                className={`text-xs font-jakarta-semibold ml-1.5 ${isCompleted
                   ? "text-text-disabled"
                   : "text-text-tertiary"
                   }`}
@@ -119,7 +122,7 @@ const ChecklistTaskItem = ({
             </View>
           )}
 
-          <View className={`flex-row items-center ${task.isDone ? "opacity-50" : ""}`}>
+          <View className={`flex-row items-center ${isCompleted ? "opacity-50" : ""}`}>
             <View className="w-5 h-5 rounded-full overflow-hidden border border-white shadow-sm bg-surface-tertiary">
               {task.assignedUser?.photo ? (
                 <Image
@@ -143,18 +146,17 @@ const ChecklistTaskItem = ({
           <View className="flex-row flex-wrap items-center gap-4">
             <Pressable
               onPress={(event) => event.stopPropagation?.()}
-              className={`flex-row items-center px-2 py-1 -ml-2 rounded-sm ${task.isDone ? "opacity-50" : "active:bg-primary/5"
+              className={`flex-row items-center px-2 py-1 -ml-2 rounded-sm ${task.doneByuserIds?.includes(user?.id ?? 0) ? "opacity-50" : "active:bg-primary/5"
                 }`}
-              disabled={task.isDone}
+              disabled={task.doneByuserIds?.includes(user?.id ?? 0)}
             >
               <MaterialIcons
                 name="add"
                 size={18}
-                color={task.isDone ? "#9CA3AF" : "#ee2b8c"}
+                color={task.doneByuserIds?.includes(user?.id ?? 0) ? "#9CA3AF" : "#ee2b8c"}
               />
               <Text
-                className={`text-xs font-jakarta-bold ml-1.5 ${task.isDone ? "text-text-disabled" : "text-primary"
-                  }`}
+                className={`text-xs font-jakarta-bold ml-1.5 ${task.doneByuserIds?.includes(user?.id ?? 0) ? "text-text-disabled" : "text-primary"}`}
               >
                 Add sub-task
               </Text>
@@ -186,12 +188,12 @@ const ChecklistTaskItem = ({
               disabled={isUpdating}
             >
               <MaterialIcons
-                name={task.isDone ? "radio-button-unchecked" : "check-circle"}
+                name={task.doneByuserIds?.includes(user?.id ?? 0) ? "radio-button-unchecked" : "check-circle"}
                 size={16}
                 color="#ee2b8c"
               />
               <Text className="text-xs font-jakarta-bold text-primary ml-1.5">
-                {task.isDone ? "Mark incomplete" : "Mark complete"}
+                {task.doneByuserIds?.includes(user?.id ?? 0) ? "Mark incomplete" : "Mark complete"}
               </Text>
             </Pressable>
 

@@ -9,7 +9,8 @@ export type MealType =
 export interface CateringColumn {
     id: number;
   name: string;
-  perPlateprice: string;
+  perPlateprice: number;
+  noOfpax :number ; 
   startDateTime: Date;
   endDateTime: Date;
   eventId: number;
@@ -32,7 +33,8 @@ export interface CateringListResponse {
 
 export interface CreateCateringPayload {
   name: string;
-  perPlateprice: string;
+  perPlateprice: number;
+  noOfpax: number|null ;
   startDateTime: string | Date;
   endDateTime: string | Date;
   mealType: string;

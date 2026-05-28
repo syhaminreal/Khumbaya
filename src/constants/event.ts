@@ -7,6 +7,8 @@ export interface Event {
   location: string;
   dressCode?: string | null;
   venue: string;
+  venueId?: number | null;
+  venueBusinessid?: number | null;
   imageUrl: string;
   role: EventRole;
   status: EventTab;
@@ -18,8 +20,8 @@ export interface Event {
   theme?: string;
   parentId?: number;
   organizer?: number;
-  createdAt?: string; 
-  updatedAt?: string; 
+  createdAt?: string;
+  updatedAt?: string;
   rsvpDeadline?: string;
 }
 
