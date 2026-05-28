@@ -47,6 +47,7 @@ export default function ContactPickerScreen() {
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
   const [isInviting, setIsInviting] = useState(false);
   const [inviteWithFamily, setInviteWithFamily] = useState(true);
+  const [familyGuestCount, setFamilyGuestCount] = useState("1");
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(
     COUNTRY_DATA[0]
   );
@@ -202,6 +203,9 @@ export default function ContactPickerScreen() {
           eventId,
           payload: {
             invitation_name: contact.name,
+            numberOfGuests: inviteWithFamily
+              ? Number(familyGuestCount || 1)
+              : 1,
             phone: finalPhone,
             fullName: contact.name,
             isFamily: inviteWithFamily,
@@ -244,6 +248,7 @@ export default function ContactPickerScreen() {
     buildPhoneWithCountry,
     formatPhoneWithCountryDash,
     inviteWithFamily,
+    familyGuestCount,
   ]);
 
   const renderItem = useCallback(
@@ -346,6 +351,24 @@ export default function ContactPickerScreen() {
             thumbColor="#ffffff"
           />
         </View>
+
+        {inviteWithFamily && (
+          <View className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <Text className="text-sm font-semibold text-slate-800">
+              Number of guests
+            </Text>
+            <TextInput
+              className="mt-2 h-11 rounded-lg border border-gray-200 px-3 text-sm text-slate-800"
+              placeholder="e.g. 2"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="number-pad"
+              value={familyGuestCount}
+              onChangeText={(text) =>
+                setFamilyGuestCount(text.replace(/\D/g, ""))
+              }
+            />
+          </View>
+        )}
 
         <View className="flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
           <View className="flex-row items-center gap-2">
