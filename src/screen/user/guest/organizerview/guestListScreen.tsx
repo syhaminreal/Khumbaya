@@ -176,10 +176,7 @@ console.log('This is the sub event ')
     }
 
     return invitations.filter((invitation: GuestDetailInterface) => {
-      if (isSubEventBoolean && isGuestUninvitedFromSubEvent(invitation)) {
-        return false;
-      }
-      const status = String(invitation?.eventGuest?.status ?? "pending")
+      const status = String(invitation.eventGuest.status ?? "pending")
         .trim()
         .toLowerCase();
       return matchesTabStatus(status, activeTab);
@@ -196,7 +193,7 @@ console.log('This is the sub event ')
     const categoryCountMap = new Map<string, number>();
 
     for (const invitation of tabFilteredInvitations) {
-      const category = getNormalizedCategory(invitation.eventGuest.category);
+      const category = getNormalizedCategory(invitation.eventGuest?.category);
       categoryCountMap.set(category, (categoryCountMap.get(category) ?? 0) + 1);
     }
 
@@ -299,10 +296,7 @@ console.log('This is the sub event ')
         return item.members.some((member) => matchesSelectedCategory(member));
       }
 
-      if (isSubEventBoolean && isGuestUninvitedFromSubEvent(item.data)) {
-        return false;
-      }
-      const status = String(item.data.eventGuest?.status ?? "pending")
+      const status = String(item.data.eventGuest.status ?? "pending")
         .trim()
         .toLowerCase();
       if (!matchesTabStatus(status, activeTab)) return false;
@@ -716,6 +710,7 @@ console.log('This is the sub event ')
 
             return <DraftInvitationCard
               guest={item}
+              onPress={() => onPressGuestCard(item)}
               onMoveToPending={() => onPressDraftSend(item)}
               onDeleteDraft={() => onDeleteDraft(item)}
               isMoving={

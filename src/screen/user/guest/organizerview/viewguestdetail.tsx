@@ -126,14 +126,17 @@ export default function ViewGuestDetail() {
     );
   };
 
-  const categoryOptions = useMemo(
-    () =>
-      guestCategories.map((item) => ({
-        label: item.label,
-        value: item.value,
-      })),
-    [guestCategories]
-  );
+  const categoryOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return guestCategories
+      .filter((item) => {
+        const key = item.value.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((item) => ({ label: item.label, value: item.value }));
+  }, [guestCategories]);
   // TODO:Reviwe
   const hasAssignmentChanges = useMemo(() => {
     const initialUnInvited = [...unInvitedSubevents].sort((a, b) => a - b);
@@ -718,14 +721,6 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                     <View className="bg-slate-50 rounded-2xl px-4">
                       {[
                         {
-                          label: "Category",
-                          value:
-                            category ||
-                            guestDetail?.eventGuest?.category ||
-                            "Uncategorized",
-                          pill: true,
-                        },
-                        {
                           label: "Arrival Time",
                           value: guestDetail?.eventGuest?.arrivalDatetime
                             ? formatTime(
@@ -801,28 +796,10 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                             {row.label}
                           </Text>
                           {row.pill ? (
-                            <View className="flex-row items-center" style={{ gap: 8 }}>
-                              <View className="bg-primary/10 px-3 py-1 rounded-full">
-                                <Text variant="h2" className="text-primary text-xs">
-                                  {formatDisplayValue(row.value)}
-                                </Text>
-                              </View>
-
-                              {row.label === "Category" && (
-                                <Pressable
-                                  onPress={() => {
-                                    setNewCategoryTitle(category || "");
-                                    setCategoryModalVisible(true);
-                                  }}
-                                  className="flex-row items-center rounded-full border border-primary/25 px-2.5 py-1"
-                                  style={{ gap: 4 }}
-                                >
-                                  <Ionicons name="create-outline" size={13} color="#EE2B8C" />
-                                  <Text className="text-[11px] font-semibold text-primary">
-                                    Edit
-                                  </Text>
-                                </Pressable>
-                              )}
+                            <View className="bg-primary/10 px-3 py-1 rounded-full">
+                              <Text variant="h2" className="text-primary text-xs">
+                                {formatDisplayValue(row.value)}
+                              </Text>
                             </View>
                           ) : (
                             <Text variant="h2" className="text-slate-900 text-sm">
@@ -834,6 +811,30 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                     </View>
                   </View>
                 )}
+
+                <View className="bg-white border border-slate-200 px-4 py-3 rounded-2xl mb-3">
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3">
+                      <View className="p-2 bg-primary/5 rounded-xl">
+                        <Ionicons name="pricetag-outline" size={18} color="#EE2B8C" />
+                      </View>
+                      <Text variant="caption" className="text-sm text-slate-500">Category</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => {
+                        setNewCategoryTitle(category || "");
+                        setCategoryModalVisible(true);
+                      }}
+                      className="flex-row items-center bg-primary/10 px-3 py-1 rounded-full"
+                      style={{ gap: 5 }}
+                    >
+                      <Text variant="h2" className="text-primary text-xs">
+                        {category || guestDetail?.eventGuest?.category || "Uncategorized"}
+                      </Text>
+                      <Ionicons name="create-outline" size={11} color="#EE2B8C" />
+                    </Pressable>
+                  </View>
+                </View>
 
                 <View className="bg-white border border-slate-200 p-4 rounded-2xl mb-3">
                   <View className="flex-row justify-between items-start">
@@ -856,8 +857,6 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                       activeOpacity={0.7}
                     ></TouchableOpacity>
                   </View>
-
-
                 </View>
                 {/* Sub event list TODO: CHEck this shit */}
                 {subEvents.length > 0 && (
