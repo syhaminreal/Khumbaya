@@ -5,16 +5,27 @@ import {
   useEventById,
   useGetEventWithRole,
 } from "@/src/features/events/hooks/use-event";
-import { useEventStore, useSubeventDraftStore } from "@/src/features/events/store/useEventStore";
+import {
+  useEventStore,
+  useSubeventDraftStore,
+} from "@/src/features/events/store/useEventStore";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { Ionicons } from "@expo/vector-icons";
-import { RelativePathString, router, Stack, useLocalSearchParams } from "expo-router";
+import {
+  RelativePathString,
+  router,
+  Stack,
+  useLocalSearchParams,
+} from "expo-router";
 import { Settings } from "lucide-react-native";
 
 import { shadowStyle } from "@/src/utils/helper";
 import { useEffect, useRef } from "react";
 import { Animated, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import EventDetailHero from "./EventDetailHero";
 
 const EventDetail = () => {
@@ -50,21 +61,24 @@ const EventDetail = () => {
 
   const event = isSubEventView
     ? (subEventDraft as Event)
-    : fullEvent ?? foundEvent ?? {
-      id: eventId ?? "0",
-      title: "Event Details",
-      location: "—",
-      venue: "",
-      imageUrl: "",
-      role: "Organizer" as const,
-      status: "upcoming" as const,
-      time: "",
-      startDateTime: "",
-      endDateTime: "",
-    };
+    : (fullEvent ??
+      foundEvent ?? {
+        id: eventId ?? "0",
+        title: "Event Details",
+        location: "—",
+        venue: "",
+        imageUrl: "",
+        role: "Organizer" as const,
+        status: "upcoming" as const,
+        time: "",
+        startDateTime: "",
+        endDateTime: "",
+      });
 
   useEffect(() => {
-    if (!isSubEventView) { setEventDraft(event); }
+    if (!isSubEventView) {
+      setEventDraft(event);
+    }
     //Cleanup when there is anotehr stack flow
     //  return () => {
     //   clearEventDraft();
@@ -86,16 +100,92 @@ const EventDetail = () => {
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     { useNativeDriver: false } // navigation.setOptions updates are not native-driven
   );
-console.log('thiis is the navigation context in the event detail page to be deleted in the futur😂futur😂futur😂futur😂futur😂futur😂futur😂futur😂e' , eventId , isSubEvent , isSubEventView)
+  console.log(
+    "thiis is the navigation context in the event detail page to be deleted in the futur😂futur😂futur😂futur😂futur😂futur😂futur😂futur😂e",
+    eventId,
+    isSubEvent,
+    isSubEventView
+  );
   const manageActions = [
-    { id: "subevents", name: "Sub Events", icon: "layers-outline", color: "#F97316", route: "./(subevent)" as RelativePathString, isVisiblity: isSubEvent === "true" ? false : true },
-    { id: "guests", name: "Guest Management", icon: "people", color: "#8B5CF6", route: "./guests" as RelativePathString, isVisiblity: true  , isSubEventView },
-    { id: "budget", name: "Budget", icon: "wallet", color: "#10B981", route: "./budget" as RelativePathString, isVisiblity: true, isSubEventView },
-    { id: "checklist", name: "Checklist", icon: "checkmark-circle-outline", color: "#EC4899", route: "./tasklist" as RelativePathString, isVisiblity: true },
-    { id: "catering", name: "Catering", icon: "restaurant", color: "#F43F5E", route: "./catering" as RelativePathString, isVisiblity: true, isSubEventView },
-    { id: "hotel-management", name: "Hotel Management", icon: "bed-outline", color: "#F59E0B", route: "./hotel" as RelativePathString, isVisiblity: true, isSubEventView },
-    { id: "logistics", name: "Logistics", icon: "cube-outline", color: "#10B981", route: "./(logistics)" as RelativePathString, isVisiblity: true, isSubEventView },
-    { id: "vendors", name: "Vendors", icon: "business", color: "#3B82F6", route: "./vendor" as RelativePathString, isVisiblity: true, isSubEventView },
+    {
+      id: "subevents",
+      name: "Sub Events",
+      icon: "layers-outline",
+      color: "#F97316",
+      route: "./(subevent)" as RelativePathString,
+      isVisiblity: isSubEvent === "true" ? false : true,
+    },
+    {
+      id: "guests",
+      name: "Guest Management",
+      icon: "people",
+      color: "#8B5CF6",
+      route: "./guests" as RelativePathString,
+      isVisiblity: true,
+      isSubEventView,
+    },
+    {
+      id: "gifts",
+      name: "Gifts",
+      icon: "gift-outline",
+      color: "#F472B6",
+      route: "./gifts" as RelativePathString,
+      isVisiblity: true,
+      isSubEventView,
+    },
+    {
+      id: "budget",
+      name: "Budget",
+      icon: "wallet",
+      color: "#10B981",
+      route: "./budget" as RelativePathString,
+      isVisiblity: true,
+      isSubEventView,
+    },
+    {
+      id: "checklist",
+      name: "Checklist",
+      icon: "checkmark-circle-outline",
+      color: "#EC4899",
+      route: "./tasklist" as RelativePathString,
+      isVisiblity: true,
+    },
+    {
+      id: "catering",
+      name: "Catering",
+      icon: "restaurant",
+      color: "#F43F5E",
+      route: "./catering" as RelativePathString,
+      isVisiblity: true,
+      isSubEventView,
+    },
+    {
+      id: "hotel-management",
+      name: "Hotel Management",
+      icon: "bed-outline",
+      color: "#F59E0B",
+      route: "./hotel" as RelativePathString,
+      isVisiblity: true,
+      isSubEventView,
+    },
+    {
+      id: "logistics",
+      name: "Logistics",
+      icon: "cube-outline",
+      color: "#10B981",
+      route: "./(logistics)" as RelativePathString,
+      isVisiblity: true,
+      isSubEventView,
+    },
+    {
+      id: "vendors",
+      name: "Vendors",
+      icon: "business",
+      color: "#3B82F6",
+      route: "./vendor" as RelativePathString,
+      isVisiblity: true,
+      isSubEventView,
+    },
   ];
 
   return (
@@ -139,8 +229,7 @@ console.log('thiis is the navigation context in the event detail page to be dele
           position: "absolute",
           left: 16,
           top: insets.top + 8,
-          zIndex: 20
-          ,
+          zIndex: 20,
         }}
       >
         <TouchableOpacity
@@ -157,8 +246,7 @@ console.log('thiis is the navigation context in the event detail page to be dele
           position: "absolute",
           right: 16,
           top: insets.top + 8,
-          zIndex: 20
-          ,
+          zIndex: 20,
         }}
       >
         <TouchableOpacity
@@ -217,9 +305,12 @@ console.log('thiis is the navigation context in the event detail page to be dele
           <Text className="text-lg font-bold mb-3">Manage Event</Text>
 
           <View className="flex-row flex-wrap gap-3 justify-center">
-            {manageActions.map((action) => (
-              action.isVisiblity && <NavigateComponent key={action.id} {...action} />
-            ))}
+            {manageActions.map(
+              (action) =>
+                action.isVisiblity && (
+                  <NavigateComponent key={action.id} {...action} />
+                )
+            )}
 
             <Row
               title="Gallery"

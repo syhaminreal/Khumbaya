@@ -1,9 +1,17 @@
 export interface GiftColumn {
   id: number;
-  name: string;
-  category: string | null;
+  title: string;
+  description?: string | null;
+  categoryId: number | null;
+  category?: string | null;
+  price: number | null;
+  currency?: string | null;
+  recipientId?: number | null;
+  recipientName?: string | null;
+  businessId?: number | null;
+  maxPerGuest?: number | null;
+  totalStock?: number | null;
   eventId: number;
-  value: number | null;
   createdBy: number | null;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -12,6 +20,7 @@ export interface GiftColumn {
 export interface GiftCategoryColumn {
   id: number;
   name: string;
+  description?: string | null;
   eventId: number;
   createdBy: number | null;
   createdAt: Date | null;
