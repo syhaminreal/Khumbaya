@@ -4,6 +4,7 @@ import { RoomData } from "@/src/features/hotel/types/hotel.types";
 export interface InviteGuestPayload {
   fullName: string;
   invitation_name: string;
+  numberOfGuests?: number;
   isDraft: boolean;
   phone: string;
   isFamily: boolean;
@@ -69,11 +70,9 @@ export const getInvitation = async (eventId: number) => {
   const response = await api.get(`/event/${eventId}/invitation`);
   return response.data.data;
 };
-export const getGuestRoom = async (
-  eventId: number
-): Promise<RoomData[]> => {
+export const getGuestRoom = async (eventId: number): Promise<RoomData[]> => {
   const response = await api.get(`event/${eventId}/hotel-management`);
-  return (response.data.data ?? response.data);
+  return response.data.data ?? response.data;
 };
 export const removeInvitation = async (eventId: number, guestId: number) => {
   const response = await api.delete(`/event/${eventId}/invitation`, {
@@ -89,10 +88,13 @@ export const moveToDraft = async (eventId: number, guestId: number) => {
   return response.data.data;
 };
 
-export const importGuestlist =async (fromEventId: number, toEventId: number) => {
+export const importGuestlist = async (
+  fromEventId: number,
+  toEventId: number
+) => {
   const response = await api.post(`/invitation/import-guest`, {
     fromEventId,
     toEventId
   });
-  return response.data.data ?? response.data ;
+  return response.data.data ?? response.data;
 };
