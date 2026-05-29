@@ -351,7 +351,21 @@ export default function EditEventScreen() {
     const resolvedBusinessName =
       values.businessId === "other"
         ? undefined : selectedBusiness?.businessInformation?.businessName?.trim();
-    const resolvedVenueName = (values.venueId && values.businessId) ? resolvedBusinessName ?? "" + values.venueName.trim() : undefined;
+    const trimmedVenueName = values.venueName.trim();
+    const trimmedBusinessName = resolvedBusinessName?.trim();
+    let resolvedVenueName: string | undefined;
+
+    if (values.businessId === "other") {
+      resolvedVenueName = trimmedVenueName || undefined;
+    } else if (trimmedBusinessName) {
+      if (values.venueId) {
+        resolvedVenueName = trimmedVenueName
+          ? `${trimmedBusinessName} ${trimmedVenueName}`
+          : trimmedBusinessName;
+      } else {
+        resolvedVenueName = trimmedBusinessName;
+      }
+    }
 
     const payload = {
       title: values.title.trim(),
@@ -362,7 +376,7 @@ export default function EditEventScreen() {
       location: values.city.trim() || undefined,
       businessId: resolvedBusinessId ?? undefined,
       business: resolvedBusinessName || undefined,
-      venue: resolvedVenueName || undefined,
+      venue: resolvedVenueName ?? undefined,
       venueId:
         values.venueId && values.businessId !== "other"
           ? Number(values.venueId)
@@ -372,6 +386,7 @@ export default function EditEventScreen() {
       budget: values.budget ? Number(values.budget) : undefined,
       rsvpDeadline: values.rsvpDeadline.toISOString(),
     };
+    console.log('this is the updated event data: 😈😈😈😈😈😈😈😈', payload)
 
     updateEvent(payload, {
       onSuccess: () => {

@@ -241,6 +241,10 @@ export default function ViewGuestDetail() {
     },
   ].filter((row) => row.value);
 
+const visibleGuestProfileRows = guestProfileRows.filter(
+    (row) => !row.value?.includes("@khumbaya.com")
+  );
+
   const handleSaveAssignments = () => {
     if (
       !guestDetail?.eventGuest ||
@@ -252,21 +256,14 @@ export default function ViewGuestDetail() {
 
     const payload = {
       userId: guestDetail.user.id,
-      familyId: guestDetail.eventGuest.familyId,
-      isAccomodation: guestDetail.eventGuest.isAccomodation ?? undefined,
-      isArrivalPickupRequired:
-        guestDetail.eventGuest.isArrivalPickupRequired ?? undefined,
-      isDeparturePickupRequired:
-        guestDetail.eventGuest.isDeparturePickupRequired ?? undefined,
-      assignedRoom: assignedRoom.trim() || null,
-      arrivalInfo: arrivalInfo.trim() || null,
-      departureInfo: departureInfo.trim() || null,
+      assignedRoom: assignedRoom.trim() || undefined,
+      arrivalInfo: arrivalInfo.trim() || undefined,
+      departureInfo: departureInfo.trim() || undefined,
       notes: notes.trim(),
       category: category.trim() || undefined,
       role: category.trim() || undefined,
       unInvitedSubevent: unInvitedSubeventIds,
     };
-
     submitRsvpResponse(payload, {
       onSuccess: () => {
         router.back();
@@ -646,16 +643,16 @@ export default function ViewGuestDetail() {
 
                     <View className="rounded-full bg-slate-100 px-3 py-1">
                       <Text className="text-[11px] font-semibold text-slate-500">
-                        {guestProfileRows.length} field
-                        {guestProfileRows.length === 1 ? "" : "s"}
+                        {visibleGuestProfileRows.length} field
+                        {visibleGuestProfileRows.length === 1 ? "" : "s"}
                       </Text>
                     </View>
                   </View>
 
                   <View className="rounded-2xl border border-slate-100 bg-white ">
-                    {guestProfileRows.length ? (
+                    {visibleGuestProfileRows.length ? (
                       <View className="gap-2">
-                        {guestProfileRows.map((row) => (
+                        {visibleGuestProfileRows.map((row) => (
                           <View
                             key={row.label}
                             className="flex-row items-center rounded-xl bg-slate-50 px-3 py-3"
@@ -668,6 +665,7 @@ export default function ViewGuestDetail() {
                                 color="#EE2B8C"
                               />
                             </View>
+
                             <View className="flex-1 flex-row justify-between items-center">
                               <Text className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                                 {row.label}
