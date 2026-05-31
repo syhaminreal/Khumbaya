@@ -137,6 +137,16 @@ export default function EventVendorsPage() {
     return vendor.status === activeTab;
   });
 
+  const groupedVendors = useMemo(() => {
+    const map = new Map<string, Vendor[]>();
+    for (const vendor of filteredVendors) {
+      const key = vendor.category || "Other";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(vendor);
+    }
+    return Array.from(map.entries());
+  }, [filteredVendors]);
+
   return (
     <SafeAreaView className="flex-1 bg-[#f8f6f7]" edges={["bottom"]}>
       {/* Tabs */}
@@ -202,11 +212,20 @@ export default function EventVendorsPage() {
           </View>
         )}
 
-        {filteredVendors.map((vendor) => (
-          <VendorCard key={vendor.id} vendor={vendor} eventId={eventId} />
+        {groupedVendors.map(([category, vendors]) => (
+          <View key={category}>
+            <Text className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4">
+              {category}
+            </Text>
+            <View style={{ gap: 8 }}>
+              {vendors.map((vendor) => (
+                <VendorCard key={vendor.id} vendor={vendor} eventId={eventId} />
+              ))}
+            </View>
+          </View>
         ))}
 
-        {filteredVendors.length === 0 && !!eventId && !isLoading && !isError && (
+        {groupedVendors.length === 0 && !!eventId && !isLoading && !isError && (
           <View className="items-center justify-center py-16">
             <Ionicons name="storefront-outline" size={64} color="#D1D5DB" />
             <Text className="text-lg font-semibold text-gray-500 mt-4">No vendors found</Text>
