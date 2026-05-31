@@ -1,7 +1,16 @@
-export { default } from "./gallery";
+import api from "@/src/api/axios";
+import ImageUpload from "@/src/components/ui/ImageUpload";
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import {
+    Alert,
+    FlatList,
+    Image,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface GalleryImage {
@@ -52,7 +61,11 @@ function EmptyGallery() {
 }
 
 export default function GalleryScreen() {
+  const params = useLocalSearchParams() as { eventId?: string };
+  const eventId = params.eventId;
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const formatDate = useCallback((date: Date) => {
     return date.toLocaleDateString("en-US", {
@@ -64,19 +77,77 @@ export default function GalleryScreen() {
     });
   }, []);
 
-  const handleImageAdd = useCallback(
-    (uri: string) => {
+  const getMimeType = useCallback((uri: string) => {
+    const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase();
+    if (!extension) return "image/jpeg";
+    if (
+      ["mp4", "mov", "avi", "mkv", "webm", "3gp", "ogg"].includes(extension)
+    ) {
+      return `video/${extension === "mov" ? "quicktime" : extension}`;
+    }
+    if (extension === "heic") return "image/heic";
+    if (extension === "heif") return "image/heif";
+    if (extension === "svg") return "image/svg+xml";
+    return `image/${extension}`;
+  }, []);
+
+  const uploadImage = useCallback(
+    async (uri: string) => {
       if (!uri) return;
+      if (!eventId) {
+        Alert.alert("Upload failed", "Missing event id.");
+        return;
+      }
 
-      const newImage: GalleryImage = {
-        id: Date.now().toString(),
-        uri: uri,
-        uploadedAt: formatDate(new Date()),
-      };
+      setSelectedImage(uri);
+      setUploading(true);
 
-      setImages((prev) => [newImage, ...prev]);
+      try {
+        const fileName = uri.split("/").pop() ?? `upload-${Date.now()}`;
+        const fileType = getMimeType(uri);
+        const data = new FormData();
+
+        data.append("file", {
+          uri,
+          name: fileName,
+          type: fileType,
+        } as any);
+
+        const response = await api.post(
+          `/gallery/event/${eventId}/upload`,
+          data,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        const responseData = response.data;
+        const message =
+          responseData?.message || responseData?.error || "Upload successful.";
+
+        Alert.alert("Upload completed", message);
+
+        const newImage: GalleryImage = {
+          id: responseData?.publicId ?? Date.now().toString(),
+          uri: responseData?.mediaUrl ?? uri,
+          uploadedAt: formatDate(new Date()),
+        };
+
+        setImages((prev) => [newImage, ...prev]);
+      } catch (err: unknown) {
+        const errorMessage =
+          err && typeof err === "object" && "message" in err
+            ? (err as any).message
+            : "Unable to upload image.";
+        Alert.alert("Upload failed", String(errorMessage));
+      } finally {
+        setUploading(false);
+        setSelectedImage("");
+      }
     },
-    [formatDate]
+    [eventId, formatDate, getMimeType]
   );
 
   const handleImageDelete = useCallback((id: string) => {
@@ -95,21 +166,24 @@ export default function GalleryScreen() {
   const ListHeader = useCallback(
     () => (
       <View>
-        {/* Add Photo Section */}
         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
           <Text className="text-base font-bold text-gray-900 mb-3">
             Add New Photos
           </Text>
           <ImageUpload
             label=""
-            placeholder="Tap to add photos"
+            placeholder={uploading ? "Uploading..." : "Tap to add photos"}
             hint="Take a photo or choose from gallery"
-            value=""
-            onChange={handleImageAdd}
+            value={selectedImage}
+            onChange={uploadImage}
           />
+          {uploading && (
+            <Text className="text-sm text-gray-500 mt-2">
+              Uploading file, please wait...
+            </Text>
+          )}
         </View>
 
-        {/* Uploaded Photos Section */}
         <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-base font-bold text-gray-900">
@@ -124,7 +198,7 @@ export default function GalleryScreen() {
         </View>
       </View>
     ),
-    [images.length, handleImageAdd]
+    [images.length, uploading, selectedImage, uploadImage]
   );
 
   const ListFooter = useCallback(() => <View className="h-24" />, []);

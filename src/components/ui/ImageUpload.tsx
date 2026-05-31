@@ -30,7 +30,7 @@ export default function ImageUpload({
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images", "videos"],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -109,16 +109,12 @@ export default function ImageUpload({
             <Text className="mt-2 text-sm text-gray-500 font-medium">
               {placeholder}
             </Text>
-            {hint && (
-              <Text className="mt-1 text-xs text-gray-400">{hint}</Text>
-            )}
+            {hint && <Text className="mt-1 text-xs text-gray-400">{hint}</Text>}
           </View>
         )}
       </TouchableOpacity>
 
-      {error && (
-        <Text className="mt-1 text-xs text-red-500">{error}</Text>
-      )}
+      {error && <Text className="mt-1 text-xs text-red-500">{error}</Text>}
     </View>
   );
 }

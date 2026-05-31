@@ -39,7 +39,7 @@ export default function ProfileScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images", "videos"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -52,59 +52,58 @@ export default function ProfileScreen() {
     }
   };
 
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable
+              onPress={handleLogout}
+              className="px-2 py-1"
+              accessibilityRole="button"
+              accessibilityLabel="Log out"
+            >
+              <Ionicons name="log-out-outline" size={22} />
+            </Pressable>
+          ),
+        }}
+      ></Stack.Screen>
 
-  return (<>
-
-    <Stack.Screen
-      options={{
-        headerRight: () => (
-          <Pressable
-            onPress={handleLogout}
-            className="px-2 py-1"
-            accessibilityRole="button"
-            accessibilityLabel="Log out"
-          >
-            <Ionicons name="log-out-outline" size={22} />
-          </Pressable>
-        ),
-      }}
-    >
-    </Stack.Screen>
-
-
-
-    <ScrollView showsVerticalScrollIndicator={false} className="px-2 bg-white pb-11">
-      <View className="items-center bg-white py-6">
-        <AvatarPicker
-          name={user?.username || "User"}
-          onPick={handlePickAvatar}
-          size="large"
-          showEditButton={true}
-          showName={false}
-        />
-        <Text className="text-2xl font-bold mt-4 text-gray-900">
-          {user?.username || "User"}
-        </Text>
-        {user?.email && !user?.email.startsWith("guest_") && (
-        <Text className="text-gray-500 text-sm">{user?.email}</Text>
-        )}
-        <Text className="text-gray-500 text-sm">{user?.phone}</Text>
-      </View>
-      <View className="mx-6 bg-white rounded-2xl p-1 flex-row shadow-sm">
-        <ToggleButton
-          title=" Business"
-          active={tab === "account"}
-          onPress={() => setTab("account")}
-        />
-        <ToggleButton
-          title="Account"
-          active={tab === "info"}
-          onPress={() => setTab("info")}
-        />
-      </View>
-      {tab === "account" ? <Account /> : <Info />}
-    </ScrollView>
-  </>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        className="px-2 bg-white pb-11"
+      >
+        <View className="items-center bg-white py-6">
+          <AvatarPicker
+            name={user?.username || "User"}
+            onPick={handlePickAvatar}
+            size="large"
+            showEditButton={true}
+            showName={false}
+          />
+          <Text className="text-2xl font-bold mt-4 text-gray-900">
+            {user?.username || "User"}
+          </Text>
+          {user?.email && !user?.email.startsWith("guest_") && (
+            <Text className="text-gray-500 text-sm">{user?.email}</Text>
+          )}
+          <Text className="text-gray-500 text-sm">{user?.phone}</Text>
+        </View>
+        <View className="mx-6 bg-white rounded-2xl p-1 flex-row shadow-sm">
+          <ToggleButton
+            title=" Business"
+            active={tab === "account"}
+            onPress={() => setTab("account")}
+          />
+          <ToggleButton
+            title="Account"
+            active={tab === "info"}
+            onPress={() => setTab("info")}
+          />
+        </View>
+        {tab === "account" ? <Account /> : <Info />}
+      </ScrollView>
+    </>
   );
 }
 
@@ -142,7 +141,6 @@ const ToggleButton = ({ title, active, onPress }: ToggleButtonProps) => {
 const Row = ({ icon, title, href }: RowProps & { href: string }) => (
   <Link href={href as any} asChild>
     <Pressable className="flex-row items-center justify-between border border-gray-200 p-4 rounded-md  mb-3 shadow-sm active:scale-[0.98]">
-
       <View className="flex-row items-center gap-4">
         <LinearGradient
           colors={["#ec489933", "#db277733"]}
