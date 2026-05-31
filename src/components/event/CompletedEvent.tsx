@@ -1,4 +1,3 @@
-import { Event } from "@/src/constants/event";
 import { useGetCompletedEvents } from "@/src/features/events/hooks/use-event";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -15,15 +14,11 @@ export const CompletedEventsTab = ({ isActive }: CompletedEventsTabProps) => {
         return null;
     }
 	const {
-		data: completedEventsData = [],
+		data: completedEvents = [],
 		isLoading,
 		isError,
 		refetch,
 	} = useGetCompletedEvents({ enabled: isActive });
-
-	const completedEvents = (completedEventsData as Event[]).filter(
-		(event) => event.status === "completed"
-	);
 
 	const onRefresh = async () => {
 		setRefreshing(true);

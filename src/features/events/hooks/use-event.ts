@@ -100,9 +100,16 @@ export const useGetEventWithRole = ({
     queryKey: ["events/with-role"],
     enabled,
     queryFn: async () => {
-      const upcomingEvents = await getUpcomingEventsApi();
-
-      return upcomingEvents;
+      const [upcomingEvents, completedEvents] = await Promise.all([
+        getUpcomingEventsApi(),
+        getCompletedEventsApi(),
+      ]);
+      const seen = new Set<string>();
+      return [...upcomingEvents, ...completedEvents].filter((e) => {
+        if (seen.has(e.id)) return false;
+        seen.add(e.id);
+        return true;
+      });
     },
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
