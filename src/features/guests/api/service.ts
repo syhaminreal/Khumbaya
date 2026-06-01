@@ -98,3 +98,31 @@ export const importGuestlist = async (
   });
   return response.data.data ?? response.data;
 };
+
+
+
+export const getInvitationGifts = async (invitationId: number): Promise<{
+  assignmentId: number;
+  invitationId: number;
+  giftId: number;
+  totalCount: number;
+  assignedAt: string;
+  assignedBy: number;
+  updatedAt: string;
+  giftName: string;
+  giftCategory: string;
+  giftValue: number;
+  giftCount: number;
+} | null> => {
+  const response = await api.get(`/invitation/${invitationId}/gifts`);
+  return response.data.data;
+};
+
+export const assignGiftToInvitation = async (invitationId: number, giftId: number) => {
+
+  const response = await api.post(`/gift/assign/${giftId}`, {
+    invitationId,
+    totalCount: 1
+  });
+  return response.data.data;
+}
