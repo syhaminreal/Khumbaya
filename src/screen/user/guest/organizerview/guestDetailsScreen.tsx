@@ -43,7 +43,7 @@ export default function GuestDetailsScreen({
         notes: propGuest.eventGuest?.notes,
         totalGuests: 1,
         relation: propGuest.user.relation,
-        category: propGuest.eventGuest?.role,
+        category: propGuest.eventGuest?.category,
       };
     }
 
@@ -67,7 +67,7 @@ export default function GuestDetailsScreen({
         notes: draft.eventGuest?.notes,
         totalGuests: 1,
         relation: draft.user.relation,
-        category: draft.eventGuest?.role ?? selectedFamilyMember?.eventGuest?.role,
+        category: draft.eventGuest?.category ?? selectedFamilyMember?.eventGuest?.category,
       };
     }
 

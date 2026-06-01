@@ -6,15 +6,18 @@ import { Text } from "@/src/components/ui/Text";
 import { useSubmitRsvpResponse } from "@/src/features/events/hooks/use-event";
 import { useSubEventListStore } from "@/src/features/events/store/useEventStore";
 import {
+  useAssignGiftToInvitation,
   useCreateEventGuestCategory,
   useGetEventGuestCategories,
+  useGetInvitationGifts,
   useRemoveInvitation,
 } from "@/src/features/guests/api/use-guests";
+import { useGiftsByEvent } from "@/src/features/gifts/hooks/use-gifts";
 import { useGuestDetailStore } from "@/src/features/guests/store/useGuestDetailStore";
-import { formatDate, formatTime, toISODateString } from "@/src/utils/helper";
+import { _entering, _exiting, _layoutAnimation, formatDate, formatTime, toISODateString } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -28,7 +31,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type CategoryPriority = 1 | 2 | 3;
@@ -71,6 +76,7 @@ const getAgeFromDob = (dob: Date) => {
 export default function ViewGuestDetail() {
   const router = useRouter();
   const guestDetail = useGuestDetailStore((state) => state.guestDraft);
+  const setGuestDetail = useGuestDetailStore((state) => state.setGuestDetail);
 
   const statusValue = guestDetail?.eventGuest?.status?.toLowerCase?.() ?? "";
   const isConfirmed = statusValue === "accepted" || statusValue === "confirmed";
@@ -80,10 +86,21 @@ export default function ViewGuestDetail() {
     useSubmitRsvpResponse(eventId);
   const removeInvitationMutation = useRemoveInvitation();
   const createCategoryMutation = useCreateEventGuestCategory();
+  const assignGiftMutation = useAssignGiftToInvitation();
   const {
     data: guestCategories = [],
     isLoading: isGuestCategoriesLoading,
   } = useGetEventGuestCategories(eventId || null);
+  const invitationId = guestDetail?.eventGuest?.id ?? null;
+  const {
+    data: invitationGift,
+    isLoading: isInvitationGiftLoading,
+  } = useGetInvitationGifts(invitationId);
+  const {
+    data: eventGiftsData,
+    isLoading: isEventGiftsLoading,
+    refetch: refetchEventGifts,
+  } = useGiftsByEvent(eventId );
 
   const initialRoom = guestDetail?.eventGuest?.assignedRoom ?? "";
   const initialArrivalInfo =
@@ -104,17 +121,41 @@ export default function ViewGuestDetail() {
   const [category, setCategory] = useState(initialCategory);
   const [notes] = useState(initialNotes);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
+  const [assigningGiftId, setAssigningGiftId] = useState<number | null>(null);
+  const [isAssigningGift, setisAssigningGift] = useState<boolean>(false);
+  const [isGiftAssignEnabled, setIsGiftAssignEnabled] = useState(false);
+  const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   // TODO: Review this is genearated code 
   const { subEventList } = useSubEventListStore();
-  const unInvitedSubevents = guestDetail?.eventGuest?.unInvitedSubevent ?? [];
+  const unInvitedSubevents = useMemo(
+    () => guestDetail?.eventGuest?.unInvitedSubevent ?? [],
+    [guestDetail?.eventGuest?.unInvitedSubevent]
+  );
   const subEvents = subEventList ?? [];
   const [unInvitedSubeventIds, setUnInvitedSubeventIds] = useState<number[]>(
     unInvitedSubevents
   );
 
   useEffect(() => {
-    setUnInvitedSubeventIds(unInvitedSubevents);
+    setUnInvitedSubeventIds((prev) => {
+      const next = unInvitedSubevents;
+      if (prev.length !== next.length) {
+        return next;
+      }
+      for (let i = 0; i < prev.length; i += 1) {
+        if (prev[i] !== next[i]) {
+          return next;
+        }
+      }
+      return prev;
+    });
   }, [unInvitedSubevents]);
+
+  useFocusEffect(() => {
+    if (eventId) {
+      refetchEventGifts();
+    }
+  });
 
   const isSubEventInvited = (subEventId: string | number) =>
     !unInvitedSubeventIds.includes(Number(subEventId));
@@ -248,6 +289,20 @@ const visibleGuestProfileRows = guestProfileRows.filter(
     (row) => !row.value?.includes("@khumbaya.com")
   );
 
+  const eventGifts = useMemo(() => {
+    const items = (eventGiftsData as any)?.items ?? eventGiftsData ?? [];
+    return Array.isArray(items) ? items : [];
+  }, [eventGiftsData]);
+
+  const eventGiftOptions = useMemo(
+    () =>
+      eventGifts.map((gift: any) => ({
+        label: gift.name,
+        value: gift.id,
+      })),
+    [eventGifts]
+  );
+
   const handleSaveAssignments = () => {
     if (
       !guestDetail?.eventGuest ||
@@ -264,12 +319,12 @@ const visibleGuestProfileRows = guestProfileRows.filter(
       departureInfo: departureInfo.trim() || undefined,
       notes: notes.trim(),
       category: category.trim() || undefined,
-      role: category.trim() || undefined,
       unInvitedSubevent: unInvitedSubeventIds,
     };
     submitRsvpResponse(payload, {
       onSuccess: () => {
         router.back();
+       
       },
     });
   };
@@ -347,6 +402,29 @@ const visibleGuestProfileRows = guestProfileRows.filter(
         error?.message ||
         "Failed to create guest category.";
       Alert.alert("Error", message);
+    }
+  };
+
+  const handleAssignGift = async (giftId: number) => {
+    if (!invitationId) {
+      Alert.alert("Error", "Invitation not found.");
+      return;
+    }
+    setisAssigningGift(true)
+    setAssigningGiftId(giftId);
+    try {
+      await assignGiftMutation.mutateAsync({ invitationId, giftId });
+      Alert.alert("Success", "Gift assigned successfully.");
+      setSelectedGiftId(null);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to assign gift. Please try again.";
+      Alert.alert("Error", message);
+    } finally {
+      setAssigningGiftId(null);
+      setisAssigningGift(false)
     }
   };
 
@@ -703,7 +781,7 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                   </View>
                 </View>
 
-                {isConfirmed && (
+                
                   <View>
                     <View className="flex-row items-center gap-2 mb-4">
                       <Ionicons
@@ -787,8 +865,8 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                           pill: true,
                         },
 
-                      ].map((row, i, arr) => (
-                        <View
+                      ].map((row, i, arr) =>
+                        row.value ? ( <View
                           key={i}
                           className={`flex-row justify-between items-center py-3 ${i < arr.length - 1 ? "border-b border-slate-100" : ""}`}
                         >
@@ -807,10 +885,11 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                             </Text>
                           )}
                         </View>
-                      ))}
+                      ) : null
+                    )}
                     </View>
                   </View>
-                )}
+              
 
                 <View className="bg-white border border-slate-200 px-4 py-3 rounded-2xl mb-3">
                   <View className="flex-row items-center justify-between">
@@ -858,6 +937,150 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                     ></TouchableOpacity>
                   </View>
                 </View>
+
+                {invitationGift ? (
+                  <Animated.View
+                    className="bg-white border border-slate-200 p-4 rounded-2xl mb-3"
+                    layout={_layoutAnimation}
+                    entering={_entering}
+                    exiting={_exiting}
+                  >
+                    <View className="flex-row items-center gap-2 mb-3">
+                      <Ionicons name="gift-outline" size={22} color="#EE2B8C" />
+                      <Text variant="caption" className="text-xs">
+                        Assigned Gift
+                      </Text>
+                    </View>
+                    {isInvitationGiftLoading ? (
+                      <ActivityIndicator color="#ee2b8c" />
+                    ) : (
+                      <View className="gap-2">
+                        <View className="flex-row justify-between items-center">
+                          <Text className="text-xs text-slate-500">Gift</Text>
+                          <Text className="text-sm font-semibold text-slate-900">
+                            {invitationGift.giftName}
+                          </Text>
+                        </View>
+                        <View className="flex-row justify-between items-center">
+                          <Text className="text-xs text-slate-500">Category</Text>
+                          <Text className="text-sm font-semibold text-slate-900">
+                            {invitationGift.giftCategory}
+                          </Text>
+                        </View>
+                        <View className="flex-row justify-between items-center">
+                          <Text className="text-xs text-slate-500">Value</Text>
+                          <Text className="text-sm font-semibold text-slate-900">
+                            {invitationGift.giftValue}
+                          </Text>
+                        </View>
+                        <View className="flex-row justify-between items-center">
+                          <Text className="text-xs text-slate-500">Count</Text>
+                          <Text className="text-sm font-semibold text-slate-900">
+                            {invitationGift.giftCount}
+                          </Text>
+                        </View>
+                        <View className="flex-row justify-between items-center">
+                          <Text className="text-xs text-slate-500">Total</Text>
+                          <Text className="text-sm font-semibold text-slate-900">
+                            {invitationGift.totalCount}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </Animated.View>
+                ) : null}
+                {isGiftAssignEnabled && !invitationGift ? (
+                  <Animated.View
+                    className="bg-white border border-slate-200 p-4 rounded-2xl mb-3"
+                    layout={_layoutAnimation}
+                    entering={_entering}
+                    exiting={_exiting}
+                  >
+                    <View className="flex-row items-center justify-between mb-3">
+                      <View className="flex-row items-center" style={{ gap: 8 }}>
+                        <Ionicons name="gift" size={20} color="#EE2B8C" />
+                        <Text variant="caption" className="text-xs">
+                          Assign Gift to Guest
+                        </Text>
+                      </View>
+                    </View>
+
+                    {isEventGiftsLoading ? (
+                      <ActivityIndicator color="#ee2b8c" />
+                    ) : eventGiftOptions.length ? (
+                      <View style={{ gap: 12 }}>
+                        <Dropdown
+                          data={eventGiftOptions}
+                          labelField="label"
+                          valueField="value"
+                          value={selectedGiftId}
+                          placeholder="Select a gift"
+                          onChange={(item) => setSelectedGiftId(item.value)}
+                          style={{
+                            height: 44,
+                            borderWidth: 1,
+                            borderColor: "#e2e8f0",
+                            borderRadius: 12,
+                            paddingHorizontal: 12,
+                            backgroundColor: "#ffffff",
+                          }}
+                          placeholderStyle={{ color: "#94a3b8", fontSize: 14 }}
+                          selectedTextStyle={{ color: "#181114", fontSize: 14 }}
+                          containerStyle={{ borderRadius: 12 }}
+                        />
+
+                        <TouchableOpacity
+                          onPress={() =>
+                            selectedGiftId != null && handleAssignGift(selectedGiftId)
+                          }
+                          disabled={
+                            selectedGiftId == null ||
+                            assigningGiftId === selectedGiftId
+                          }
+                          className="items-center justify-center rounded-md bg-primary/90 py-2.5"
+                          style={{ opacity: selectedGiftId == null ? 0.6 : 1 }}
+                        >
+                          <Text className="text-white text-xs font-semibold">
+                            {isAssigningGift && assigningGiftId === selectedGiftId
+                              ? "Assigning..."
+                              : "Assign Gift"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => router.push("./gifts-add")}
+                        className="mt-1 items-center justify-center rounded-md border border-primary/20 bg-primary/5 py-2.5"
+                      >
+                        <Text className="text-xs font-semibold text-primary">
+                          No gifts found. Add a new gift
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </Animated.View>
+                ) : null}
+              {( !invitationGift) && (
+                <Animated.View
+                  layout={_layoutAnimation}
+                  entering={_entering}
+                  exiting={_exiting}
+                >
+                  <Pressable
+                    onPress={() => setIsGiftAssignEnabled((prev) => !prev)}
+                    className={`flex-row items-center gap-3 p-3 bg-slate-50 rounded-md border-2 ${
+                      isGiftAssignEnabled ? "border-pink-200" : "border-transparent"
+                    }`}
+                  >
+                    <Ionicons
+                      name={isGiftAssignEnabled ? "checkbox" : "square-outline"}
+                      size={20}
+                      color={isGiftAssignEnabled ? "#EE2B8C" : "#cbd5e1"}
+                    />
+                    <Text className="text-sm text-slate-900 font-semibold">
+                      Assign Gift to the guest
+                    </Text>
+                  </Pressable>
+                </Animated.View>)}
                 {/* Sub event list TODO: CHEck this shit */}
                 {subEvents.length > 0 && (
                   <View className="bg-white border border-slate-200 p-4 rounded-2xl mb-3">
