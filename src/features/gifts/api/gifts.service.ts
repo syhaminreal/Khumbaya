@@ -17,6 +17,7 @@ export interface CreateGiftPayload {
 	name: string;
 	category: string;
 	value?: number;
+	count:number;
 }
 
 export interface UpdateGiftPayload {
@@ -27,14 +28,14 @@ export interface UpdateGiftPayload {
 
 export const getGiftCategoriesByEventApi = async (
 	eventId: number | string
-): Promise<GiftCategoryColumn[]> => {
+): Promise<{ items: GiftCategoryColumn[]  , page: number, totalItems: number, totalPages: number }> => {
 	const response = await api.get(`/gift-categories/event/${eventId}`);
 	return response.data?.data ?? response.data;
 };
 
 export const getGiftCategoriesWithGiftsApi = async (
 	eventId: number | string
-): Promise<GiftCategoryWithGifts[]> => {
+): Promise<{ items: GiftCategoryWithGifts[]  , page: number, totalItems: number, totalPages: number }> => {
 	const response = await api.get(
 		`/gift-categories/event/${eventId}/gifts`
 	);
@@ -43,7 +44,7 @@ export const getGiftCategoriesWithGiftsApi = async (
 
 export const listGiftsByEventApi = async (
 	eventId: number | string
-): Promise<GiftColumn[]> => {
+): Promise<{ items: GiftColumn[]  , page: number, totalItems: number, totalPages: number }> => {
 	const response = await api.get(`/gift/event/${eventId}`);
 	return response.data?.data ?? response.data;
 };
@@ -78,6 +79,11 @@ export const deleteGiftCategoryApi = async (categoryId: number | string) => {
 	const response = await api.delete(`/gift-category/${categoryId}`);
 	return response.data?.data ?? response.data;
 };
+
+export const removeGiftAssignFromInvitation = async (assignmentId: number) => {
+  const response = await api.delete(`/gift/assign/${assignmentId}`);
+  return response.data?.data ?? response.data;
+}
 
 export const createGiftApi = async (
 	eventId: number | string,

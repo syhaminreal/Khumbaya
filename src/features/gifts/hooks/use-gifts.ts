@@ -13,6 +13,7 @@ import {
     getGiftCategoriesByEventApi,
     getGiftCategoriesWithGiftsApi,
     listGiftsByEventApi,
+    removeGiftAssignFromInvitation,
     updateGiftApi,
     updateGiftCategoryApi,
 } from "../api/gifts.service";
@@ -24,6 +25,9 @@ export const useGiftCategoriesByEvent = (eventId: number | string) => {
     enabled: !isNaN(Number(eventId)),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    select(data) {
+      return data.items; 
+    },
   });
 };
 
@@ -44,6 +48,9 @@ export const useGiftsByEvent = (eventId: number | string) => {
     enabled: !isNaN(Number(eventId)),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    select(data) {
+      return data.items; 
+    }
   });
 };
 
@@ -71,9 +78,11 @@ export const useCreateGiftCategory = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["gift-categories", "event", variables.eventId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: ["gift-categories-with-gifts", "event", variables.eventId],
+        refetchType: "all",
       });
     },
   });
@@ -95,9 +104,11 @@ export const useUpdateGiftCategory = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["gift-categories", "event", variables.eventId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: ["gift-categories-with-gifts", "event", variables.eventId],
+        refetchType: "all",
       });
     },
   });
@@ -139,12 +150,15 @@ export const useCreateGift = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["gifts", "event", variables.eventId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: ["gift-categories-with-gifts", "event", variables.eventId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: ["gift-categories", "event", variables.eventId],
+        refetchType: "all",
       });
     },
   });
@@ -164,13 +178,31 @@ export const useUpdateGift = () => {
       payload: UpdateGiftPayload;
     }) => updateGiftApi(giftId, payload),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["gift", variables.giftId] });
+      queryClient.invalidateQueries({
+        queryKey: ["gift", variables.giftId],
+        refetchType: "all",
+      });
       queryClient.invalidateQueries({
         queryKey: ["gifts", "event", variables.eventId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: ["gift-categories-with-gifts", "event", variables.eventId],
+        refetchType: "all",
       });
+    },
+  });
+};
+
+export const useRemoveGiftAssignFromInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (assignmentId: number) => removeGiftAssignFromInvitation(assignmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rsvp-invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["gifts", "event"] });
+      queryClient.invalidateQueries({ queryKey: ["gift-categories-with-gifts", "event"] });
     },
   });
 };
