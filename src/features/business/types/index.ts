@@ -28,6 +28,9 @@ export interface CreateBusinessPayload {
   categoryDetails?: Record<string, string | boolean>;
   contactPhone?: string;
   email?: string;
+  websiteUrl?: string;
+  whatsappNumber?: string;
+  contactPersonName?: string;
 }
 
 export type  UpdateBusinessPayload = Partial<Omit<Business , "id" | "ownerId" | "createdAt" | "updatedAt">>;
@@ -133,6 +136,7 @@ export interface Business {
   teamSize?: number | null;
   serviceArea?: string | null;
   contactPersonname?: string | null;
+  contactPersonName?: string | null;
   contactPhone?: string | null;
   websiteUrl?: string | null;
   instagramUrl?: string | null;

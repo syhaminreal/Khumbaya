@@ -137,4 +137,7 @@ export interface FormState {
   categoryDetails: Record<string, string | boolean>;
   email: string;
   contactPhone: string;
+  websiteUrl: string;
+  whatsappNumber: string;
+  contactPersonName: string;
 }
