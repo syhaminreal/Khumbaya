@@ -661,10 +661,20 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                 >
                   {guestDetail?.user.username || "User Name"}
                 </Text>
-                <Text variant="h2" className="text-primary text-sm mt-1">
-                  {isConfirmed ? "Confirmed" : "Pending"} •{" "}
-                  {category || guestDetail?.eventGuest?.category || "Guest"}
-                </Text>
+                <Pressable
+                  onPress={() => {
+                    setNewCategoryTitle(category || "");
+                    setCategoryModalVisible(true);
+                  }}
+                  className="flex-row items-center mt-1"
+                  style={{ gap: 4 }}
+                >
+                  <Text variant="h2" className="text-primary text-sm">
+                    {isConfirmed ? "Confirmed" : "Pending"} •{" "}
+                    {category || guestDetail?.eventGuest?.category || "Guest"}
+                  </Text>
+                  <Ionicons name="create-outline" size={13} color="#EE2B8C" />
+                </Pressable>
                 <View className="flex-row items-center mt-2" style={{ gap: 6 }}>
                   <Ionicons name="call-outline" size={14} color="#64748b" />
                   <Text variant="caption" className="text-slate-500 text-sm">
@@ -891,31 +901,7 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                   </View>
               
 
-                <View className="bg-white border border-slate-200 px-4 py-3 rounded-2xl mb-3">
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-3">
-                      <View className="p-2 bg-primary/5 rounded-xl">
-                        <Ionicons name="pricetag-outline" size={18} color="#EE2B8C" />
-                      </View>
-                      <Text variant="caption" className="text-sm text-slate-500">Category</Text>
-                    </View>
-                    <Pressable
-                      onPress={() => {
-                        setNewCategoryTitle(category || "");
-                        setCategoryModalVisible(true);
-                      }}
-                      className="flex-row items-center bg-primary/10 px-3 py-1 rounded-full"
-                      style={{ gap: 5 }}
-                    >
-                      <Text variant="h2" className="text-primary text-xs">
-                        {category || guestDetail?.eventGuest?.category || "Uncategorized"}
-                      </Text>
-                      <Ionicons name="create-outline" size={11} color="#EE2B8C" />
-                    </Pressable>
-                  </View>
-                </View>
-
-                <View className="bg-white border border-slate-200 p-4 rounded-2xl mb-3">
+<View className="bg-white border border-slate-200 p-4 rounded-2xl mb-3">
                   <View className="flex-row justify-between items-start">
                     <View className="flex-row gap-3 flex-1">
                       <View className="p-2 bg-primary/5 rounded-xl">
