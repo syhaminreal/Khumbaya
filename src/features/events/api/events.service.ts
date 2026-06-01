@@ -233,6 +233,7 @@ export const submitRsvpResponseApi = async (
   eventId: number,
   payload: Partial<Invitation>
 ) => {
+  console.log(  'This is the event ervice p🤒p🤒p🤒p🤒p🤒p🤒p🤒p🤒ayload' , payload);
   const response = await api.post(`/invitation/responce/${eventId}`, payload);
   return response.data;
 };
