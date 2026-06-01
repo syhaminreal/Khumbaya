@@ -1,15 +1,20 @@
-import api from "@/src/api/axios";
 import ImageUpload from "@/src/components/ui/ImageUpload";
+import {
+  useDeleteEventGalleryImage,
+  useEventGallery,
+  useUploadEventGalleryImage,
+} from "@/src/features/events/hooks/use-event";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    Alert,
-    FlatList,
-    Image,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -63,19 +68,22 @@ function EmptyGallery() {
 export default function GalleryScreen() {
   const params = useLocalSearchParams() as { eventId?: string };
   const eventId = params.eventId;
-  const [images, setImages] = useState<GalleryImage[]>([]);
+  const {
+    data: images = [],
+    isLoading,
+    error,
+    refetch,
+  } = useEventGallery(eventId, { enabled: !!eventId });
+  const uploadGalleryMutation = useUploadEventGalleryImage(eventId ?? "");
+  const uploadLoading = uploadGalleryMutation.status === "pending";
+  const uploadGalleryImage = uploadGalleryMutation.mutateAsync;
+  const { mutate: deleteGalleryImage } = useDeleteEventGalleryImage(
+    eventId ?? ""
+  );
   const [selectedImage, setSelectedImage] = useState("");
-  const [uploading, setUploading] = useState(false);
-
-  const formatDate = useCallback((date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }, []);
+  const loadError = error
+    ? String((error as any).message || "Unable to load gallery.")
+    : null;
 
   const getMimeType = useCallback((uri: string) => {
     const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase();
@@ -100,42 +108,21 @@ export default function GalleryScreen() {
       }
 
       setSelectedImage(uri);
-      setUploading(true);
 
       try {
         const fileName = uri.split("/").pop() ?? `upload-${Date.now()}`;
         const fileType = getMimeType(uri);
-        const data = new FormData();
 
-        data.append("file", {
+        const responseData = await uploadGalleryImage({
           uri,
           name: fileName,
           type: fileType,
-        } as any);
+        });
 
-        const response = await api.post(
-          `/gallery/event/${eventId}/upload`,
-          data,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        const responseData = response.data;
         const message =
           responseData?.message || responseData?.error || "Upload successful.";
 
         Alert.alert("Upload completed", message);
-
-        const newImage: GalleryImage = {
-          id: responseData?.publicId ?? Date.now().toString(),
-          uri: responseData?.mediaUrl ?? uri,
-          uploadedAt: formatDate(new Date()),
-        };
-
-        setImages((prev) => [newImage, ...prev]);
       } catch (err: unknown) {
         const errorMessage =
           err && typeof err === "object" && "message" in err
@@ -143,16 +130,47 @@ export default function GalleryScreen() {
             : "Unable to upload image.";
         Alert.alert("Upload failed", String(errorMessage));
       } finally {
-        setUploading(false);
         setSelectedImage("");
       }
     },
-    [eventId, formatDate, getMimeType]
+    [eventId, getMimeType, uploadGalleryImage]
   );
 
-  const handleImageDelete = useCallback((id: string) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
-  }, []);
+  const handleImageDelete = useCallback(
+    (id: string) => {
+      if (!eventId) {
+        Alert.alert("Delete failed", "Missing event id.");
+        return;
+      }
+
+      Alert.alert(
+        "Delete Photo",
+        "Are you sure you want to remove this photo?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              deleteGalleryImage(id, {
+                onError: (err: unknown) => {
+                  const errorMessage =
+                    err && typeof err === "object" && "message" in err
+                      ? (err as any).message
+                      : "Unable to delete photo.";
+                  Alert.alert("Delete failed", String(errorMessage));
+                },
+                onSuccess: () => {
+                  Alert.alert("Photo removed", "Photo deleted successfully.");
+                },
+              });
+            },
+          },
+        ]
+      );
+    },
+    [deleteGalleryImage, eventId]
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: GalleryImage }) => (
@@ -172,12 +190,12 @@ export default function GalleryScreen() {
           </Text>
           <ImageUpload
             label=""
-            placeholder={uploading ? "Uploading..." : "Tap to add photos"}
+            placeholder={uploadLoading ? "Uploading..." : "Tap to add photos"}
             hint="Take a photo or choose from gallery"
             value={selectedImage}
             onChange={uploadImage}
           />
-          {uploading && (
+          {uploadLoading && (
             <Text className="text-sm text-gray-500 mt-2">
               Uploading file, please wait...
             </Text>
@@ -198,10 +216,38 @@ export default function GalleryScreen() {
         </View>
       </View>
     ),
-    [images.length, uploading, selectedImage, uploadImage]
+    [images.length, uploadLoading, selectedImage, uploadImage]
   );
 
   const ListFooter = useCallback(() => <View className="h-24" />, []);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background-light">
+        <ActivityIndicator size="large" color="#ec4899" />
+        <Text className="mt-3 text-base text-gray-500">Loading gallery...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background-light px-6">
+        <Text className="text-center text-base font-semibold text-gray-900 mb-3">
+          Unable to load gallery
+        </Text>
+        <Text className="text-center text-sm text-gray-500 mb-4">
+          {loadError}
+        </Text>
+        <TouchableOpacity
+          onPress={() => refetch()}
+          className="rounded-full bg-pink-500 px-5 py-3"
+        >
+          <Text className="text-white font-semibold">Retry</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background-light">

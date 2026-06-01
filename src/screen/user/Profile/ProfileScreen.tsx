@@ -1,11 +1,19 @@
 import AvatarPicker from "@/src/components/ui/AvatarPicker";
+import { updateUserMeFormDataApi } from "@/src/features/user/api/user.service";
 import { useAuthStore } from "@/src/store/AuthStore";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, Stack, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import {
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    ScrollView,
+    Text,
+    View,
+} from "react-native";
 
 type ToggleButtonProps = {
   title: string;
@@ -20,8 +28,34 @@ type RowProps = {
 
 export default function ProfileScreen() {
   const [tab, setTab] = useState<"account" | "info">("account");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { clearAuth: logout, user, updateUser } = useAuthStore();
   const router = useRouter();
+
+  const getFileName = (uri: string) => {
+    const parts = uri.split("/");
+    const fileName = parts[parts.length - 1] || `photo-${Date.now()}.jpg`;
+    return fileName.includes(".") ? fileName : `${fileName}.jpg`;
+  };
+
+  const getMimeType = (uri: string) => {
+    const extension = uri.split(".").pop()?.toLowerCase();
+    switch (extension) {
+      case "png":
+        return "image/png";
+      case "gif":
+        return "image/gif";
+      case "svg":
+        return "image/svg+xml";
+      case "webp":
+        return "image/webp";
+      case "heic":
+      case "heif":
+        return "image/heic";
+      default:
+        return "image/jpeg";
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -39,16 +73,43 @@ export default function ProfileScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images", "videos"],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      updateUser({
-        photo: result.assets[0].uri,
-      });
+    if (result.canceled || !result.assets?.[0]?.uri) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    const uri = asset.uri;
+    const fileName = getFileName(uri);
+    const mimeType = getMimeType(uri);
+
+    const formData = new FormData();
+    formData.append("photo", {
+      uri,
+      name: fileName,
+      type: mimeType,
+    } as any);
+
+    setUploadingAvatar(true);
+    try {
+      const updatedUser = await updateUserMeFormDataApi(formData);
+      if (updatedUser?.photo) {
+        updateUser({ photo: updatedUser.photo });
+      }
+      Alert.alert("Profile Updated", "Your avatar was uploaded successfully.");
+    } catch (error) {
+      console.error("Avatar upload failed", error);
+      Alert.alert(
+        "Upload failed",
+        "Unable to upload profile photo. Please try again."
+      );
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -76,11 +137,18 @@ export default function ProfileScreen() {
         <View className="items-center bg-white py-6">
           <AvatarPicker
             name={user?.username || "User"}
+            avatarUri={user?.photo ?? undefined}
             onPick={handlePickAvatar}
             size="large"
             showEditButton={true}
             showName={false}
           />
+          {uploadingAvatar && (
+            <View className="mt-3 flex-row items-center gap-2">
+              <ActivityIndicator size="small" color="#ec4899" />
+              <Text className="text-sm text-gray-500">Uploading avatar...</Text>
+            </View>
+          )}
           <Text className="text-2xl font-bold mt-4 text-gray-900">
             {user?.username || "User"}
           </Text>

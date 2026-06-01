@@ -12,7 +12,6 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import { uploadImageToCloudinary } from "../../../../utils/cloudinary";
 
 import { useState } from "react";
 import {
@@ -160,21 +159,22 @@ export default function EventCreate() {
       return;
     }
 
-    let imageUrl: string | undefined;
+    let imageFile: { uri: string; name: string; type: string } | undefined;
 
     if (coverImage) {
-      try {
-        setUploading(true);
-        imageUrl = await uploadImageToCloudinary(coverImage);
-      } catch (error) {
-        Alert.alert(
-          "Image upload failed",
-          "Could not upload the selected image. Please try again."
-        );
-        return;
-      } finally {
-        setUploading(false);
-      }
+      setUploading(true);
+      const filename =
+        coverImage.split("/").pop() || `upload-${Date.now()}.jpg`;
+      const extension = filename.includes(".")
+        ? filename.split(".").pop()
+        : "jpg";
+      const fileType = `image/${extension}`;
+      imageFile = {
+        uri: coverImage,
+        name: filename,
+        type: fileType,
+      };
+      setUploading(false);
     }
 
     const payload: CREATEEVENT = {
@@ -188,7 +188,7 @@ export default function EventCreate() {
       endDateTime: selectedEndDateTime,
       parentId: undefined,
       role: "Organizer",
-      imageUrl,
+      imageFile,
     };
 
     createEvent(payload, {

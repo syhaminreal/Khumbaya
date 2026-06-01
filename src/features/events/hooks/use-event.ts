@@ -6,9 +6,11 @@ import {
     acceptRsvpInvitationApi,
     CREATEEVENT,
     createEventApi,
+    deleteEventGalleryImage,
     duplicateEventApi,
     getCompletedEventsApi,
     getEventById,
+    getEventGallery,
     getEventOwners,
     getInvitedEvent,
     getResponsesWithUser,
@@ -19,6 +21,7 @@ import {
     removeEventMember,
     submitRsvpResponseApi,
     updateEventApi,
+    uploadEventGalleryImage,
 } from "../api/events.service";
 
 export const useCreateEvent = () => {
@@ -137,6 +140,71 @@ export const useEventById = (
   });
 };
 
+export interface EventGalleryItem {
+  id: string | number;
+  mediaUrl: string;
+  createdAt?: string;
+}
+
+export const useEventGallery = (
+  eventId?: string,
+  { enabled = true }: EventQueryOptions = {}
+) => {
+  return useQuery({
+    queryKey: ["event-gallery", eventId],
+    queryFn: async () => {
+      if (!eventId) {
+        throw new Error("Missing event id");
+      }
+
+      const gallery = await getEventGallery(eventId);
+      return gallery.map((item: EventGalleryItem) => ({
+        id: String(item.id),
+        uri: item.mediaUrl,
+        uploadedAt: item.createdAt
+          ? new Date(item.createdAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+      }));
+    },
+    enabled: enabled && !!eventId,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+};
+
+export const useUploadEventGalleryImage = (eventId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { uri: string; name: string; type: string }) =>
+      uploadEventGalleryImage(eventId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-gallery", eventId] });
+    },
+  });
+};
+
+export const useDeleteEventGalleryImage = (eventId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (imageId: string) => deleteEventGalleryImage(eventId, imageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-gallery", eventId] });
+    },
+  });
+};
+
 export const useEventResponseWithUser = (eventId: number) => {
   return useQuery({
     queryKey: ["event-responses", eventId],
@@ -238,15 +306,16 @@ export const useUpdateEvent = (eventId: number) => {
     },
   });
 };
-export const useRemoveEventMember = (eventId:number) => {
+export const useRemoveEventMember = (eventId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({userId}:{userId:number}) => removeEventMember(eventId,userId),
+    mutationFn: ({ userId }: { userId: number }) =>
+      removeEventMember(eventId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["event-owner", eventId] }); // ONly refetch the eventMember in the ui 
+      queryClient.invalidateQueries({ queryKey: ["event-owner", eventId] }); // ONly refetch the eventMember in the ui
     },
   });
-}
+};
 
 // export const useDeleteEvent = (eventId: number) => {
 //   const queryClient = useQueryClient();
