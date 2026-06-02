@@ -119,7 +119,7 @@ export default function ViewGuestDetail() {
   const [arrivalInfo, setArrivalInfo] = useState(initialArrivalInfo);
   const [departureInfo, setDepartureInfo] = useState(initialDepartureInfo);
   const [category, setCategory] = useState(initialCategory);
-  const [notes] = useState(initialNotes);
+  const notes = guestDetail?.eventGuest?.notes ?? initialNotes;
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
   const [assigningGiftId, setAssigningGiftId] = useState<number | null>(null);
   const [isAssigningGift, setisAssigningGift] = useState<boolean>(false);
@@ -441,7 +441,6 @@ const visibleGuestProfileRows = guestProfileRows.filter(
               style={{
                 opacity: isSaveDisabled ? 0.5 : 1,
                 paddingVertical: 4,
-
               }}
             >
               {isPending ? (
@@ -617,19 +616,35 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                 colors={["rgba(238,43,140,0.07)", "transparent"]}
                 className="items-center px-6 pt-8 pb-8"
               >
-                {!isConfirmed ? (
-                  <View
-                    className="absolute right-4 top-4 p-2 rounded-full bg-white"
+                <View className="absolute right-4 top-4 flex-row items-center gap-2">
+                  <TouchableOpacity
+                    onPress={() => router.push("./edit-rsvp")}
+                    activeOpacity={0.75}
+                    className="flex-row items-center gap-1 px-2.5 py-1.5 rounded-full bg-white"
                     style={{
                       shadowColor: "#000",
-                      shadowOpacity: 0.12,
+                      shadowOpacity: 0.08,
                       shadowRadius: 4,
-                      elevation: 3,
+                      elevation: 2,
                     }}
                   >
-                    <ThreeDotButton onPress={() => setActionMenuVisible(true)} />
-                  </View>
-                ) : null}
+                    <Ionicons name="pencil-outline" size={12} color="#EE2B8C" />
+                    <Text className="text-[11px] font-semibold text-primary">Edit RSVP</Text>
+                  </TouchableOpacity>
+                  {!isConfirmed && (
+                    <View
+                      className="p-2 rounded-full bg-white"
+                      style={{
+                        shadowColor: "#000",
+                        shadowOpacity: 0.12,
+                        shadowRadius: 4,
+                        elevation: 3,
+                      }}
+                    >
+                      <ThreeDotButton onPress={() => setActionMenuVisible(true)} />
+                    </View>
+                  )}
+                </View>
 
                 <View className="relative">
                   <View

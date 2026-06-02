@@ -21,6 +21,7 @@ export default function EventGuestManagementLayout() {
       <Stack.Screen name="excel-review" options={{ headerShown:false }} />
       <Stack.Screen name="import-guests" options={{ title: "Import Guests" }} />
       <Stack.Screen name="gifts-add" options={{ headerShown:false }} />
+      <Stack.Screen name="edit-rsvp" options={{ title: "Edit RSVP" }} />
     </Stack>
   );
 }
