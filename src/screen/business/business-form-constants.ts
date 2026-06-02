@@ -95,6 +95,11 @@ export const VENDOR_CATEGORIES: VendorCategory[] = [
     name: "Baraat",
     icon: "directions-bus",
   },
+  {
+    value: BusinessCategory.EssentialItems,
+    name: "Essential Items",
+    icon: "inventory",
+  },
 ];
 
 // ─── Category dropdown options (top-level only) ──────────────────────────────
