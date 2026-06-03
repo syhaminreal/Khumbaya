@@ -1,5 +1,5 @@
 import { useCateringById } from "@/src/features/catering";
-import { useMenuList } from "@/src/features/catering/menu";
+import { useDeleteMenuMutation, useMenuList } from "@/src/features/catering/menu";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { formatDateTimeRangeVerbose, toISODateString } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -54,6 +54,12 @@ export default function CateringDetailsScreen() {
         const {
                 data: menuData,
         } = useMenuList(cateringId, menuPage, 100, { enabled: !!cateringId });
+
+        const deleteMenuMutation = useDeleteMenuMutation();
+
+        const handleDeleteMenuItem = (menuId: number) => {
+                deleteMenuMutation.mutate(menuId);
+        };
 
         const groupedMenus = useMemo(() => {
                 return (menuData || []).reduce((acc: any, item: any) => {
@@ -280,12 +286,21 @@ export default function CateringDetailsScreen() {
                                                                                                                 ) : null}
                                                                                                         </View>
                                                                                                 </View>
-                                                                                                <View className="items-end">
+                                                                                                <View className="items-end gap-2">
                                                                                                         <View className="px-2.5 py-1 rounded-full bg-surface-container border border-surface-container">
                                                                                                                 <Text className="text-[10px] font-semibold text-on-surface-variant">
                                                                                                                         Guests {item.guestCount ?? "—"}
                                                                                                                 </Text>
                                                                                                         </View>
+                                                                                                        {!isViewerMode && (
+                                                                                                                <TouchableOpacity
+                                                                                                                        onPress={() => handleDeleteMenuItem(item.id)}
+                                                                                                                        disabled={deleteMenuMutation.isPending}
+                                                                                                                        className="h-8 w-8 items-center justify-center rounded-full bg-red-50"
+                                                                                                                >
+                                                                                                                        <MaterialIcons name="delete-outline" size={18} color="#ef4444" />
+                                                                                                                </TouchableOpacity>
+                                                                                                        )}
                                                                                                 </View>
                                                                                         </View>
                                                                                 ))}
