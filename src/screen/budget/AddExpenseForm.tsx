@@ -5,6 +5,7 @@ import {
   useUpdateExpenseMutation,
 } from "@/src/features/budget/hooks/use-budget";
 import { expenseFormSchema } from "@/src/features/budget/schema";
+import { useGetBusinessByEventId } from "@/src/features/business/hooks/use-business";
 import { useSubEventsOfEvent } from "@/src/features/events/hooks/use-event";
 import { MaterialIcons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,9 +44,9 @@ export default function AddExpenseScreen({
 
   const parsedCategoryId = useMemo(() => {
     return categoryId ? Number(JSON.parse(categoryId.toString())) : 0;
-
-  }, [categoryId])
+  }, [categoryId]);
   const { data: subEvents } = useSubEventsOfEvent(parsedEventId);
+  const { data: vendors = [] } = useGetBusinessByEventId(parsedEventId);
 
   const resolvedSubEventId = useMemo(() => {
     return subEventid ? Number(JSON.parse(subEventid.toString())) : undefined;
@@ -54,12 +55,22 @@ export default function AddExpenseScreen({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const subEventOptions = useMemo(
     () =>
-      (subEvents || []).map
-        ((item: { title?: string; name?: string; id: number }) => ({
+      (subEvents || []).map(
+        (item: { title?: string; name?: string; id: number }) => ({
           label: `${item.title ?? "Untitled sub-event"} `,
           value: String(item.id),
-        })),
+        })
+      ),
     [subEvents]
+  );
+
+  const vendorOptions = useMemo(
+    () =>
+      (vendors || []).map((vendor: any) => ({
+        label: vendor.businessName ?? "Unnamed vendor",
+        value: String(vendor.id),
+      })),
+    [vendors]
   );
 
   // Fetch expense data in edit mode
@@ -68,10 +79,7 @@ export default function AddExpenseScreen({
     { enabled: editMode && !!expenseId }
   );
 
-  const expenseMutation = useExpenseMutation(
-    parsedCategoryId,
-    parsedEventId
-  );
+  const expenseMutation = useExpenseMutation(parsedCategoryId, parsedEventId);
 
   const updateMutation = useUpdateExpenseMutation(
     Number(expenseId || 0),
@@ -92,6 +100,7 @@ export default function AddExpenseScreen({
       allocatedAmount: "",
       nextDueDate: "",
       subEventid: resolvedSubEventId,
+      paidTo: undefined,
       notes: "",
     },
   });
@@ -110,9 +119,11 @@ export default function AddExpenseScreen({
       if (typeof expenseData.subEventid === "number") {
         setValue("subEventid", expenseData.subEventid);
       }
+      if (typeof expenseData.paidTo === "number") {
+        setValue("paidTo", expenseData.paidTo);
+      }
     }
   }, [editMode, expenseData, setValue]);
-
 
   //Use call back function to get the data
 
@@ -126,13 +137,14 @@ export default function AddExpenseScreen({
 
   const onSubmit = async (data: ExpenseFormData) => {
     try {
-      console.log('This is the kdhfkajhdf ', data);
+      console.log("This is the kdhfkajhdf ", data);
       const payload = {
         name: data.name,
         allocatedAmount: parseFloat(data.allocatedAmount),
         nextDueDate: data.nextDueDate || undefined,
         notes: data.notes || undefined,
         subEventid: data.subEventid ?? resolvedSubEventId,
+        paidTo: data.paidTo,
       };
 
       const mutation = editMode ? updateMutation : expenseMutation;
@@ -245,6 +257,48 @@ export default function AddExpenseScreen({
                 {subEventOptions.length === 0 && (
                   <Text className="text-xs text-gray-400 ml-1" variant="h2">
                     No sub-events found for this event.
+                  </Text>
+                )}
+              </View>
+
+              <View className="gap-2">
+                <Text className="text-sm text-gray-600 ml-1" variant="h2">
+                  Paid To (Vendor)
+                </Text>
+                <Controller
+                  control={control}
+                  name="paidTo"
+                  render={({ field: { onChange, value } }) => (
+                    <Dropdown
+                      style={{
+                        height: 56,
+                        borderWidth: 1,
+                        borderColor: "#e5e7eb",
+                        borderRadius: 6,
+                        paddingHorizontal: 16,
+                        backgroundColor: "#f8f6f7",
+                      }}
+                      data={vendorOptions}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Select vendor (optional)"
+                      value={typeof value === "number" ? String(value) : null}
+                      onChange={(item) => onChange(Number(item.value))}
+                      selectedTextStyle={{
+                        color: "#181114",
+                        fontSize: 15,
+                        fontWeight: "600",
+                      }}
+                      placeholderStyle={{ color: "#9CA3AF", fontSize: 15 }}
+                      itemTextStyle={{ color: "#181114", fontSize: 15 }}
+                      activeColor="#fdf2f8"
+                      disable={vendorOptions.length === 0}
+                    />
+                  )}
+                />
+                {vendorOptions.length === 0 && (
+                  <Text className="text-xs text-gray-400 ml-1" variant="h2">
+                    No vendors found for this event.
                   </Text>
                 )}
               </View>

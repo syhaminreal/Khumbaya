@@ -1,18 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  addBudgetCategory,
-  addExpenseToCategory,
-  addPayment,
-  deleteBudgetCategory,
-  deleteExpense,
-  deletePayment,
-  getBudgetSummary,
-  getCategoryDetails,
-  getExpenseById,
-  getPaymentById,
-  updateBudgetCategory,
-  updateExpense,
-  updatePayment,
+    addBudgetCategory,
+    addExpenseToCategory,
+    addPayment,
+    deleteBudgetCategory,
+    deleteExpense,
+    deletePayment,
+    getBudgetSummary,
+    getCategoryDetails,
+    getExpenseById,
+    getPaymentById,
+    updateBudgetCategory,
+    updateExpense,
+    updatePayment,
 } from "../services/budgetService";
 
 export const useBudgetSummary = (
@@ -102,6 +102,7 @@ export const useExpenseMutation = (categoryId: number, eventId: number) => {
       nextDueDate?: string;
       notes?: string;
       subEventid?: number;
+      paidTo?: number;
     }) => addExpenseToCategory(categoryId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -187,6 +188,7 @@ export const useUpdateExpenseMutation = (
       nextDueDate?: string;
       notes?: string;
       subEventid?: number;
+      paidTo?: number;
     }) => updateExpense(expenseId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
