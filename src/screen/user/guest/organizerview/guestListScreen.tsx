@@ -579,12 +579,24 @@ console.log('This is the sub event ')
   );
 
   const onPressFamilyCard = (familyData: FamilyGroup) => {
-    console.log('this is the familyCard and the data in the draft set just now is the😑the😑the😑the😑the😑the😑the😑the😑the😑the😑' , familyData) ; 
     setFamilyGuest(familyData);
-    push({
-      pathname: "./guests/familymember",
-      params: { eventId: effectiveEventId },
-    });
+
+    if (familyData.members.length === 1) {
+      const singleMember = familyData.members[0];
+      setGuestDetail(singleMember);
+      push({
+        pathname: "./guests/[guestDetailId]",
+        params: {
+          eventId: effectiveEventId,
+          guestDetailId: singleMember.eventGuest?.id,
+        },
+      });
+    } else {
+      push({
+        pathname: "./guests/familymember",
+        params: { eventId: effectiveEventId },
+      });
+    }
   };
 
   useEffect(() => {
