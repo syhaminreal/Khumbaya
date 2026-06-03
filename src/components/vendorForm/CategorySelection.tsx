@@ -28,6 +28,7 @@ const CATEGORIES: Category[] = [
   { key: "makeup", title: "Makeup & Hair", icon: "face-retouching-natural" },
   { key: "planning", title: "Planning", icon: "edit-note" },
   { key: "transport", title: "Transport", icon: "directions-car" },
+  { key: "essential_items", title: "Essential Items", icon: "inventory" },
 ];
 
 type CategorySelectionProps = {

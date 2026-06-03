@@ -5,7 +5,6 @@ import {
   useUpdateCategoryMutation,
 } from "@/src/features/budget/hooks/use-budget";
 import { budgetCategoryFormSchema } from "@/src/features/budget/schema";
-import { useCategory } from "@/src/features/general-category/use-category";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -18,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Dropdown } from "react-native-element-dropdown";
 
 export default function AddBudgetItemScreen({
   editMode = false,
@@ -27,10 +25,6 @@ export default function AddBudgetItemScreen({
 }) {
   const router = useRouter();
   const { eventId, categoryId } = useLocalSearchParams();
-
-  const { data: categoriesResponse, isLoading: isCategoriesLoading } =
-    useCategory("budget");
-  const categories = categoriesResponse?.data || [];
 
   const { data: categoryData, isLoading: isCategoryLoading } =
     useCategoryDetails(Number(categoryId || 0), {
@@ -76,7 +70,6 @@ export default function AddBudgetItemScreen({
   }
 
   const onSubmit = async (data: any) => {
-    //check if there is the sub event in the data using the react hook 
     if (!eventId) {
       Alert.alert("Error", "Event ID is missing");
       return;
@@ -125,45 +118,20 @@ export default function AddBudgetItemScreen({
         <Text className="text-sm text-gray-700 mb-2" variant="h2">
           Category
         </Text>
-        <View className="bg-white rounded-md shadow-sm border border-gray-100 mb-6">
-          {isCategoriesLoading ? (
-            <View className="h-14 items-center justify-center">
-              <View className="flex-row items-center gap-2">
-                <ActivityIndicator size="small" color="#ee2b8c" />
-                <Text className="text-sm text-gray-600">
-                  Loading categories...
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <Controller
-              control={control}
-              name="name"
-              render={({ field: { value, onChange } }) => (
-                <Dropdown
-                  style={{
-                    height: 50,
-                    borderWidth: 1,
-                    borderColor: "#e5e7eb",
-                    borderRadius: 6,
-                    paddingHorizontal: 12,
-                    backgroundColor: "white",
-                  }}
-                  placeholderStyle={{ color: "#9CA3AF" }}
-                  selectedTextStyle={{ color: "#111827", fontSize: 14 }}
-                  data={categories.map((cat: any) => ({ // 
-                    label: cat.name,
-                    value: cat.name,
-                  }))}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Select a category"
-                  value={value}
-                  onChange={(item: any) => onChange(item.value)}
-                />
-              )}
-            />
-          )}
+        <View className="bg-white rounded-sm px-4 h-14 shadow-sm border border-gray-100 mb-6">
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { value, onChange } }) => (
+              <TextInput
+                className="flex-1 text-sm font-medium text-[#181114]"
+                placeholder="e.g. Catering, Venue, Decor"
+                placeholderTextColor="#9ca3af"
+                value={value}
+                onChangeText={onChange}
+              />
+            )}
+          />
         </View>
         {errors.name && (
           <Text className="text-red-500 text-xs mb-4">

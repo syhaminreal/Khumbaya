@@ -24,10 +24,11 @@ export const UpcomingEventsTab = ({ isActive }: UpcomingEventsTabProps) => {
     refetch,
   } = usegetUpcomingEvents({ enabled: isActive });
 
+  const now = new Date();
   const events = (eventsData as Event[]).filter((event) => {
-    if (event.status === "upcoming") return true;
-    const endDate = event.endDateTime ? new Date(event.endDateTime) : undefined;
-    return !endDate || Number.isNaN(endDate.getTime()) || endDate >= new Date();
+    const dateStr = event.endDateTime || event.startDateTime;
+    const date = dateStr ? new Date(dateStr) : null;
+    return !date || Number.isNaN(date.getTime()) || date >= now;
   });
 
   const onRefresh = async () => {

@@ -76,6 +76,7 @@ export default function GuestCard({
     guest.user.username?.trim() || guest.user.email || "Guest";
   const relation = guest.user.relation?.trim();
   const phone = guest.user.phone?.trim();
+  const category = guest.eventGuest?.category?.trim();
 
 return (
     <Fragment>
@@ -107,7 +108,11 @@ return (
                 {displayName}
               </Text>
 
-              {relation ? (
+              {category ? (
+                <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
+                  {category}
+                </Text>
+              ) : relation ? (
                 <Text numberOfLines={1} className="mt-0.5 text-xs text-gray-500">
                   {relation}
                 </Text>
