@@ -38,6 +38,7 @@ type AddGuestFormValues = {
   fullName: string;
   phone: string;
   category: string;
+  numberOfGuests: string;
   invitation_name: string;
 };
 
@@ -82,6 +83,7 @@ const AddGuestScreen = () => {
       defaultValues: {
         fullName: "",
         invitation_name: "",
+        numberOfGuests: "1",
         phone: "",
         category: "",
 
@@ -194,7 +196,7 @@ const AddGuestScreen = () => {
         return;
       }
 
-      const resolvedName = foundUser?.username || values.fullName.trim() || values.phone.trim() || values.invitation_name.trim();
+      const resolvedName = foundUser?.username || values.fullName.trim() || values.phone.trim();
 
       if (!resolvedName) {
         Alert.alert(
@@ -209,7 +211,8 @@ const AddGuestScreen = () => {
         await inviteGuestMutation.mutateAsync({
           eventId,
           payload: {
-            invitation_name: values.invitation_name.trim() || resolvedName || currentPhone,
+            invitation_name: values.invitation_name.trim() || "",
+            numberOfGuests: inviteWithFamily ? Number(values.numberOfGuests) : 1,
             phone: fullGuestPhone,
             fullName: values.fullName.trim() ?? resolvedName,
             isDraft,
@@ -271,7 +274,7 @@ const AddGuestScreen = () => {
       const firstError =
         errors.fullName ||
         errors.phone ||
-        errors.invitation_name ||
+        errors.numberOfGuests ||
         errors.category;
       if (firstError?.message) {
         Alert.alert("Error", firstError.message as string);
@@ -433,32 +436,6 @@ const AddGuestScreen = () => {
           </View>
 
           <View className="flex flex-col gap-6 px-6" style={{ gap: 24 }}>
-            <View style={{ gap: 8 }}>
-              <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
-                INVITATION NAME
-              </Text>
-              <Controller
-                control={control}
-                name="invitation_name"
-                rules={{
-                  validate: (value) => {
-                    return (
-                      value.trim().length > 0 || "Please enter invitation name"
-                    );
-                  },
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    className="h-14 w-full rounded-md border border-slate-200 bg-white px-4 text-base text-slate-900"
-                    placeholder="e.g. Sharma Family"
-                    placeholderTextColor="#94a3b8"
-                    value={value}
-                    onChangeText={onChange}
-                  />
-                )}
-              />
-            </View>
-
             <View style={{ gap: 8 }}>
               <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
                 PHONE NUMBER
@@ -686,8 +663,57 @@ const AddGuestScreen = () => {
                       for each family member during their digital RSVP process.
                     </Text>
                   </View>
+
+                  <View style={{ gap: 8 }}>
+                    <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
+                      NUMBER OF GUESTS
+                    </Text>
+                    <Controller
+                      control={control}
+                      name="numberOfGuests"
+                      rules={{
+                        validate: (value) => {
+                          if (!inviteWithFamily) return true;
+                          const guestCount = Number(value);
+                          return (
+                            (Number.isInteger(guestCount) && guestCount > 0) ||
+                            "Please enter a valid number of guests"
+                          );
+                        },
+                      }}
+                      render={({ field: { onChange, value } }) => (
+                        <TextInput
+                          className="h-14 w-full rounded-md border border-slate-200 bg-white px-4 text-base text-slate-900"
+                          placeholder="e.g. 2"
+                          placeholderTextColor="#94a3b8"
+                          keyboardType="number-pad"
+                          value={value}
+                          onChangeText={(text) => onChange(text.replace(/\D/g, ""))}
+                        />
+                      )}
+                    />
+                  </View>
                 </View>
               )}
+            </View>
+
+            <View style={{ gap: 8 }}>
+              <Text className="text-sm font-semibold tracking-wide text-[#1a1b3a]">
+                INVITATION NAME (OPTIONAL)
+              </Text>
+              <Controller
+                control={control}
+                name="invitation_name"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    className="h-14 w-full rounded-md border border-slate-200 bg-white px-4 text-base text-slate-900"
+                    placeholder="e.g. Sharma Family"
+                    placeholderTextColor="#94a3b8"
+                    value={value}
+                    onChangeText={onChange}
+                  />
+                )}
+              />
             </View>
           </View>
 

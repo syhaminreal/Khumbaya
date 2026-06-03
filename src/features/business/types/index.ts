@@ -12,7 +12,8 @@ export enum BusinessCategory {
   BridalWear = "Bridal Wear",
   JewelryAccessories = "Jewelry & Accessories",
   SecurityGuard = "Security Guard",
-  Baraat = "Baraat"
+  Baraat = "Baraat",
+  EssentialItems = "Essential Items"
 }
 
 export interface CreateBusinessPayload {

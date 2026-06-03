@@ -100,9 +100,16 @@ export const useGetEventWithRole = ({
     queryKey: ["events/with-role"],
     enabled,
     queryFn: async () => {
-      const upcomingEvents = await getUpcomingEventsApi();
-
-      return upcomingEvents;
+      const [upcomingEvents, completedEvents] = await Promise.all([
+        getUpcomingEventsApi(),
+        getCompletedEventsApi(),
+      ]);
+      const seen = new Set<string>();
+      return [...upcomingEvents, ...completedEvents].filter((e) => {
+        if (seen.has(e.id)) return false;
+        seen.add(e.id);
+        return true;
+      });
     },
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -161,6 +168,10 @@ export const useSubmitRsvpResponse = (eventId: number) => {
       queryClient.invalidateQueries({ queryKey: ["rsvp-invitations"] });
       queryClient.invalidateQueries({
         queryKey: ["event-guest-room", eventId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["gifts", "event", eventId] });
+      queryClient.invalidateQueries({
+        queryKey: ["gift-categories-with-gifts", "event", eventId],
       });
     },
   });
@@ -235,6 +246,13 @@ export const useUpdateEvent = (eventId: number) => {
       queryClient.invalidateQueries({ queryKey: ["events/completed"] });
       queryClient.invalidateQueries({ queryKey: ["events/with-role"] });
       queryClient.invalidateQueries({ queryKey: ["budget-summary", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["gifts", "event", eventId] });
+      queryClient.invalidateQueries({
+        queryKey: ["gift-categories", "event", eventId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gift-categories-with-gifts", "event", eventId],
+      });
     },
   });
 };

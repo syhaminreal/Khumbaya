@@ -95,11 +95,7 @@ console.log('This is the sub event ')
   const submitRsvpMutation = useSubmitRsvpResponse(effectiveEventId ?? 0);
   const removeInvitationMutation = useRemoveInvitation();
   const createCategoryMutation = useCreateEventGuestCategory();
-  const giftEventId = useMemo(
-    () => (effectiveEventId == null ? Number.NaN : effectiveEventId),
-    [effectiveEventId]
-  );
-
+ 
   const [draftAction, setDraftAction] = useState<{
     userId: number;
     type: "send" | "delete" | "moveToDraft";
@@ -110,9 +106,6 @@ console.log('This is the sub event ')
   const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
   const [isAddCategoryModalVisible, setIsAddCategoryModalVisible] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [isAddGiftModalVisible, setIsAddGiftModalVisible] = useState(false);
-  const [newGiftName, setNewGiftName] = useState("");
-
 
   const tabs: { label: string; value: GuestFilterTab }[] = useMemo(
     () =>
@@ -176,10 +169,7 @@ console.log('This is the sub event ')
     }
 
     return invitations.filter((invitation: GuestDetailInterface) => {
-      if (isSubEventBoolean && isGuestUninvitedFromSubEvent(invitation)) {
-        return false;
-      }
-      const status = String(invitation?.eventGuest?.status ?? "pending")
+      const status = String(invitation.eventGuest.status ?? "pending")
         .trim()
         .toLowerCase();
       return matchesTabStatus(status, activeTab);
@@ -196,7 +186,7 @@ console.log('This is the sub event ')
     const categoryCountMap = new Map<string, number>();
 
     for (const invitation of tabFilteredInvitations) {
-      const category = getNormalizedCategory(invitation.eventGuest.category);
+      const category = getNormalizedCategory(invitation.eventGuest?.category);
       categoryCountMap.set(category, (categoryCountMap.get(category) ?? 0) + 1);
     }
 
@@ -299,10 +289,7 @@ console.log('This is the sub event ')
         return item.members.some((member) => matchesSelectedCategory(member));
       }
 
-      if (isSubEventBoolean && isGuestUninvitedFromSubEvent(item.data)) {
-        return false;
-      }
-      const status = String(item.data.eventGuest?.status ?? "pending")
+      const status = String(item.data.eventGuest.status ?? "pending")
         .trim()
         .toLowerCase();
       if (!matchesTabStatus(status, activeTab)) return false;
@@ -398,8 +385,11 @@ console.log('This is the sub event ')
   }, []);
 
   const openAddGiftModal = useCallback(() => {
-    setIsAddGiftModalVisible(true);
-  }, []);
+    push({
+      pathname: `./guests/gifts-add`,
+      params: { eventId: effectiveEventId },
+    });
+  }, [effectiveEventId]);
 
   const onPressGuestCard = (guest: GuestDetailInterface) => {
     setGuestDetail(guest);
@@ -407,7 +397,8 @@ console.log('This is the sub event ')
     push({
       pathname:
         `./guests/[guestDetailId]`,
-      params: { eventId: effectiveEventId, guestDetailId: guest.user.id },
+     
+        params: { eventId: effectiveEventId, guestDetailId: guest.user.id },
     });
   };
 // TODO: handle the case of the not available event guest int he list screen insterad  o using the ? in the file 
@@ -716,6 +707,7 @@ console.log('This is the sub event ')
 
             return <DraftInvitationCard
               guest={item}
+              onPress={() => onPressGuestCard(item)}
               onMoveToPending={() => onPressDraftSend(item)}
               onDeleteDraft={() => onDeleteDraft(item)}
               isMoving={
@@ -1055,74 +1047,7 @@ console.log('This is the sub event ')
         </View>
       </Modal>
 
-      <Modal
-        visible={isAddGiftModalVisible}
-        transparent
-        allowSwipeDismissal
-        animationType="fade"
-        onRequestClose={() => setIsAddGiftModalVisible(false)}
-      >
-        <View className="flex-1 bg-black/35 justify-end">
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setIsAddGiftModalVisible(false)}
-            className="absolute inset-0"
-          />
-
-          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-7">
-            <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-3" />
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="font-jakarta-bold text-base text-[#181114]">
-                Add gift
-              </Text>
-              <TouchableOpacity
-                onPress={() => setIsAddGiftModalVisible(false)}
-              >
-                <Ionicons name="close" size={20} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            <TextInput
-              className="h-12 rounded-xl border border-gray-200 px-4 text-sm text-gray-900"
-              placeholder="Gift name"
-              placeholderTextColor="#9CA3AF"
-              value={newGiftName}
-              onChangeText={setNewGiftName}
-            />
-
-            <View className="mt-4">
-              <Text className="text-xs text-gray-600 mb-2">Category</Text>
-             
-            </View>
-
-            <View className="flex-row items-center justify-end gap-3 mt-5">
-              <TouchableOpacity
-                onPress={() => {
-                  setNewGiftName("");
-                  setIsAddGiftModalVisible(false);
-                }}
-                className="px-4 py-2"
-              >
-                <Text className="text-sm text-gray-600">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (!newGiftName.trim()) return;
-                  Alert.alert(
-                    "Gift saved",
-                    "Hook this to the backend when ready."
-                  );
-                  setNewGiftName("");
-                  setIsAddGiftModalVisible(false);
-                }}
-                className="px-4 py-2 rounded-lg bg-primary"
-              >
-                <Text className="text-sm text-white">Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+     
     </SafeAreaView>
   );
 }

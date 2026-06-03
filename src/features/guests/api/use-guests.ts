@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GuestWithRoom, RoomData } from "../../hotel/types/hotel.types";
 import {
+  assignGiftToInvitation,
   createEventGuestCategory,
   getEventGuest,
   getEventGuestCategories,
   getGuestRoom,
   getInvitation,
+  getInvitationGifts,
   importGuestlist,
   inviteGuest,
   removeInvitation,
@@ -148,5 +150,28 @@ export const useGetGuestRoom = (eventId: number | null) => {
     queryKey: ["event-guest-room", eventId],
     queryFn: async () => getGuestRoom(eventId!),
     enabled: !!eventId,
+  });
+};
+
+export const useGetInvitationGifts = (invitationId: number | null) => {
+  return useQuery({
+    queryKey: ["invitation-gifts", invitationId],
+    queryFn: () => getInvitationGifts(invitationId!),
+    enabled: !!invitationId,
+  });
+};
+
+export const useAssignGiftToInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ invitationId, giftId }: { invitationId: number; giftId: number }) =>
+      assignGiftToInvitation(invitationId, giftId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["invitation-gifts", variables.invitationId],
+        
+      });
+    },
   });
 };

@@ -18,7 +18,10 @@ export default function EventGuestManagementLayout() {
       <Stack.Screen name="addguest" options={{ title: "Add Guest" }} />
       <Stack.Screen name="[guestDetailId]" />
       <Stack.Screen name="contact-review" options={{ headerShown:false }} />
+      <Stack.Screen name="excel-review" options={{ headerShown:false }} />
       <Stack.Screen name="import-guests" options={{ title: "Import Guests" }} />
+      <Stack.Screen name="gifts-add" options={{ headerShown:false }} />
     </Stack>
   );
 }
+  

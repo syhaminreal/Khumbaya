@@ -6,6 +6,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import type { ScrollView as ScrollViewType } from "react-native";
 import {
   Alert,
@@ -32,19 +33,41 @@ import {
 export default function CreateBusinessScreen() {
   const router = useRouter();
   const createBusiness = useCreateBusiness();
-  const [form, setForm] = useState<FormState>({
-    businessName: "",
-    description: "",
-    city: "",
-    country: "",
-    vendorType: "",
-    vendorCategoryId: "",
-    categoryDetails: {},
-    email: "",
-    contactPhone: "",
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormState>({
+    mode: "onChange",
+    defaultValues: {
+      businessName: "",
+      description: "",
+      city: "",
+      country: "",
+      vendorType: "",
+      vendorCategoryId: "",
+      categoryDetails: {},
+      email: "",
+      contactPhone: "",
+    },
   });
+
+  const form = watch();
+
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const scrollRef = useRef<ScrollViewType>(null);
+
+  useEffect(() => {
+    register("email", {
+      pattern: {
+        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        message: "Please enter a valid email address.",
+      },
+    });
+  }, [register]);
 
   useEffect(() => {
     if (form.vendorCategoryId) {
@@ -53,13 +76,14 @@ export default function CreateBusinessScreen() {
   }, [form.vendorCategoryId]);
 
   const updateCategoryDetail = (key: string, value: string | boolean) =>
-    setForm((prev) => ({
-      ...prev,
-      categoryDetails: { ...prev.categoryDetails, [key]: value },
-    }));
+    setValue(
+      "categoryDetails",
+      { ...form.categoryDetails, [key]: value },
+      { shouldDirty: true }
+    );
 
 
-  const handleSubmit = async () => {
+  const onSubmitForm = async () => {
     if (!form?.businessName?.trim()) {
       Alert.alert("Required", "Please enter a business name.");
       return;
@@ -73,13 +97,12 @@ export default function CreateBusinessScreen() {
       return;
     }
 
-
     createBusiness.mutate(
       {
         businessName: form.businessName.trim(),
         description: form.description.trim() || undefined,
         category: form.vendorCategoryId,
-        cover: coverImage ?? photos[Math.floor(((Math.random() * 1000) % 6) + 1)].url,
+        cover: coverImage ?? photos[Math.floor(((Math.random() * 1000) % 6) + 1)]?.url,
         city: form.city.trim() || undefined,
         country: form.country.trim() || undefined,
         categoryDetails: form.categoryDetails,
@@ -312,7 +335,7 @@ export default function CreateBusinessScreen() {
               placeholderTextColor="#d1d5db"
               value={form.businessName}
               onChangeText={(text) =>
-                setForm((prev) => ({ ...prev, businessName: text }))
+                setValue("businessName", text, { shouldDirty: true })
               }
             />
           </View>
@@ -332,7 +355,7 @@ export default function CreateBusinessScreen() {
               style={{ minHeight: 110 }}
               value={form.description}
               onChangeText={(text) =>
-                setForm((prev) => ({ ...prev, description: text }))
+                setValue("description", text, { shouldDirty: true })
               }
             />
           </View>
@@ -351,9 +374,16 @@ export default function CreateBusinessScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={form.email}
-                onChangeText={(text) => setForm((prev) => ({ ...prev, email: text }))}
+                onChangeText={(text) =>
+                  setValue("email", text, { shouldDirty: true, shouldValidate: true })
+                }
               />
             </View>
+            {!!errors.email?.message && (
+              <Text className="text-xs text-red-500 mt-2">
+                {errors.email.message}
+              </Text>
+            )}
           </View>
 
           {/* Phone Number */}
@@ -369,7 +399,9 @@ export default function CreateBusinessScreen() {
                 placeholderTextColor="#d1d5db"
                 keyboardType="phone-pad"
                 value={form.contactPhone}
-                onChangeText={(text) => setForm((prev) => ({ ...prev, contactPhone: text }))}
+                onChangeText={(text) =>
+                  setValue("contactPhone", text, { shouldDirty: true })
+                }
               />
             </View>
           </View>
@@ -396,12 +428,9 @@ export default function CreateBusinessScreen() {
               placeholder="Select category"
               value={form.vendorCategoryId || null}
               onChange={(item) => {
-                setForm((prev) => ({
-                  ...prev,
-                  vendorCategoryId: item.value,
-                  vendorType: "",
-                  categoryDetails: {},
-                }));
+                setValue("vendorCategoryId", item.value, { shouldDirty: true });
+                setValue("vendorType", "", { shouldDirty: true });
+                setValue("categoryDetails", {}, { shouldDirty: true });
               }}
               renderItem={(item, selected) => (
                 <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: selected ? "#fdf2f8" : "white" }}>
@@ -437,7 +466,7 @@ export default function CreateBusinessScreen() {
                 placeholder={`Select type`}
                 value={form.vendorType || null}
                 onChange={(item) =>
-                  setForm((prev) => ({ ...prev, vendorType: item.value }))
+                  setValue("vendorType", item.value, { shouldDirty: true })
                 }
                 renderItem={(item, selected) => (
                   <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: selected ? "#fdf2f8" : "white" }}>
@@ -477,7 +506,7 @@ export default function CreateBusinessScreen() {
                   placeholderTextColor="#d1d5db"
                   value={form.city}
                   onChangeText={(text) =>
-                    setForm((prev) => ({ ...prev, city: text }))
+                    setValue("city", text, { shouldDirty: true })
                   }
                 />
               </View>
@@ -500,7 +529,7 @@ export default function CreateBusinessScreen() {
                   placeholderTextColor="#d1d5db"
                   value={form.country}
                   onChangeText={(text) =>
-                    setForm((prev) => ({ ...prev, country: text }))
+                    setValue("country", text, { shouldDirty: true })
                   }
                 />
               </View>
@@ -511,7 +540,7 @@ export default function CreateBusinessScreen() {
         {/* Submit — inside scroll so it's reachable at the end */}
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={handleSubmit}
+          onPress={handleSubmit(onSubmitForm)}
           disabled={createBusiness.isPending}
           className="w-full bg-[#ee2b8c] rounded-2xl py-5 flex-row items-center justify-center gap-3 mt-8"
           style={{

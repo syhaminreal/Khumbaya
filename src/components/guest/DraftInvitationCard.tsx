@@ -10,6 +10,7 @@ import { GuestDetailInterface } from "../../features/guests/types";
 
 interface DraftInvitationCardProps {
   guest: GuestDetailInterface;
+  onPress?: () => void;
   onMoveToPending: () => void;
   onDeleteDraft: () => void;
   isMoving: boolean;
@@ -19,6 +20,7 @@ interface DraftInvitationCardProps {
 
 export default function DraftInvitationCard({
   guest,
+  onPress,
   onMoveToPending,
   style,
   onDeleteDraft,
@@ -43,7 +45,7 @@ export default function DraftInvitationCard({
     <View className="mb-3 rounded-2xl border border-[#EE2B8C]/20 bg-white"
       style={style}
     >
-      <View className="min-h-[86px] flex-row items-center gap-3 px-4 py-3">
+      <Pressable onPress={onPress} className="min-h-[86px] flex-row items-center gap-3 px-4 py-3">
         {guest.user.photo ? (
           <Image
             source={{ uri: guest.user.photo }}
@@ -79,7 +81,7 @@ export default function DraftInvitationCard({
             Draft
           </Text>
         </View>
-      </View>
+      </Pressable>
 
       <View className="flex-row gap-2 px-4 pb-3">
         <Pressable

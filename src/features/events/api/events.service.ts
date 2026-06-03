@@ -191,14 +191,11 @@ export const getCompletedEventsApi = async ({
   limit = 20,
 }: GetEventsParams = {}) => {
   const events = await getUpcomingEventsApi({ page, limit });
-
+  const now = new Date();
   return events.filter((event: Event) => {
-    if (event.status === "completed") return true;
-
-    const endDate = event.endDateTime ? new Date(event.endDateTime) : undefined;
-    return (
-      !!endDate && !Number.isNaN(endDate.getTime()) && endDate < new Date()
-    );
+    const dateStr = event.endDateTime || event.startDateTime;
+    const date = dateStr ? new Date(dateStr) : null;
+    return !!date && !Number.isNaN(date.getTime()) && date < now;
   });
 };
 
@@ -236,6 +233,7 @@ export const submitRsvpResponseApi = async (
   eventId: number,
   payload: Partial<Invitation>
 ) => {
+  console.log(  'This is the event ervice p🤒p🤒p🤒p🤒p🤒p🤒p🤒p🤒ayload' , payload);
   const response = await api.post(`/invitation/responce/${eventId}`, payload);
   return response.data;
 };
