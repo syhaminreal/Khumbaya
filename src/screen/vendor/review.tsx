@@ -147,6 +147,7 @@ export function ReviewSection({ businessId, resolvedId }: ReviewSectionProps) {
           id: String(review.id),
           reviewerName:
             normalizeText(review.reviewerName) ||
+            normalizeText(review.username) ||
             (isCurrentUser ? normalizeText(user?.username) : "") ||
             "Anonymous",
           reviewerAvatarUrl: normalizeAvatarUrl(

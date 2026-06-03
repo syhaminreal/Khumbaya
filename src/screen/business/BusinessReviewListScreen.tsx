@@ -26,7 +26,6 @@ export default function BusinessReviewListScreen() {
       reviewerName:
         review.reviewerName?.trim() ||
         review.username?.trim() ||
-        review.user?.username?.trim() ||
         (review.userId === user?.id ? user.username?.trim() : "") ||
         "Anonymous",
       reviewerAvatarUrl:
