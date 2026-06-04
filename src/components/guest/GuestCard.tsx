@@ -16,6 +16,7 @@ interface GuestCardProps {
   onDelete?: () => void;
   onDraftPress?: () => void;
   onMoveToDraft?: () => void;
+  onEditRsvp?: () => void;
   isMovingToDraft?: boolean;
   isDraftActionLoading?: boolean;
 }
@@ -26,6 +27,7 @@ export default function GuestCard({
   onDelete,
   onDraftPress,
   onMoveToDraft,
+  onEditRsvp,
   isMovingToDraft = false,
   isDraftActionLoading = false,
 }: GuestCardProps) {
@@ -145,7 +147,8 @@ return (
               </View>
 
               {(displayStatus.toLowerCase() === "pending" && onMoveToDraft) ||
-              onDelete ? (
+              onDelete ||
+              onEditRsvp ? (
                 <ThreeDotButton onPress={() => setMenuVisible(true)} />
               ) : null}
             </View>
@@ -167,6 +170,20 @@ return (
                     },
                     loading: isMovingToDraft,
                     disabled: isMovingToDraft,
+                  },
+                ]
+              : []),
+            ...(onEditRsvp
+              ? [
+                  {
+                    label: "Edit RSVP",
+                    icon: "create-outline" as const,
+                    color: "#EE2B8C",
+                    iconBgClassName: "bg-pink-50",
+                    onPress: () => {
+                      setMenuVisible(false);
+                      onEditRsvp();
+                    },
                   },
                 ]
               : []),

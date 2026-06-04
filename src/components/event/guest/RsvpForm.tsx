@@ -34,7 +34,7 @@ const ATTENDANCE_OPTIONS = [
   { label: "no", value: "rejected" },
 ] as const;
 
-export const RSVPFormContent = (content: Omit<Invitation,
+type RSVPFormContentProps = Omit<Invitation,
   "role" |
   "category" |
   "arrivalInfo" |
@@ -50,7 +50,9 @@ export const RSVPFormContent = (content: Omit<Invitation,
   "hasCheckedOut" |
   "id" |
   "respondedBy"
->) => {
+> & { onSuccess?: (data: any, payload: any) => void };
+
+export const RSVPFormContent = (content: RSVPFormContentProps) => {
   const router = useRouter();
   const { mutate: submitRsvp, isPending } = useSubmitRsvpResponse(content.eventId);
   const { control, handleSubmit, watch, setValue } = useForm<RSVPFormValues>({
@@ -151,7 +153,11 @@ export const RSVPFormContent = (content: Omit<Invitation,
           );
           useRsvpStore.getState().setDraftMembers(updatedMembers);
         }
-        router.back();
+        if (content.onSuccess) {
+          content.onSuccess(data, cleanedPayload);
+        } else {
+          router.back();
+        }
       },
     });
   };

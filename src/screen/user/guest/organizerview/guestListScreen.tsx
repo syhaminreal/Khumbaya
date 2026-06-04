@@ -24,7 +24,7 @@ import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { cn } from "@/src/utils/cn";
 import { _layoutAnimation } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
-import { RelativePathString, useLocalSearchParams } from "expo-router";
+import { RelativePathString, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -43,6 +43,7 @@ type GuestFilterTab = "accepted" | "pending" | "draft" | "Un-Invited"
 
 export default function GuestListScreen() {
 const {eventDraft} = useEventStore();
+  const router = useRouter();
   const { push } = useThrottledRouter();
  
   const { eventId, isGuest, isSubEvent } = useLocalSearchParams();
@@ -169,7 +170,7 @@ console.log('This is the sub event ')
     }
 
     return invitations.filter((invitation: GuestDetailInterface) => {
-      const status = String(invitation.eventGuest.status ?? "pending")
+      const status = String(invitation.eventGuest?.status ?? "pending")
         .trim()
         .toLowerCase();
       return matchesTabStatus(status, activeTab);
@@ -289,7 +290,7 @@ console.log('This is the sub event ')
         return item.members.some((member) => matchesSelectedCategory(member));
       }
 
-      const status = String(item.data.eventGuest.status ?? "pending")
+      const status = String(item.data.eventGuest?.status ?? "pending")
         .trim()
         .toLowerCase();
       if (!matchesTabStatus(status, activeTab)) return false;
@@ -393,14 +394,19 @@ console.log('This is the sub event ')
 
   const onPressGuestCard = (guest: GuestDetailInterface) => {
     setGuestDetail(guest);
-    //TODO: Draft the detail of the guest instead of using the params in this 
+    //TODO: Draft the detail of the guest instead of using the params in this
     push({
       pathname:
         `./guests/[guestDetailId]`,
-     
+
         params: { eventId: effectiveEventId, guestDetailId: guest.user.id },
     });
   };
+
+  const onEditRsvp = useCallback((guest: GuestDetailInterface) => {
+    setGuestDetail(guest);
+    push(`./guests/edit-rsvp` as RelativePathString);
+  }, [setGuestDetail, push]);
 // TODO: handle the case of the not available event guest int he list screen insterad  o using the ? in the file 
   const onPressDraftSend = useCallback(
     async (guest: GuestDetailInterface) => {
@@ -626,7 +632,12 @@ console.log('This is the sub event ')
     <SafeAreaView className="p-4 h-full" edges={["top"]}>
       <View>
         <View className="flex-row items-center justify-between mt-2 mb-3 border-b border-gray-300 pb-3">
-          <View className="w-10" />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="h-10 w-10 rounded-full bg-white border border-gray-200 items-center justify-center"
+          >
+            <Ionicons name="chevron-back" size={20} color="#e71872" />
+          </TouchableOpacity>
           <Text className="flex-1 text-center text-lg font-jakarta-bold text-[#181114]">
             Guest Management
           </Text>
@@ -793,12 +804,12 @@ console.log('This is the sub event ')
                 layout={_layoutAnimation}
                 entering={FadeInDown.delay(index * 20).duration(300)}>
                 <GuestCard
-
                   guest={item.data}
                   onPress={() => {
                     onPressGuestCard(item.data);
                   }}
                   onMoveToDraft={() => onMoveToDraft(item.data)}
+                  onEditRsvp={() => onEditRsvp(item.data)}
                   onDelete={
                     activeTab === "pending"
                       ? () => onRemoveGuest(item.data)
