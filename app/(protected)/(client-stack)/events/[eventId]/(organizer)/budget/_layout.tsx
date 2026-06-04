@@ -58,7 +58,7 @@ export default function BudgetLayout() {
         options={{ title: "Edit Payment" }}
       />
       <Stack.Screen
-        name="edit-expense"
+        name="[categoryId]/edit-expense"
         options={{ title: "Edit Expense" }}
       />
     </Stack>

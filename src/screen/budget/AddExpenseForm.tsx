@@ -380,7 +380,7 @@ export default function AddExpenseScreen({
                   />
                 ) : (
                   <Text className="text-white text-base" variant="h2">
-                    Create Expense
+                    {editMode ? "Update Expense" : "Create Expense"}
                   </Text>
                 )}
               </TouchableOpacity>

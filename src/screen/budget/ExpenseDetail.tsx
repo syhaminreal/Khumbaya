@@ -117,11 +117,11 @@ export default function ExpenseDetailScreen() {
     setMenuVisible(false);
     router.push({
       pathname:
-        `../../../budget/[eventId]/[categoryId]/[expenseId]/edit-expense` ,
+        `/(protected)/(client-stack)/events/[eventId]/(organizer)/budget/[categoryId]/edit-expense`,
       params: {
-        expenseId: expenseId,
-        categoryId: categoryId,
-        eventId: eventId,
+        expenseId: expenseId?.toString(),
+        categoryId: categoryId?.toString(),
+        eventId: eventId?.toString(),
       },
     });
   };
