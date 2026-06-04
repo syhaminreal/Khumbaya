@@ -4,7 +4,7 @@ import {
 } from "@/src/components/ui/CountryPhone";
 import { Text } from "@/src/components/ui/Text";
 import { COUNTRY_DATA } from "@/src/constants/countrydata";
-import { useInviteGuest } from "@/src/features/guests/api/use-guests";
+
 import { Ionicons } from "@expo/vector-icons";
 import * as Contacts from "expo-contacts";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -31,8 +31,6 @@ type ContactItem = {
 export default function ContactPickerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const inviteGuestMutation = useInviteGuest();
-
   const eventId = useMemo(() => {
     const raw = Array.isArray(params.eventId)
       ? params.eventId[0]
@@ -45,75 +43,18 @@ export default function ContactPickerScreen() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteWithFamily, setInviteWithFamily] = useState(true);
+  const [inviteWithFamily, setInviteWithFamily] = useState(false);
   const [familyGuestCount, setFamilyGuestCount] = useState("1");
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(
     COUNTRY_DATA[0]
   );
   const [pickerVisible, setPickerVisible] = useState(false);
 
-  const normalizePhone = useCallback((raw: string) => {
-    const trimmed = raw.trim();
-    if (!trimmed) return "";
-    const cleaned = trimmed.replace(/[^\d+]/g, "");
-    if (!cleaned) return "";
-    if (cleaned.startsWith("00")) {
-      return `+${cleaned.slice(2).replace(/\D/g, "")}`;
-    }
-    if (cleaned.startsWith("+")) {
-      return `+${cleaned.slice(1).replace(/\D/g, "")}`;
-    }
-    return cleaned.replace(/\D/g, "");
-  }, []);
-
-  const buildPhoneWithCountry = useCallback(
-    (digits: string) => {
-      const stripped = digits.replace(/^0+/, "");
-      return `+${selectedCountry.dialCode}-${stripped}`;
-    },
-    [selectedCountry.dialCode]
-  );
-
-  const formatPhoneWithCountryDash = useCallback(
-    (phone: string) => {
-      if (!phone.startsWith("+")) return phone;
-      const normalized = phone.replace(/[\s-]/g, "");
-
-      if (normalized.startsWith("+977")) {
-        const rest = normalized.slice(4);
-        return `+977-${rest}`;
-      }
-
-      const country = selectedCountry.dialCode;
-      if (normalized.startsWith(`+${country}`)) {
-        const rest = normalized.slice(country.length + 1);
-        return `+${country}-${rest}`;
-      }
-      return phone;
-    },
-    [selectedCountry.dialCode]
-  );
-
-  const confirmCountryCode = useCallback(
-    (name: string) =>
-      new Promise<boolean>((resolve) => {
-        Alert.alert(
-          "Missing country code",
-          `${name} has no country code. Use +${selectedCountry.dialCode}?`,
-          [
-            { text: "Skip", style: "cancel", onPress: () => resolve(false) },
-            { text: "Use", onPress: () => resolve(true) },
-          ]
-        );
-      }),
-    [selectedCountry.dialCode]
-  );
-
   useEffect(() => {
     (async () => {
       const { status } = await Contacts.requestPermissionsAsync();
       if (status !== "granted") {
+        setIsLoadingContacts(false);
         Alert.alert(
           "Permission Denied",
           "Contacts permission is required to import guests.",
@@ -163,7 +104,7 @@ export default function ContactPickerScreen() {
     });
   }, [contacts]);
 
-  const handleImport = useCallback(async () => {
+  const handleImport = useCallback(() => {
     if (!eventId) {
       Alert.alert("Error", "Invalid event.");
       return;
@@ -173,71 +114,20 @@ export default function ContactPickerScreen() {
       return;
     }
 
-    setIsInviting(true);
-    const selectedContacts = contacts.filter((c) => selected.has(c.id));
-    let successCount = 0;
-    const failed: string[] = [];
-
-    for (const contact of selectedContacts) {
-      try {
-        const normalizedPhone = normalizePhone(contact.phone);
-        if (!normalizedPhone) {
-          failed.push(contact.name);
-          continue;
-        }
-
-        let finalPhone = normalizedPhone;
-
-        if (!normalizedPhone.startsWith("+")) {
-          const shouldAdd = await confirmCountryCode(contact.name);
-          if (!shouldAdd) {
-            failed.push(contact.name);
-            continue;
-          }
-          finalPhone = buildPhoneWithCountry(normalizedPhone);
-        } else {
-          finalPhone = formatPhoneWithCountryDash(normalizedPhone);
-        }
-
-        await inviteGuestMutation.mutateAsync({
-          eventId,
-          payload: {
-            invitation_name: contact.name,
-            numberOfGuests: inviteWithFamily
-              ? Number(familyGuestCount || 1)
-              : 1,
-            phone: finalPhone,
-            fullName: contact.name,
-            isFamily: inviteWithFamily,
-            isDraft: false,
-            role: "Guest",
-            category: "Friend",
-            status: "pending",
-            isAccomodation: false,
-          },
-        });
-        successCount++;
-      } catch {
-        failed.push(contact.name);
-      }
-    }
-
-    const payload = selectedContacts.map((contact) => ({
-      id: contact.id,
-      name: contact.name,
-      phone: contact.phone,
-    }));
+    const payload = contacts
+      .filter((c) => selected.has(c.id))
+      .map((c) => ({ id: c.id, name: c.name, phone: c.phone }));
 
     router.push({
       pathname: "/(protected)/(client-stack)/events/[eventId]/(organizer)/guests/contact-review",
       params: {
         eventId: String(eventId),
         inviteWithFamily: String(inviteWithFamily),
+        familyGuestCount: String(familyGuestCount),
         dialCode: selectedCountry.dialCode,
         contacts: JSON.stringify(payload),
       },
     });
-    setIsInviting(false);
   }, [
     eventId,
     selected,
@@ -420,7 +310,7 @@ export default function ContactPickerScreen() {
         <View className="absolute bottom-8 left-5 right-5">
           <TouchableOpacity
             onPress={handleImport}
-            disabled={isInviting || selected.size === 0}
+            disabled={selected.size === 0}
             className={`h-14 rounded-2xl items-center justify-center flex-row ${selected.size === 0 ? "bg-gray-200" : "bg-[#EE2B8C]"
               }`}
             style={
@@ -435,25 +325,21 @@ export default function ContactPickerScreen() {
                 : {}
             }
           >
-            {isInviting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Ionicons
-                  name="person-add-outline"
-                  size={20}
-                  color={selected.size === 0 ? "#9CA3AF" : "#fff"}
-                />
-                <Text
-                  className={`ml-2 text-sm font-semibold ${selected.size === 0 ? "text-gray-400" : "text-white"
-                    }`}
-                >
+            <>
+              <Ionicons
+                name="person-add-outline"
+                size={20}
+                color={selected.size === 0 ? "#9CA3AF" : "#fff"}
+              />
+              <Text
+                className={`ml-2 text-sm font-semibold ${selected.size === 0 ? "text-gray-400" : "text-white"
+                  }`}
+              >
                   {selected.size === 0
                     ? "Select contacts to invite"
                     : `Review ${selected.size} contact${selected.size > 1 ? "s" : ""}`}
                 </Text>
               </>
-            )}
           </TouchableOpacity>
         </View>
       )}
