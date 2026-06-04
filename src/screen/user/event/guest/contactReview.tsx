@@ -101,6 +101,14 @@ export default function ContactReviewScreen() {
     [params.inviteWithFamily]
   );
 
+  const familyGuestCount = useMemo(() => {
+    const raw = Array.isArray(params.familyGuestCount)
+      ? params.familyGuestCount[0]
+      : params.familyGuestCount;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  }, [params.familyGuestCount]);
+
   const dialCode = useMemo(() => {
     const raw = Array.isArray(params.dialCode)
       ? params.dialCode[0]
@@ -231,6 +239,7 @@ export default function ContactReviewScreen() {
             invitation_name: name,
             phone: finalPhone,
             fullName: name,
+            numberOfGuests: inviteWithFamily ? familyGuestCount : 1,
             isFamily: inviteWithFamily,
             isDraft: false,
             role: "Guest",
