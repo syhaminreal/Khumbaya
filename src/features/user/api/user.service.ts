@@ -60,11 +60,7 @@ export const updateUserMeApi = async (data: UpdateUserMePayload) => {
 };
 
 export const updateUserMeFormDataApi = async (formData: FormData) => {
-  const response = await api.patch("/user/me", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await api.patch("/user/me", formData);
   return response.data.data ?? response.data;
 };
 

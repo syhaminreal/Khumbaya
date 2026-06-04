@@ -7,12 +7,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 
 type ToggleButtonProps = {
@@ -89,11 +89,14 @@ export default function ProfileScreen() {
     const mimeType = getMimeType(uri);
 
     const formData = new FormData();
-    formData.append("photo", {
+    const imageFile = {
       uri,
       name: fileName,
       type: mimeType,
-    } as any);
+    } as any;
+
+    formData.append("photo", imageFile);
+    formData.append("file", imageFile);
 
     setUploadingAvatar(true);
     try {
