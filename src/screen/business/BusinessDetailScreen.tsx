@@ -75,33 +75,33 @@ function RequestCard({ request }: { request: BusinessRequest }) {
   );
 }
 
-function ActiveRequestsSection({ requests }: { requests: BusinessRequest[] }) {
-  return (
-    <View
-      className="bg-white rounded-md border border-gray-100 overflow-hidden"
-      style={shadowStyle}
-    >
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100">
-        <Text variant="h1" className="text-base text-[#181114]">
-          Active Requests
-        </Text>
-        <TouchableOpacity activeOpacity={0.7}>
-          <Text variant="h1" className="text-xs text-primary">View All</Text>
-        </TouchableOpacity>
-      </View>
-      {requests.length === 0 ? (
-        <View className="py-8 items-center">
-          <MaterialIcons name="inbox" size={32} color="#d1d5db" />
-          <Text className="text-gray-400 text-sm mt-2">
-            No pending requests
-          </Text>
-        </View>
-      ) : (
-        requests.map((req) => <RequestCard key={req.id} request={req} />)
-      )}
-    </View>
-  );
-}
+// function ActiveRequestsSection({ requests }: { requests: BusinessRequest[] }) {
+//   return (
+//     <View
+//       className="bg-white rounded-md border border-gray-100 overflow-hidden"
+//       style={shadowStyle}
+//     >
+//       <View className="flex-row items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100">
+//         <Text variant="h1" className="text-base text-[#181114]">
+//           Active Requests
+//         </Text>
+//         <TouchableOpacity activeOpacity={0.7}>
+//           <Text variant="h1" className="text-xs text-primary">View All</Text>
+//         </TouchableOpacity>
+//       </View>
+//       {requests.length === 0 ? (
+//         <View className="py-8 items-center">
+//           <MaterialIcons name="inbox" size={32} color="#d1d5db" />
+//           <Text className="text-gray-400 text-sm mt-2">
+//             No pending requests
+//           </Text>
+//         </View>
+//       ) : (
+//         requests.map((req) => <RequestCard key={req.id} request={req} />)
+//       )}
+//     </View>
+//   );
+// }
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -323,7 +323,7 @@ export default function BusinessDetailsScreen() {
         />
 
         <View className="px-4 gap-4 mt-4">
-          <ActiveRequestsSection requests={[]} />
+          {/* <ActiveRequestsSection requests={[]} /> */}
 
           {/* Category-specific details (from constants) */}
           {businessWithAttribute.businessInformation.category === "Venue" && (
@@ -344,6 +344,8 @@ export default function BusinessDetailsScreen() {
               }
             />
           )}
+
+{/* package list */}
 
           <AvailabilityCalendar dates={undefined} />
           <LatestReviewSection reviews={[]} />

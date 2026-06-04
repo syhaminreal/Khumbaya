@@ -174,73 +174,6 @@ export default function CreateBusinessScreen() {
       );
     }
 
-    if (field.type === "dropdown") {
-      const dropdownData = (field.options ?? []).map((o) => ({
-        label: o,
-        value: o,
-      }));
-      return (
-        <View key={field.key}>
-          <Text
-            variant="h1"
-            className="text-[11px] text-[#594048] uppercase tracking-widest ml-1 mb-1.5"
-          >
-            {field.label}
-          </Text>
-          <Dropdown
-            style={{
-              height: 50,
-              borderWidth: 1,
-              borderColor: "#e5e7eb",
-              borderRadius: 12,
-              paddingHorizontal: 16,
-              backgroundColor: "white",
-            }}
-            placeholderStyle={{ color: "#d1d5db", fontSize: 15 }}
-            selectedTextStyle={{
-              color: "#181114",
-              fontSize: 15,
-              fontWeight: "600",
-            }}
-            data={dropdownData}
-            labelField="label"
-            valueField="value"
-            placeholder={`Select ${field.label.toLowerCase()}`}
-            value={(value as string) ?? null}
-            onChange={(item) => updateCategoryDetail(field.key, item.value)}
-            renderItem={(item, selected) => (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 20,
-                  paddingVertical: 12,
-                  backgroundColor: selected ? "#fdf2f8" : "white",
-                }}
-              >
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 14,
-                    color: selected ? "#ee2b8c" : "#181114",
-                    fontWeight: selected ? "600" : "400",
-                  }}
-                >
-                  {item.label}
-                </Text>
-                {selected && (
-                  <MaterialIcons
-                    name="check-circle"
-                    size={16}
-                    color="#ee2b8c"
-                  />
-                )}
-              </View>
-            )}
-          />
-        </View>
-      );
-    }
 
     // text or number
     return (
@@ -289,6 +222,9 @@ export default function CreateBusinessScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      
+      
+     
       className="flex-1 bg-[#f8f6f7]"
     >
       <ScrollView
@@ -301,6 +237,7 @@ export default function CreateBusinessScreen() {
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        
       >
         {/* Page title */}
         <View className="mb-5">
@@ -390,6 +327,84 @@ export default function CreateBusinessScreen() {
             </View>
           </View>
 
+          {/* ── Section: Category ── */}
+          <View className="h-px bg-gray-100 my-1" />
+          <Text className="text-xs font-semibold text-[#ee2b8c] uppercase tracking-widest ml-1">Category</Text>
+
+          <View>
+            <Dropdown
+              style={{
+                height: 50,
+                borderWidth: 1,
+                borderColor: "#e5e7eb", 
+
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                backgroundColor: "white",
+              }}
+              placeholderStyle={{ color: "#d1d5db", fontSize: 15 }}
+              selectedTextStyle={{ color: "#181114", fontSize: 15, fontWeight: "600" }}
+              data={CATEGORY_OPTIONS}
+              labelField="label"
+              valueField="value"
+              placeholder="Select category"
+              value={form.vendorCategoryId || null}
+              onChange={(item) => {
+                setValue("vendorCategoryId", item.value, { shouldDirty: true });
+                setValue("vendorType", "", { shouldDirty: true });
+                setValue("categoryDetails", {}, { shouldDirty: true });
+              }}
+              renderItem={(item) => (
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: "white" }}>
+                  <Text style={{ flex: 1, fontSize: 15, color: "#181114", fontWeight: "400" }}>
+                    {item.label}
+                  </Text>
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Sub-type — shown only if selected category has subtypes */}
+          {activeCategory?.subtypes && activeCategory.subtypes.length > 0 && (
+            <View>
+              <Text variant="h1" className="text-[11px] text-[#594048] uppercase tracking-widest ml-1 mb-1.5">{activeCategory.name} Type <Text className="text-[#ee2b8c]">*</Text></Text>
+              <Dropdown
+                style={{
+                  height: 50,
+                  borderWidth: 1,
+                  borderColor: "#e5e7eb",
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  backgroundColor: "white",
+                }}
+                placeholderStyle={{ color: "#d1d5db", fontSize: 15 }}
+                selectedTextStyle={{ color: "#181114", fontSize: 15, fontWeight: "600" }}
+                data={activeCategory.subtypes.map((s) => ({ label: s, value: s }))}
+                labelField="label"
+                valueField="value"
+                placeholder={`Select type`}
+                value={form.vendorType || null}
+                onChange={(item) =>
+                  setValue("vendorType", item.value, { shouldDirty: true })
+                }
+                renderItem={(item) => (
+                  <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: "white" }}>
+                    <Text style={{ flex: 1, fontSize: 15, color: "#181114", fontWeight: "400" }}>
+                      {item.label}
+                    </Text>
+                  </View>
+                )}
+              />
+            </View>
+          )}
+
+          {/* Security-specific fields */}
+          {activeFields && activeFields.length > 0 && (
+            <View className="gap-6">
+              {activeFields.map(renderCategoryField)}
+            </View>
+          )}
+
           {/* ── Section: Contact Details ── */}
           <View className="h-px bg-gray-100 my-1" />
           <Text className="text-xs font-semibold text-[#ee2b8c] uppercase tracking-widest ml-1">Contact Details</Text>
@@ -442,7 +457,6 @@ export default function CreateBusinessScreen() {
                 value={form.contactPhone}
                 onChangeText={(text) => setValue("contactPhone", text, { shouldDirty: true })}
               />
-            
             </View>
             {/* WhatsApp / mobile */}
             <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100">
@@ -470,85 +484,6 @@ export default function CreateBusinessScreen() {
               />
             </View>
           </View>
-
-          {/* ── Section: Category ── */}
-          <View className="h-px bg-gray-100 my-1" />
-          <Text className="text-xs font-semibold text-[#ee2b8c] uppercase tracking-widest ml-1">Category</Text>
-
-          <View>
-            <Dropdown
-              style={{
-                height: 50,
-                borderWidth: 1,
-                borderColor: "#e5e7eb",
-                borderRadius: 12,
-                paddingHorizontal: 16,
-                backgroundColor: "white",
-              }}
-              placeholderStyle={{ color: "#d1d5db", fontSize: 15 }}
-              selectedTextStyle={{ color: "#181114", fontSize: 15, fontWeight: "600" }}
-              data={CATEGORY_OPTIONS}
-              labelField="label"
-              valueField="value"
-              placeholder="Select category"
-              value={form.vendorCategoryId || null}
-              onChange={(item) => {
-                setValue("vendorCategoryId", item.value, { shouldDirty: true });
-                setValue("vendorType", "", { shouldDirty: true });
-                setValue("categoryDetails", {}, { shouldDirty: true });
-              }}
-              renderItem={(item, selected) => (
-                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: selected ? "#fdf2f8" : "white" }}>
-                  <Text style={{ flex: 1, fontSize: 15, color: selected ? "#ee2b8c" : "#181114", fontWeight: selected ? "600" : "400" }}>
-                    {item.label}
-                  </Text>
-                  {selected && <MaterialIcons name="check-circle" size={16} color="#ee2b8c" />}
-                </View>
-              )}
-            />
-          </View>
-
-          {/* Sub-type — shown only if selected category has subtypes */}
-          {activeCategory?.subtypes && activeCategory.subtypes.length > 0 && (
-            <View>
-              <Text variant="h1" className="text-[11px] text-[#594048] uppercase tracking-widest ml-1 mb-1.5">{activeCategory.name} Type <Text className="text-[#ee2b8c]">*</Text></Text>
-              <Dropdown
-                style={{
-                  height: 50,
-                  borderWidth: 1,
-                  borderColor: "#e5e7eb",
-                  borderRadius: 12,
-                  paddingHorizontal: 16,
-                  backgroundColor: "white",
-                }}
-                placeholderStyle={{ color: "#d1d5db", fontSize: 15 }}
-                selectedTextStyle={{ color: "#181114", fontSize: 15, fontWeight: "600" }}
-                data={activeCategory.subtypes.map((s) => ({ label: s, value: s }))}
-                labelField="label"
-                valueField="value"
-                placeholder={`Select type`}
-                value={form.vendorType || null}
-                onChange={(item) =>
-                  setValue("vendorType", item.value, { shouldDirty: true })
-                }
-                renderItem={(item, selected) => (
-                  <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: selected ? "#fdf2f8" : "white" }}>
-                    <Text style={{ flex: 1, fontSize: 15, color: selected ? "#ee2b8c" : "#181114", fontWeight: selected ? "600" : "400" }}>
-                      {item.label}
-                    </Text>
-                    {selected && <MaterialIcons name="check-circle" size={16} color="#ee2b8c" />}
-                  </View>
-                )}
-              />
-            </View>
-          )}
-
-          {/* Security-specific fields */}
-          {activeFields && activeFields.length > 0 && (
-            <View className="gap-6">
-              {activeFields.map(renderCategoryField)}
-            </View>
-          )}
 
         </View>
 
