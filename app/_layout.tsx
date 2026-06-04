@@ -30,6 +30,8 @@ function RootNavigation() {
     // Wait until auth hydration is complete
     if (isLoading) return;
 
+    console.log("User token:", token);
+
     const inAuthGroup = segmentsRef.current[0] === "(onboarding)";
 
     // Route based purely on token presence (source of truth)

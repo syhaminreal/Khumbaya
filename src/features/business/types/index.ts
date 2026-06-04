@@ -156,7 +156,8 @@ export interface Business {
 export interface BusinessWithAttribute {
   businessInformation: Business,
   venueInformation: VenueAttribute[],
-  vendorServicesinformation: OtherServiceAttribute[]
+  vendorServicesinformation: OtherServiceAttribute[],
+  vendorServicesInformation?: OtherServiceAttribute[]
 }
 
 export interface VendorEventInvitation {

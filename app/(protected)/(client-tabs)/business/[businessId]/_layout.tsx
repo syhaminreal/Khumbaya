@@ -19,18 +19,10 @@ export default function BusinessDetailedLayout() {
         ),
       }}
     >
-      <Stack.Screen
-        name="detailed"
-        options={{ title: "Business Details" }}
-      />
-      <Stack.Screen
-        name="edit"
-        options={{ title: "Business Details" }}
-      />
-      <Stack.Screen
-        name="venue/create"
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="detailed" options={{ title: "Business Details" }} />
+      <Stack.Screen name="reviews" options={{ title: "Business Reviews" }} />
+      <Stack.Screen name="edit" options={{ title: "Business Details" }} />
+      <Stack.Screen name="venue/create" options={{ headerShown: false }} />
       <Stack.Screen
         name="venue/[venueId]/update"
         options={{ headerShown: false }}
