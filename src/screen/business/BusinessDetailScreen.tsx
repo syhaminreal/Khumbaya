@@ -4,6 +4,7 @@ import ServiceDetailsSection from "@/src/components/business/[businessId]/Servic
 import VenueDetailsSection from "@/src/components/business/[businessId]/VenueDetailsSection";
 import { Text } from "@/src/components/ui/Text";
 import { useDeleteBusiness, useGetBusinessById } from "@/src/features/business";
+import { PackageList } from "@/src/features/packages";
 import { useBusinessDraftStore } from "@/src/features/business/store/useBusiness";
 import {
   BusinessRequest,
@@ -27,53 +28,53 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 // ─── Active Requests ──────────────────────────────────────────────────────────
 
-function RequestCard({ request }: { request: BusinessRequest }) {
-  const isPending = request.status === "pending";
+// function RequestCard({ request }: { request: BusinessRequest }) {
+//   const isPending = request.status === "pending";
 
-  return (
-    <View className="px-4 py-3 border-b border-gray-50">
-      <View className="flex-row items-center gap-3">
-        <Image
-          source={{ uri: request.clientAvatarUrl }}
-          className="w-10 h-10 rounded-full bg-gray-100"
-          resizeMode="cover"
-        />
-        <View className="flex-1">
-          <Text variant="h1" className="text-sm text-[#181114]">
-            {request.clientName}
-          </Text>
-          <Text className="text-xs text-[#594048]">{request.eventType}</Text>
-          <View className="flex-row items-center gap-1 mt-0.5">
-            <MaterialIcons name="calendar-today" size={11} color="#9ca3af" />
-            <Text className="text-[11px] text-gray-400">{request.date}</Text>
-          </View>
-        </View>
-        {isPending ? (
-          <View className="flex-row gap-2">
-            <TouchableOpacity
-              activeOpacity={0.85}
-              className="bg-primary rounded-lg px-3 py-1.5"
-            >
-              <Text variant="h1" className="text-white text-xs">Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              className="bg-gray-100 rounded-lg px-3 py-1.5"
-            >
-              <Text variant="h1" className="text-gray-500 text-xs">Reject</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View className="bg-emerald-100 rounded-full px-3 py-1">
-            <Text variant="h1" className="text-emerald-600 text-xs">
-              Confirmed
-            </Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
+//   return (
+//     <View className="px-4 py-3 border-b border-gray-50">
+//       <View className="flex-row items-center gap-3">
+//         <Image
+//           source={{ uri: request.clientAvatarUrl }}
+//           className="w-10 h-10 rounded-full bg-gray-100"
+//           resizeMode="cover"
+//         />
+//         <View className="flex-1">
+//           <Text variant="h1" className="text-sm text-[#181114]">
+//             {request.clientName}
+//           </Text>
+//           <Text className="text-xs text-[#594048]">{request.eventType}</Text>
+//           <View className="flex-row items-center gap-1 mt-0.5">
+//             <MaterialIcons name="calendar-today" size={11} color="#9ca3af" />
+//             <Text className="text-[11px] text-gray-400">{request.date}</Text>
+//           </View>
+//         </View>
+//         {isPending ? (
+//           <View className="flex-row gap-2">
+//             <TouchableOpacity
+//               activeOpacity={0.85}
+//               className="bg-primary rounded-lg px-3 py-1.5"
+//             >
+//               <Text variant="h1" className="text-white text-xs">Accept</Text>
+//             </TouchableOpacity>
+//             <TouchableOpacity
+//               activeOpacity={0.85}
+//               className="bg-gray-100 rounded-lg px-3 py-1.5"
+//             >
+//               <Text variant="h1" className="text-gray-500 text-xs">Reject</Text>
+//             </TouchableOpacity>
+//           </View>
+//         ) : (
+//           <View className="bg-emerald-100 rounded-full px-3 py-1">
+//             <Text variant="h1" className="text-emerald-600 text-xs">
+//               Confirmed
+//             </Text>
+//           </View>
+//         )}
+//       </View>
+//     </View>
+//   );
+// }
 
 // function ActiveRequestsSection({ requests }: { requests: BusinessRequest[] }) {
 //   return (
@@ -345,7 +346,12 @@ export default function BusinessDetailsScreen() {
             />
           )}
 
-{/* package list */}
+          {/* Package List */}
+          {businessWithAttribute?.businessInformation?.id && (
+            <PackageList
+              businessId={businessWithAttribute.businessInformation.id}
+            />
+          )}
 
           <AvailabilityCalendar dates={undefined} />
           <LatestReviewSection reviews={[]} />
