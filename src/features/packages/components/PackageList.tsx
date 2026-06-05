@@ -1,23 +1,33 @@
 import { Text } from "@/src/components/ui/Text";
+import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { shadowStyle } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
+  Pressable,
   TouchableOpacity,
+  useWindowDimensions,
   View,
-  ScrollView,
 } from "react-native";
 import { useGetPackage } from "../api/use-package";
 import { Package, PackageItem } from "../types";
-
 interface PackageListProps {
   businessId: number;
+  showActions?: boolean;
 }
 
-function formatCurrency(amount: string, currency: string): string {
-  const numAmount = parseFloat(amount);
-  if (isNaN(numAmount)) return `${currency} ${amount}`;
+function parseNumber(value?: string | number): number {
+  if (value === undefined || value === null) return 0;
+  const sanitized = String(value).replace(/,/g, "").trim();
+  const num = Number(sanitized);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function formatCurrency(amount: string | number, currency: string): string {
+  const numAmount = parseNumber(amount);
+  if (!Number.isFinite(numAmount)) return `${currency} ${amount}`;
 
   const currencySymbols: Record<string, string> = {
     USD: "$",
@@ -29,6 +39,14 @@ function formatCurrency(amount: string, currency: string): string {
 
   const symbol = currencySymbols[currency] || currency;
   return `${symbol}${numAmount.toLocaleString()}`;
+}
+
+function getItemAmount(item: PackageItem): number {
+  const amount = parseNumber(item.amount);
+  if (amount > 0) return amount;
+  const quantity = parseNumber(item.quantity) || 1;
+  const rate = parseNumber(item.rate);
+  return quantity * rate;
 }
 
 function SkeletonCard() {
@@ -68,7 +86,18 @@ function SkeletonCard() {
   );
 }
 
-function PackageItemRow({ item, index }: { item: PackageItem; index: number }) {
+function PackageItemRow({
+  item,
+  index,
+  currency,
+}: {
+  item: PackageItem;
+  index: number;
+  currency: string;
+}) {
+  const quantity = parseNumber(item.quantity);
+  const rate = parseNumber(item.rate);
+  const amount = getItemAmount(item);
   return (
     <View
       className={`flex-row items-center justify-between py-3 ${
@@ -76,24 +105,27 @@ function PackageItemRow({ item, index }: { item: PackageItem; index: number }) {
       }`}
     >
       <View className="flex-1 flex-row items-center gap-2">
-        <View className="w-6 h-6 rounded-full bg-primary/10 items-center justify-center">
-          <MaterialIcons name="check" size={14} color="#ee2b8c" />
+        <View className="w-6 h-6 rounded-full bg-[#f3f4f6] items-center justify-center">
+          <MaterialIcons name="check" size={14} color="#6b7280" />
         </View>
         <View className="flex-1">
-          <Text className="text-sm text-[#181114] font-medium">{item.title}</Text>
+          <Text className="text-base text-[#181114] font-semibold">
+            {item.title}
+            {quantity ? ` × ${quantity}` : ""}
+          </Text>
           {item.group && (
-            <Text className="text-xs text-gray-400">{item.group}</Text>
+            <Text className="text-sm text-gray-400">{item.group}</Text>
           )}
         </View>
       </View>
       <View className="items-end">
-        {item.quantity && parseInt(item.quantity) > 1 && (
-          <Text className="text-xs text-gray-400">
-            {item.quantity} x {item.rate}
+        {quantity > 1 && rate > 0 && (
+          <Text className="text-sm text-gray-400">
+            {quantity} x {formatCurrency(rate, currency)}
           </Text>
         )}
-        <Text className="text-sm text-[#181114] font-semibold">
-          {formatCurrency(item.amount, "")}
+        <Text className="text-base text-[#181114] font-semibold">
+          {formatCurrency(amount, currency)}
         </Text>
       </View>
     </View>
@@ -104,115 +136,112 @@ function PackageCard({
   packageItem,
   onEdit,
   onShare,
+  onPress,
+  isExpanded,
+  showActions,
 }: {
   packageItem: Package;
   onEdit?: () => void;
   onShare?: () => void;
+  onPress?: () => void;
+  isExpanded?: boolean;
+  showActions?: boolean;
 }) {
-  const hasMoreThanThreeItems = (packageItem.items?.length || 0) > 3;
-  const displayItems = packageItem.items?.slice(0, 3) || [];
-  const remainingCount = (packageItem.items?.length || 0) - 3;
+  const displayItems = packageItem.items || [];
+  const itemsTotal = (packageItem.items || []).reduce(
+    (sum, item) => sum + getItemAmount(item),
+    0
+  );
+  const currency = packageItem.currency || "";
 
   return (
-    <View
+    <Pressable
+      onPress={onPress}
       className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
       style={shadowStyle}
     >
-      {/* Gradient Header */}
       <View
-        className="px-5 py-6"
-        style={{
-          backgroundColor: "#ee2b8c",
-        }}
+        className="px-4 py-4"
       >
-        <View className="flex-row items-start justify-between">
+        <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-white/80 text-xs uppercase tracking-wider font-medium mb-1">
-              Package
-            </Text>
             <Text
               variant="h1"
-              className="text-white text-xl"
+              className="text-[#181114] text-lg"
               numberOfLines={2}
             >
               {packageItem.title}
             </Text>
-          </View>
-          <View className="flex-row gap-1">
-            {onEdit && (
-              <TouchableOpacity
-                onPress={onEdit}
-                activeOpacity={0.75}
-                className="w-8 h-8 rounded-full bg-white/20 items-center justify-center"
-              >
-                <MaterialIcons name="edit" size={16} color="white" />
-              </TouchableOpacity>
-            )}
-            {onShare && (
-              <TouchableOpacity
-                onPress={onShare}
-                activeOpacity={0.75}
-                className="w-8 h-8 rounded-full bg-white/20 items-center justify-center"
-              >
-                <MaterialIcons name="share" size={16} color="white" />
-              </TouchableOpacity>
-            )}
+            <Text className="text-xs text-gray-400 mt-1">
+              {packageItem.items?.length || 0} items included
+            </Text>
           </View>
         </View>
 
-        {/* Price in header */}
         <View className="mt-4">
-          <Text className="text-white/80 text-xs mb-1">Total Price</Text>
-          <Text variant="h1" className="text-white text-3xl">
-            {formatCurrency(packageItem.totalAmount, packageItem.currency)}
-          </Text>
-        </View>
-      </View>
-
-      <View className="p-5">
-        {/* Package Items */}
-        {displayItems.length > 0 && (
-          <View className="mb-4">
-            <Text className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">
-              What&apos;s Included
+          <View className="flex-row items-end gap-2">
+            <Text variant="h1" className="text-2xl text-[#181114]">
+              {formatCurrency(itemsTotal, currency)}
             </Text>
-            <View>
-              {displayItems.map((item, index) => (
-                <PackageItemRow key={index} item={item} index={index} />
-              ))}
+          </View>
+        </View>
+
+        <View className="flex-row items-center justify-between mt-4">
+          <View className="flex-row items-center gap-2">
+            <View className="w-6 h-6 rounded-full bg-[#f3f4f6] items-center justify-center">
+              <MaterialIcons name={isExpanded ? "expand-less" : "expand-more"} size={18} color="#6b7280" />
             </View>
-            {hasMoreThanThreeItems && (
-              <View className="pt-2 border-t border-gray-50">
-                <Text className="text-xs text-primary text-center">
-                  +{remainingCount} more items
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Total Section */}
-        <View className="pt-4 border-t border-gray-100">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm text-gray-500">Total Amount</Text>
-            <Text
-              variant="h1"
-              className="text-xl text-[#181114]"
-            >
-              {formatCurrency(packageItem.totalAmount, packageItem.currency)}
+            <Text className="text-xs text-gray-500">
+              {isExpanded ? "Hide details" : "View details"}
             </Text>
           </View>
+          {showActions ? (
+            <View className="flex-row items-center gap-1">
+              {onEdit && (
+                <TouchableOpacity
+                  onPress={onEdit}
+                  activeOpacity={0.75}
+                  className="w-8 h-8 rounded-full bg-[#f3f4f6] items-center justify-center"
+                >
+                  <MaterialIcons name="edit" size={16} color="#6b7280" />
+                </TouchableOpacity>
+              )}
+              {onShare && (
+                <TouchableOpacity
+                  onPress={onShare}
+                  activeOpacity={0.75}
+                  className="w-8 h-8 rounded-full bg-[#f3f4f6] items-center justify-center"
+                >
+                  <MaterialIcons name="share" size={16} color="#6b7280" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : null}
         </View>
-
-        {/* View Details Button */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="mt-5 bg-[#EE2B8C] rounded-xl py-3.5 items-center"
-        >
-          <Text className="text-white font-semibold text-sm">View Details</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+
+      {isExpanded && (
+        <View className="px-4 pb-4 pt-2 border-t border-gray-100">
+          {displayItems.length > 0 && (
+            <View>
+              <Text className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">
+                What&apos;s Included
+              </Text>
+              <View>
+                {displayItems.map((item, index) => (
+                  <PackageItemRow
+                    key={index}
+                    item={item}
+                    index={index}
+                    currency={currency}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -236,12 +265,12 @@ function LoadingState() {
   );
 }
 
-function EmptyState({ businessId }: { businessId: number }) {
-  const router = useRouter();
-
+function EmptyState({ businessId, showActions }: { businessId: number; showActions?: boolean }) {
+  const {push } = useThrottledRouter()
   const handleCreatePackage = () => {
-    router.push({
-      pathname: "/business/[businessId]/package/create",
+    // TODO: Navigate to create package screen when available
+    push({
+      pathname: "./packages/create",
       params: { businessId: String(businessId) },
     });
   };
@@ -259,22 +288,25 @@ function EmptyState({ businessId }: { businessId: number }) {
           <MaterialIcons name="inventory-2" size={40} color="#ee2b8c" />
         </View>
         <Text variant="h1" className="text-lg text-[#181114] mb-2 text-center">
-          No packages created yet
+          No packages yet
         </Text>
         <Text className="text-sm text-gray-400 text-center max-w-xs mb-8">
-          Start building custom service tiers to streamline your client
-          proposals.
+          {showActions
+            ? "Start building custom service tiers to streamline your client proposals."
+            : "This vendor hasn't added any packages yet."}
         </Text>
-        <TouchableOpacity
-          onPress={handleCreatePackage}
-          activeOpacity={0.85}
-          className="bg-[#EE2B8C] rounded-xl py-3.5 px-6 flex-row items-center gap-2"
-        >
-          <MaterialIcons name="add" size={20} color="white" />
-          <Text className="text-white font-semibold text-sm">
-            Create First Package
-          </Text>
-        </TouchableOpacity>
+        {showActions && (
+          <TouchableOpacity
+            onPress={handleCreatePackage}
+            activeOpacity={0.85}
+            className="bg-[#EE2B8C] rounded-xl py-3.5 px-6 flex-row items-center gap-2"
+          >
+            <MaterialIcons name="add" size={20} color="white" />
+            <Text className="text-white font-semibold text-sm">
+              Create First Package
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -307,34 +339,57 @@ function ErrorState({ error }: { error: Error | null }) {
 function PackageGrid({
   packages,
   businessId,
+  showActions,
 }: {
   packages: Package[];
   businessId: number;
+  showActions: boolean;
 }) {
-  const router = useRouter();
+  const { push } = useThrottledRouter();
+  const { width } = useWindowDimensions();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const numColumns = useMemo(() => {
+    const availableWidth = Math.max(width - 48, 0);
+    const maxColumns = Math.floor(availableWidth / 340) || 1;
+    return Math.min(2, Math.max(1, maxColumns));
+  }, [width]);
+
+  const handleCreatePackage = () => {
+    push({
+      pathname: "./packages/create",
+      params: { businessId: String(businessId) },
+    });
+  };
 
   const handleEditPackage = (pkg: Package) => {
-    if (pkg.id) {
-      router.push({
-        pathname: "/business/[businessId]/package/[packageId]/edit",
-        params: {
-          businessId: String(businessId),
-          packageId: String(pkg.id),
-        },
-      });
-    }
+    // TODO: Navigate to edit package screen when available
+    // router.push({
+    //   pathname: "/business/[businessId]/package/[packageId]/edit",
+    //   params: {
+    //     businessId: String(businessId),
+    //     packageId: String(pkg.id),
+    //   },
+    // });
+    console.log("Navigate to edit package:", pkg.id);
   };
 
   const handleSharePackage = (pkg: Package) => {
-    // Implement share functionality
+    // TODO: Implement share functionality
     console.log("Share package:", pkg.id);
   };
 
+  const handleOpenDetails = (pkg: Package) => {
+    setExpandedId((prev) => (prev === pkg.id ? null : (pkg.id ?? null)));
+  };
+
   const handleViewAll = () => {
-    router.push({
-      pathname: "/business/[businessId]/packages",
-      params: { businessId: String(businessId) },
-    });
+    // TODO: Navigate to all packages screen when available
+    // router.push({
+    //   pathname: "/business/[businessId]/packages",
+    //   params: { businessId: String(businessId) },
+    // });
+    console.log("Navigate to all packages for business:", businessId);
   };
 
   return (
@@ -348,28 +403,53 @@ function PackageGrid({
             Available Packages
           </Text>
         </View>
-        {packages.length > 2 && (
-          <TouchableOpacity onPress={handleViewAll} activeOpacity={0.75}>
-            <Text className="text-sm text-[#ee2b8c] font-medium">View All</Text>
-          </TouchableOpacity>
-        )}
+        <View className="flex-row items-center gap-3">
+          {showActions && (
+            <TouchableOpacity
+              onPress={handleCreatePackage}
+              activeOpacity={0.75}
+              className="flex-row items-center gap-1"
+            >
+              <MaterialIcons name="add" size={16} color="#ee2b8c" />
+              <Text className="text-sm text-[#ee2b8c] font-medium">Create</Text>
+            </TouchableOpacity>
+          )}
+          {packages.length > 2 && (
+            <TouchableOpacity onPress={handleViewAll} activeOpacity={0.75}>
+              <Text className="text-sm text-[#ee2b8c] font-medium">View All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      <View className="flex-col gap-4">
-        {packages.map((pkg) => (
-          <PackageCard
-            key={pkg.id}
-            packageItem={pkg}
-            onEdit={() => handleEditPackage(pkg)}
-            onShare={() => handleSharePackage(pkg)}
-          />
-        ))}
-      </View>
+      <FlatList
+        data={packages}
+        keyExtractor={(item, index) => String(item.id ?? index)}
+        renderItem={({ item }) => (
+          <View className={numColumns > 1 ? "flex-1" : ""}>
+            <PackageCard
+              packageItem={item}
+              onEdit={() => handleEditPackage(item)}
+              onShare={() => handleSharePackage(item)}
+              onPress={() => handleOpenDetails(item)}
+              isExpanded={expandedId === (item.id ?? null)}
+              showActions={showActions}
+            />
+          </View>
+        )}
+        numColumns={numColumns}
+        columnWrapperStyle={
+          numColumns > 1 ? { gap: 16, marginBottom: 16 } : undefined
+        }
+        contentContainerStyle={{ gap: numColumns > 1 ? 0 : 16 }}
+        scrollEnabled={false}
+        key={numColumns}
+      />
     </View>
   );
 }
 
-export function PackageList({ businessId }: PackageListProps) {
+export function PackageList({ businessId, showActions = true }: PackageListProps) {
   const { data, isLoading, isError, error } = useGetPackage(businessId);
 
   // Handle loading state
@@ -385,11 +465,17 @@ export function PackageList({ businessId }: PackageListProps) {
   // Handle empty state - data might be null or packages array might be empty
   const packages = Array.isArray(data) ? data : data?.packages || [];
   if (!packages || packages.length === 0) {
-    return <EmptyState businessId={businessId} />;
+    return <EmptyState businessId={businessId} showActions={showActions} />;
   }
 
   // Render packages
-  return <PackageGrid packages={packages} businessId={businessId} />;
+  return (
+    <PackageGrid
+      packages={packages}
+      businessId={businessId}
+      showActions={showActions}
+    />
+  );
 }
 
 export default PackageList;
