@@ -27,6 +27,10 @@ export default function BusinessDetailedLayout() {
         name="venue/[venueId]/update"
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="packages/create"
+        options={{ headerShown:false }}
+      />
     </Stack>
   );
 }
