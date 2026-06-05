@@ -1,14 +1,10 @@
 import { useGetBusinessByEventId } from "@/src/features/business/hooks/use-business";
+import { CategoryChip } from "@/src/components/onboarding/CategoryChip";
+import { Text } from "@/src/components/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, type RelativePathString } from "expo-router";
 import { useMemo, useState } from "react";
-import {
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Vendor {
@@ -16,11 +12,11 @@ interface Vendor {
   name: string;
   category: string;
   status: "booked" | "pending";
-  contact?: string;
   price?: string;
   rating?: number;
   imageUrl?: string;
 }
+
 
 const mapBusinessStatusToVendorStatus = (status: unknown): Vendor["status"] => {
   const normalized = String(status ?? "").toLowerCase();
@@ -34,83 +30,57 @@ const mapBusinessStatusToVendorStatus = (status: unknown): Vendor["status"] => {
   return "pending";
 };
 
-const statusBadgeClass: Record<Vendor["status"], string> = {
-  booked: "bg-green-100",
-  pending: "bg-orange-100",
-};
-
-const statusTextClass: Record<Vendor["status"], string> = {
-  booked: "text-green-700",
-  pending: "text-orange-600",
-};
-
 const VendorCard = ({ vendor, eventId }: { vendor: Vendor; eventId?: string }) => (
-  <TouchableOpacity
-    className="bg-white rounded-2xl overflow-hidden flex-row items-center shadow-sm"
-    style={{ elevation: 3 }}
+  <Pressable
+    className="bg-white rounded-2xl overflow-hidden flex-row items-center border border-gray-100"
+    style={{ elevation: 2, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } }}
     onPress={() =>
       router.push({ pathname: "/(shared)/explore/[vendorId]" as RelativePathString, params: { vendorId: vendor.id, fromEventId: eventId, eventVendorStatus: vendor.status } })
     }
-    activeOpacity={0.8}
+    android_ripple={{ color: "#f3f4f6" }}
   >
-    <View className="w-[80px] h-[80px] relative">
+    <View className="w-20 h-20 relative">
       {vendor.imageUrl ? (
-        <Image
-          source={{ uri: vendor.imageUrl }}
-          className="w-full h-full"
-          resizeMode="cover"
-        />
+        <Image source={{ uri: vendor.imageUrl }} className="w-full h-full" resizeMode="cover" />
       ) : (
         <View className="w-full h-full bg-gray-100 items-center justify-center">
-          <Ionicons name="storefront" size={32} color="#9CA3AF" />
+          <Ionicons name="storefront" size={28} color="#9CA3AF" />
         </View>
       )}
-      <View className={`absolute top-2 left-2 px-2 py-1 rounded-xl ${statusBadgeClass[vendor.status]}`}>
-        <Text className={`text-[10px] font-semibold capitalize ${statusTextClass[vendor.status]}`}>
-          {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
+      <View className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full ${vendor.status === "booked" ? "bg-green-100" : "bg-orange-100"}`}>
+        <Text className={`text-[10px] ${vendor.status === "booked" ? "text-green-700" : "text-orange-600"}`}>
+          {vendor.status === "booked" ? "Booked" : "Pending"}
         </Text>
       </View>
     </View>
 
-    <View className="flex-1 px-3 py-2">
-      <Text className="text-base font-semibold text-[#181114]">{vendor.name}</Text>
-      <Text className="text-xs text-gray-500 mt-0.5">{vendor.category}</Text>
-
-      <View className="flex-row items-center gap-3 mt-1.5">
-        {vendor.rating && (
+    <View className="flex-1 px-3 py-3 gap-0.5">
+      <Text className="text-sm font-bold text-gray-900" numberOfLines={1}>{vendor.name}</Text>
+      <Text variant="caption" className="text-xs" numberOfLines={1}>{vendor.category}</Text>
+      <View className="flex-row items-center gap-3 mt-1">
+        {vendor.rating != null && (
           <View className="flex-row items-center gap-1">
-            <Ionicons name="star" size={14} color="#F59E0B" />
-            <Text className="text-xs font-medium text-amber-500">{vendor.rating}</Text>
+            <Ionicons name="star" size={12} color="#F59E0B" />
+            <Text className="text-xs text-amber-500">{vendor.rating}</Text>
           </View>
         )}
         {vendor.price && (
-          <Text className="text-xs font-semibold text-emerald-500">{vendor.price}</Text>
+          <Text className="text-xs text-emerald-600">{vendor.price}</Text>
         )}
       </View>
     </View>
 
     <View className="pr-3">
-      <TouchableOpacity
-        className="p-2"
-        onPress={() =>
-          router.push({ pathname: "/(shared)/explore/[vendorId]" as RelativePathString, params: { vendorId: vendor.id, fromEventId: eventId, eventVendorStatus: vendor.status } })
-        }
-      >
-        <Ionicons name="ellipsis-horizontal" size={20} color="#6B7280" />
-      </TouchableOpacity>
+      <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
     </View>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 export default function EventVendorsPage() {
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
-  const [activeTab, setActiveTab] = useState<"all" | "booked" | "pending">("all");
+  const [activeCategory, setActiveCategory] = useState("All");
 
-  const {
-    data: eventBusinesses = [],
-    isLoading,
-    isError,
-  } = useGetBusinessByEventId(eventId);
+  const { data: eventBusinesses = [], isLoading, isError } = useGetBusinessByEventId(eventId);
 
   const vendorsData = useMemo<Vendor[]>(() => {
     return eventBusinesses.map((business: any) => ({
@@ -118,24 +88,21 @@ export default function EventVendorsPage() {
       name: business?.businessName ?? "Unnamed Vendor",
       category: business?.category ?? "General",
       status: mapBusinessStatusToVendorStatus(business?.status),
-      contact: business?.contactPhone ?? business?.whatsappNumber ?? undefined,
-      price:
-        typeof business?.priceStartingFrom === "number"
-          ? `₹${business.priceStartingFrom}`
-          : undefined,
-      rating:
-        typeof business?.rating === "number" ? business.rating : undefined,
+      price: typeof business?.priceStartingFrom === "number" ? `₹${business.priceStartingFrom}` : undefined,
+      rating: typeof business?.rating === "number" ? business.rating : undefined,
       imageUrl: business?.avatar ?? business?.cover ?? undefined,
     }));
   }, [eventBusinesses]);
 
-  const bookedCount = vendorsData.filter((v) => v.status === "booked").length;
-  const pendingCount = vendorsData.filter((v) => v.status === "pending").length;
+  const usedCategories = useMemo(
+    () => Array.from(new Set(vendorsData.map((v) => v.category).filter(Boolean))),
+    [vendorsData]
+  );
 
-  const filteredVendors = vendorsData.filter((vendor) => {
-    if (activeTab === "all") return true;
-    return vendor.status === activeTab;
-  });
+  const filteredVendors = useMemo(() => {
+    if (activeCategory === "All") return vendorsData;
+    return vendorsData.filter((v) => v.category === activeCategory);
+  }, [vendorsData, activeCategory]);
 
   const groupedVendors = useMemo(() => {
     const map = new Map<string, Vendor[]>();
@@ -148,76 +115,65 @@ export default function EventVendorsPage() {
   }, [filteredVendors]);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f6f7]" edges={["bottom"]}>
-      {/* Tabs */}
-      <View className="bg-white border-b border-gray-200 px-4 py-3 flex-row gap-3">
-        <TouchableOpacity
-          className={`flex-1 py-2.5 rounded-full items-center justify-center ${activeTab === "all" ? "bg-[#ee2b8c]" : "bg-gray-100"}`}
-          onPress={() => setActiveTab("all")}
+    <SafeAreaView className="flex-1 bg-gray-50" edges={["bottom"]}>
+      <View className="bg-white border-b border-gray-100 py-3">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-3 px-4"
+          style={{ overflow: "visible" }}
         >
-          <Text className={`text-sm font-semibold ${activeTab === "all" ? "text-white" : "text-gray-500"}`}>
-            All
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className={`flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-1.5 ${activeTab === "pending" ? "bg-[#ee2b8c]" : "bg-gray-100"}`}
-          onPress={() => setActiveTab("pending")}
-        >
-          <Text className={`text-sm font-semibold ${activeTab === "pending" ? "text-white" : "text-gray-500"}`}>Pending</Text>
-          <View className={`w-5 h-5 rounded-full items-center justify-center ${activeTab === "pending" ? "bg-white/30" : "bg-orange-100"}`}>
-            <Text className={`text-[11px] font-bold ${activeTab === "pending" ? "text-white" : "text-orange-500"}`}>{pendingCount}</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className={`flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-1.5 ${activeTab === "booked" ? "bg-[#ee2b8c]" : "bg-gray-100"}`}
-          onPress={() => setActiveTab("booked")}
-        >
-          <Text className={`text-sm font-semibold ${activeTab === "booked" ? "text-white" : "text-gray-500"}`}>Booked</Text>
-          <View className={`w-5 h-5 rounded-full items-center justify-center ${activeTab === "booked" ? "bg-white/30" : "bg-green-100"}`}>
-            <Text className={`text-[11px] font-bold ${activeTab === "booked" ? "text-white" : "text-green-600"}`}>{bookedCount}</Text>
-          </View>
-        </TouchableOpacity>
+          <CategoryChip
+            label="All"
+            isActive={activeCategory === "All"}
+            onPress={() => setActiveCategory("All")}
+          />
+          {usedCategories.map((category) => (
+            <CategoryChip
+              key={category}
+              label={category}
+              isActive={activeCategory === category}
+              onPress={() => setActiveCategory(category)}
+            />
+          ))}
+        </ScrollView>
       </View>
 
-      {/* Vendor List */}
+      {/* Vendor list */}
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, gap: 8 }}
+        contentContainerClassName="px-4 pb-32 pt-2"
         showsVerticalScrollIndicator={false}
       >
         {!eventId && (
-          <View className="items-center justify-center py-16">
+          <View className="items-center justify-center py-16 gap-2">
             <Ionicons name="warning-outline" size={48} color="#F59E0B" />
-            <Text className="text-lg font-semibold text-gray-500 mt-4">Event not found</Text>
-            <Text className="text-sm text-gray-400 mt-1">
-              Open this page from an event to load vendors.
-            </Text>
+            <Text className="text-base font-bold text-gray-500">Event not found</Text>
+            <Text variant="caption">Open this page from an event to load vendors.</Text>
           </View>
         )}
 
         {isLoading && !!eventId && (
-          <View className="items-center justify-center py-16">
+          <View className="items-center justify-center py-16 gap-2">
             <Ionicons name="sync-outline" size={48} color="#9CA3AF" />
-            <Text className="text-lg font-semibold text-gray-500 mt-4">Loading vendors...</Text>
+            <Text className="text-base font-bold text-gray-500">Loading vendors...</Text>
           </View>
         )}
 
         {isError && !!eventId && (
-          <View className="items-center justify-center py-16">
+          <View className="items-center justify-center py-16 gap-2">
             <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-            <Text className="text-lg font-semibold text-gray-500 mt-4">Could not load vendors</Text>
-            <Text className="text-sm text-gray-400 mt-1">Please try again.</Text>
+            <Text className="text-base font-bold text-gray-500">Could not load vendors</Text>
+            <Text variant="caption">Please try again.</Text>
           </View>
         )}
 
         {groupedVendors.map(([category, vendors]) => (
-          <View key={category}>
-            <Text className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4">
+          <View key={category} className="mt-4">
+            <Text variant="caption" className="uppercase tracking-widest text-xs mb-2">
               {category}
             </Text>
-            <View style={{ gap: 8 }}>
+            <View className="gap-2">
               {vendors.map((vendor) => (
                 <VendorCard key={vendor.id} vendor={vendor} eventId={eventId} />
               ))}
@@ -226,24 +182,23 @@ export default function EventVendorsPage() {
         ))}
 
         {groupedVendors.length === 0 && !!eventId && !isLoading && !isError && (
-          <View className="items-center justify-center py-16">
+          <View className="items-center justify-center py-16 gap-2">
             <Ionicons name="storefront-outline" size={64} color="#D1D5DB" />
-            <Text className="text-lg font-semibold text-gray-500 mt-4">No vendors found</Text>
-            <Text className="text-sm text-gray-400 mt-1">Try adjusting your filters</Text>
+            <Text className="text-base font-bold text-gray-500">No vendors found</Text>
+            <Text variant="caption">Try a different category</Text>
           </View>
         )}
-
-        <View className="h-20" />
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#ee2b8c] items-center justify-center"
+      {/* FAB */}
+      <Pressable
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary items-center justify-center"
         style={{ elevation: 8 }}
         onPress={() => router.push("/(shared)/explore/explore")}
+        android_ripple={{ color: "#c4006e", radius: 28 }}
       >
         <Ionicons name="add" size={28} color="white" />
-      </TouchableOpacity>
+      </Pressable>
     </SafeAreaView>
   );
 }
