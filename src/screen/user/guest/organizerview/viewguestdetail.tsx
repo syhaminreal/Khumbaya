@@ -35,6 +35,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { GuestDetailInterface } from "@/src/features/guests/types";
 
 type CategoryPriority = 1 | 2 | 3;
 
@@ -76,6 +77,7 @@ const getAgeFromDob = (dob: Date) => {
 export default function ViewGuestDetail() {
   const router = useRouter();
   const guestDetail = useGuestDetailStore((state) => state.guestDraft);
+  console.log('This is the event detail about the information of the user trying to access the system ' , guestDetail) ; 
   const setGuestDetail = useGuestDetailStore((state) => state.setGuestDetail);
 
   const statusValue = guestDetail?.eventGuest?.status?.toLowerCase?.() ?? "";
@@ -135,6 +137,21 @@ export default function ViewGuestDetail() {
   const [unInvitedSubeventIds, setUnInvitedSubeventIds] = useState<number[]>(
     unInvitedSubevents
   );
+
+  // Sync local state when guestDetail changes (e.g., after save)
+  useEffect(() => {
+    if (guestDetail?.eventGuest) {
+      setAssignedRoom(guestDetail.eventGuest.assignedRoom ?? "");
+      setArrivalInfo(guestDetail.eventGuest.arrivalInfo ?? "");
+      setDepartureInfo(guestDetail.eventGuest.departureInfo ?? "");
+      setCategory(guestDetail.eventGuest.category ?? "");
+    }
+  }, [
+    guestDetail?.eventGuest?.assignedRoom,
+    guestDetail?.eventGuest?.arrivalInfo,
+    guestDetail?.eventGuest?.departureInfo,
+    guestDetail?.eventGuest?.category,
+  ]);
 
   useEffect(() => {
     setUnInvitedSubeventIds((prev) => {
@@ -323,8 +340,23 @@ const visibleGuestProfileRows = guestProfileRows.filter(
     };
     submitRsvpResponse(payload, {
       onSuccess: () => {
+        if (guestDetail) {
+          setGuestDetail({
+            ...guestDetail,
+            eventGuest: {
+              id: guestDetail.eventGuest?.id ?? 0,
+              userId: guestDetail.eventGuest?.id ?? 0,
+              ...guestDetail.eventGuest,
+              assignedRoom: payload.assignedRoom??null,
+              arrivalInfo: payload.arrivalInfo??null,
+              departureInfo: payload.departureInfo??null,
+              notes: payload.notes,
+              category: payload.category as string,
+              unInvitedSubevent: payload.unInvitedSubevent,
+            } as any 
+          });
+        }
         router.back();
-       
       },
     });
   };
@@ -657,7 +689,7 @@ const visibleGuestProfileRows = guestProfileRows.filter(
                     }}
                   >
                     <Text variant="h1" className="text-white text-4xl">
-                      {guestDetail?.user.username
+                      {guestDetail?.user?.username
                         ? guestDetail.user.username
                           .split(" ")
                           .map((n) => n[0])

@@ -1,10 +1,7 @@
 import MemberCard from "@/src/components/guest/family/MemberCard";
 import { Text } from "@/src/components/ui/Text";
 import { useGetInvitationsForEvent } from "@/src/features/guests/api/use-guests";
-import {
-  useFamilyGuestStore,
-  useGuestDetailStore,
-} from "@/src/features/guests/store/useGuestDetailStore";
+import { useGuestDetailStore } from "@/src/features/guests/store/useGuestDetailStore";
 import { GuestDetailInterface } from "@/src/features/guests/types";
 import { useThrottledRouter } from "@/src/hooks/useThrottledRouter";
 import { mapToMemberRsvpProp, MemberRsvpCardProp } from "@/src/utils/type/rsvp";
@@ -15,36 +12,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GuestFamilyMember() {
   const { push } = useThrottledRouter();
-  const { eventId, family , isSubEvent } = useLocalSearchParams<{
+  const { eventId, familyId, familyName } = useLocalSearchParams<{
     eventId: string;
-    family?: string;
-    isSubEvent?: string;
+    familyId: string;
+    familyName?: string;
   }>();
-  const familyGroupFromStore = useFamilyGuestStore(
-    (state) => state.familyGroup
-  );
-  const { familyId, familyName } = useMemo(() => {
-    if (familyGroupFromStore) {
-      return {
-        familyId: familyGroupFromStore.familyId,
-        familyName: familyGroupFromStore.family_name,
-      }
-    }
-    return { familyId: null, familyName: null };
 
-  }, [familyGroupFromStore])
+  const parsedFamilyId = familyId ? Number(familyId) : null;
   const setGuestDetail = useGuestDetailStore((state) => state.setGuestDetail);
-
 
   // Live data from API — auto-updates when useSubmitRsvpResponse invalidates ["event-invitations", eventId]
   const { data: invitations } = useGetInvitationsForEvent(Number(eventId));
-
+console.log('This is te  invitations for the event ' , invitations) ;
   const liveFamilyMembers = useMemo(() => {
-    if (!invitations || familyId == null) return [];
-    return (familyGroupFromStore?.members || []).filter(
-      (inv) => inv.eventGuest?.familyId === familyId
+    if (!invitations || parsedFamilyId == null) return [];
+    return invitations.filter(
+      (inv: any) => inv.eventGuest?.familyId === parsedFamilyId
     );
-  }, [invitations, familyId]);
+  }, [invitations, parsedFamilyId]);
 
   const members: MemberRsvpCardProp[] = useMemo(
     () => liveFamilyMembers.map(mapToMemberRsvpProp),
@@ -55,7 +40,7 @@ export default function GuestFamilyMember() {
     if (familyId == null || !eventId) return;
 
     const guest = liveFamilyMembers.find(
-      (item) => item.user.id === member.user.id
+      (item:any) => item.user.id === member.user.id
     );
 
     if (!guest) return;

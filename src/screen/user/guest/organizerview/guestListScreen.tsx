@@ -87,7 +87,6 @@ const isSubEventBoolean = isSubEvent ==="true";
   const clearGuestDetail = useGuestDetailStore(
     (state) => state.clearGuestDetail
   );
-  const setFamilyGuest = useFamilyGuestStore((state) => state.setFamilyGroup);
   const clearFamilyGuest = useFamilyGuestStore(
     (state) => state.clearFamilyGroup
   );
@@ -585,8 +584,6 @@ console.log('This is the sub event ')
   );
 
   const onPressFamilyCard = (familyData: FamilyGroup) => {
-    setFamilyGuest(familyData);
-
     if (familyData.members.length === 1) {
       const singleMember = familyData.members[0];
       setGuestDetail(singleMember);
@@ -600,7 +597,11 @@ console.log('This is the sub event ')
     } else {
       push({
         pathname: "./guests/familymember",
-        params: { eventId: effectiveEventId },
+        params: {
+          eventId: effectiveEventId,
+          familyId: familyData.familyId.toString(),
+          familyName: familyData.family_name,
+        },
       });
     }
   };
