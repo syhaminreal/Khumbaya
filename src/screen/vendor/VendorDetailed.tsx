@@ -2,12 +2,10 @@ import { Text } from "@/src/components/ui/Text";
 import { AvailableSpacesSection } from "@/src/components/vendor/AvailableSpacesSection";
 import { ServiceInfoSection } from "@/src/components/vendor/ServiceInfoSection";
 import { useGetBusinessById, useGetEventVendor } from "@/src/features/business/hooks/use-business";
-import { useToggleFavourite } from "@/src/features/favourite/hooks/use-favourite";
-import {
-  BusinessCategory,
-  OtherServiceAttribute,
-} from "@/src/features/business/types";
+
 import { ReviewSection } from "@/src/screen/vendor/review";
+import { BusinessCategory, OtherServiceAttribute } from "@/src/features/business/types";
+import { PackageList } from "@/src/features/packages/components/PackageList";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -70,8 +68,6 @@ export default function VendorDetailed() {
   const businessId = Number(resolvedId);
 
   const { data: businessWithAttribute, isLoading, isError } = useGetBusinessById(resolvedId);
-  const { data: eventVendorData } = useGetEventVendor(resolvedId, resolvedId);
-  const eventStatus = eventVendorData?.status ?? null;
 
   useEffect(() => {
     const biz = businessWithAttribute?.businessInformation;
@@ -302,6 +298,13 @@ export default function VendorDetailed() {
             service={serviceAttr}
             category={(biz.category as BusinessCategory) ?? null}
           />
+        )}
+
+        {/* Packages */}
+        {biz.id && (
+          <View className="mt-2 px-4">
+            <PackageList businessId={Number(biz.id)} showActions={false} />
+          </View>
         )}
 
         {/* Gallery */}
