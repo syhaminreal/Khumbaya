@@ -101,6 +101,7 @@ console.log('This is the sub event ')
     type: "send" | "delete" | "moveToDraft";
   } | null>(null);
   const [activeTab, setActiveTab] = useState<GuestFilterTab>("pending");
+  const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
@@ -236,6 +237,25 @@ console.log('This is the sub event ')
     [getNormalizedCategory, selectedCategory]
   );
 
+  const normalizedSearchText = searchText.trim().toLowerCase();
+
+  const matchesSearchText = useCallback(
+    (guest: GuestDetailInterface) => {
+      if (!normalizedSearchText) return true;
+      const haystack = [
+        guest.user.username,
+        guest.user.email,
+        guest.user.phone,
+        guest.familyName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalizedSearchText);
+    },
+    [normalizedSearchText]
+  );
+
   const getFamilyEffectiveStatus = useCallback(
     (members: GuestDetailInterface[]): string => {
       const hasAccepted = members.some(
@@ -295,6 +315,16 @@ console.log('This is the sub event ')
       if (!matchesTabStatus(status, activeTab)) return false;
       return matchesSelectedCategory(item.data);
     })
+      .filter((item: GroupedInvitation) => {
+        if (!normalizedSearchText) return true;
+        if (item.type === "family") {
+          return (
+            item.family_name.toLowerCase().includes(normalizedSearchText) ||
+            item.members.some(matchesSearchText)
+          );
+        }
+        return matchesSearchText(item.data);
+      })
       .map((item: GroupedInvitation): GroupedInvitation => {
         if (item.type === "family") {
           return {
@@ -318,6 +348,8 @@ console.log('This is the sub event ')
     groupedInvitations,
     activeTab,
     matchesSelectedCategory,
+    matchesSearchText,
+    normalizedSearchText,
     matchesTabStatus,
     getFamilyEffectiveStatus,
     isGuestUninvitedFromSubEvent,
@@ -329,10 +361,14 @@ console.log('This is the sub event ')
       const status = String(invitation.eventGuest?.status ?? "pending")
         .trim()
         .toLowerCase();
-      return status === "draft" && matchesSelectedCategory(invitation);
+      return (
+        status === "draft" &&
+        matchesSelectedCategory(invitation) &&
+        matchesSearchText(invitation)
+      );
     }
     );
-  }, [tabFilteredInvitations, matchesSelectedCategory]);
+  }, [tabFilteredInvitations, matchesSelectedCategory, matchesSearchText]);
 
   const filteredGuestCount =
     selectedCategory === "all"
@@ -655,6 +691,8 @@ console.log('This is the sub event ')
               className="flex-1 h-full px-6 text-base text-gray-900 bg-gray-300/50 rounded-md"
               placeholder="Search for the friend"
               placeholderTextColor="#9CA3AF"
+              value={searchText}
+              onChangeText={setSearchText}
             />
           </View>
 
