@@ -170,9 +170,6 @@ export default function EventVendorsPage() {
 
         {groupedVendors.map(([category, vendors]) => (
           <View key={category} className="mt-4">
-            <Text variant="caption" className="uppercase tracking-widest text-xs mb-2">
-              {category}
-            </Text>
             <View className="gap-2">
               {vendors.map((vendor) => (
                 <VendorCard key={vendor.id} vendor={vendor} eventId={eventId} />
