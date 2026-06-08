@@ -35,7 +35,10 @@ const VendorCard = ({ vendor, eventId }: { vendor: Vendor; eventId?: string }) =
     className="bg-white rounded-2xl overflow-hidden flex-row items-center border border-gray-100"
     style={{ elevation: 2, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } }}
     onPress={() =>
-      router.push({ pathname: "/(shared)/explore/[vendorId]" as RelativePathString, params: { vendorId: vendor.id, fromEventId: eventId, eventVendorStatus: vendor.status } })
+      router.push({
+        pathname: "/(protected)/(client-stack)/events/[eventId]/(organizer)/vendor-detail/[vendorId]" as RelativePathString,
+        params: { eventId, vendorId: vendor.id },
+      })
     }
     android_ripple={{ color: "#f3f4f6" }}
   >
