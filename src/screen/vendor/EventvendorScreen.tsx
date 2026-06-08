@@ -28,37 +28,6 @@ interface VendorEvent {
 const VENDOR_AVATAR_URL =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuA00Hs8VhRrrpBnJhbiFmtCHPy-0GRUdkAhXCdIgim1CrXK4EeXlbQera8jpP9eqJMXftmmD010atQVIcwCokiygOfiQf2n4xFknXGPdJlzAsijaeR72HJqUCXMCV2dI1LMbOtIPEdWXGOtGPvghtZruL_wPrDusl7GN5kEm4nyCGmw7-WPJPtAAFXhq2Dd3A7gJxmC6YSFwpLQvpGJfWL3LWYaUwAr88L_wBwwUWR593u11gRbyeXI68PIBdqYplmnBv2hbW_RcdA";
 
-const statusStyles: Record<
-  VendorEventStatus,
-  { badge: string; text: string; ring: string }
-> = {
-  Confirmed: {
-    badge: "bg-green-50",
-    text: "text-green-700",
-    ring: "ring-green-600/20",
-  },
-  Pending: {
-    badge: "bg-yellow-50",
-    text: "text-yellow-800",
-    ring: "ring-yellow-600/20",
-  },
-  Request: {
-    badge: "bg-purple-50",
-    text: "text-purple-700",
-    ring: "ring-purple-600/20",
-  },
-  New: {
-    badge: "bg-blue-50",
-    text: "text-blue-700",
-    ring: "ring-blue-700/10",
-  },
-  Completed: {
-    badge: "bg-gray-100",
-    text: "text-gray-600",
-    ring: "ring-gray-300",
-  },
-};
-
 const tabs: VendorEventTab[] = ["Upcoming", "Requests", "Completed"];
 
 export default function EventvendorScreen() {
@@ -243,7 +212,6 @@ export default function EventvendorScreen() {
               </Text>
 
               {sectionEvents.map((event) => {
-                const status = statusStyles[event.status];
                 return (
                   <TouchableOpacity
                     key={event.id}
@@ -303,26 +271,15 @@ export default function EventvendorScreen() {
                           >
                             {event.location}
                           </Text>
-                          <Text className="mx-1 text-xs text-[#896175]">•</Text>
-                          <Text
-                            className="text-xs font-medium text-[#896175]"
-                            numberOfLines={1}
-                          >
-                            {event.category}
-                          </Text>
                         </View>
                       </View>
 
-                      {/* Status Badge */}
+                      {/* Category Badge */}
                       <View className="shrink-0">
                         {/* NOTE: dark:bg-*/}
-                        <View
-                          className={`rounded-md px-2 py-1 ring-1 ring-inset ${status.badge} ${status.ring}`}
-                        >
-                          <Text
-                            className={`text-xs font-medium ${status.text}`}
-                          >
-                            {event.status}
+                        <View className="rounded-md bg-gray-100 px-2 py-1 ring-1 ring-inset ring-gray-300">
+                          <Text className="text-xs font-medium text-gray-600">
+                            {event.category}
                           </Text>
                         </View>
                       </View>
