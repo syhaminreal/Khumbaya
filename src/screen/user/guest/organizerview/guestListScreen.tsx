@@ -42,13 +42,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 type GuestFilterTab = "accepted" | "pending" | "draft" | "Un-Invited"
 
 export default function GuestListScreen() {
-const {eventDraft} = useEventStore();
+  const { eventDraft } = useEventStore();
   const router = useRouter();
   const { push } = useThrottledRouter();
- 
+
   const { eventId, isGuest, isSubEvent } = useLocalSearchParams();
-  console.log('This is the event id', eventId , 'Ths is the sub event of the business' , isSubEvent  , 'This is the is gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲est in the invitation ' ,isGuest )
-const isSubEventBoolean = isSubEvent ==="true";
+  console.log('This is the event id', eventId, 'Ths is the sub event of the business', isSubEvent, 'This is the is gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲gu👩‍🦲est in the invitation ', isGuest)
+  const isSubEventBoolean = isSubEvent === "true";
   const subEventIdParam = useMemo(() => {
     if (eventId && !isNaN(Number(eventId))) {
       return Number(eventId);
@@ -72,7 +72,7 @@ const isSubEventBoolean = isSubEvent ==="true";
       return Number(eventDraft.id);
     }
     return null;
-  } , [ eventDraft?.id, isSubEventBoolean, subEventIdParam])
+  }, [eventDraft?.id, isSubEventBoolean, subEventIdParam])
 
   const {
     data: subEventsResponse,
@@ -87,15 +87,16 @@ const isSubEventBoolean = isSubEvent ==="true";
   const clearGuestDetail = useGuestDetailStore(
     (state) => state.clearGuestDetail
   );
+  const setFamilyGuest = useFamilyGuestStore((state) => state.setFamilyGroup)
   const clearFamilyGuest = useFamilyGuestStore(
     (state) => state.clearFamilyGroup
   );
-console.log('This is the sub event ')
+  console.log('This is the sub event ')
   const { data: invitations, isLoading } = useGetInvitationsForEvent(effectiveEventId);
   const submitRsvpMutation = useSubmitRsvpResponse(effectiveEventId ?? 0);
   const removeInvitationMutation = useRemoveInvitation();
   const createCategoryMutation = useCreateEventGuestCategory();
- 
+
   const [draftAction, setDraftAction] = useState<{
     userId: number;
     type: "send" | "delete" | "moveToDraft";
@@ -273,7 +274,7 @@ console.log('This is the sub event ')
     },
     []
   );
-//  TODO: Have this in the backend 
+  //  TODO: Have this in the backend 
   const groupedInvitations = useMemo(() => {
     if (!invitations) return [];
     return groupInvitationsByFamily(invitations);
@@ -378,7 +379,7 @@ console.log('This is the sub event ')
   const selectedCategoryLabel =
     selectedCategory === "all" ? "All" : formatCategoryLabel(selectedCategory);
 
-    // UPTO HERE upper part is all what should be done in the backend 
+  // UPTO HERE upper part is all what should be done in the backend 
   const categoryPickerOptions = useMemo(
     () => [
       {
@@ -434,7 +435,7 @@ console.log('This is the sub event ')
       pathname:
         `./guests/[guestDetailId]`,
 
-        params: { eventId: effectiveEventId, guestDetailId: guest.user.id },
+      params: { eventId: effectiveEventId, guestDetailId: guest.user.id },
     });
   };
 
@@ -442,7 +443,7 @@ console.log('This is the sub event ')
     setGuestDetail(guest);
     push(`./guests/edit-rsvp` as RelativePathString);
   }, [setGuestDetail, push]);
-// TODO: handle the case of the not available event guest int he list screen insterad  o using the ? in the file 
+  // TODO: handle the case of the not available event guest int he list screen insterad  o using the ? in the file 
   const onPressDraftSend = useCallback(
     async (guest: GuestDetailInterface) => {
       if (!eventId || !guest?.user?.id) return;
@@ -467,7 +468,7 @@ console.log('This is the sub event ')
     [eventId, submitRsvpMutation]
   );
 
-    if(!effectiveEventId || effectiveEventId === -1 || effectiveEventId === null) {
+  if (!effectiveEventId || effectiveEventId === -1 || effectiveEventId === null) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center">
         <Text className="text-gray-500">Event not found.</Text>
@@ -493,7 +494,7 @@ console.log('This is the sub event ')
             setDraftAction({ userId: guest.user.id, type: "delete" });
             try {
               await removeInvitationMutation.mutateAsync({
-                eventId:effectiveEventId,
+                eventId: effectiveEventId,
                 guestId: guest.user.id,
               });
             } catch (error: any) {
@@ -631,6 +632,7 @@ console.log('This is the sub event ')
         },
       });
     } else {
+      setFamilyGuest(familyData);
       push({
         pathname: "./guests/familymember",
         params: {
@@ -648,7 +650,7 @@ console.log('This is the sub event ')
       clearGuestDetail();
     };
   }, [clearFamilyGuest, clearGuestDetail]);
-  
+
   const [tabWidth, setTabWidth] = useState(0);
   const indicatorX = useSharedValue(0);
 
@@ -1109,7 +1111,7 @@ console.log('This is the sub event ')
         </View>
       </Modal>
 
-     
+
     </SafeAreaView>
   );
 }

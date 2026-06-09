@@ -4,6 +4,7 @@ import {
   useGetEventVendor,
 } from "@/src/features/business/hooks/use-business";
 import { PackageList } from "@/src/features/packages/components/PackageList";
+import { shadowStyle } from "@/src/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Image, Pressable, ScrollView, View } from "react-native";
@@ -90,41 +91,42 @@ export default function EventVendorDetail() {
         }}
       />
 
-      {/* Quick actions */}
-      <View className="bg-white border-b border-gray-100 px-4 py-4 gap-3">
-        <View className="flex-row items-center gap-3">
+
+      <ScrollView className="flex-1" contentContainerClassName="px-4 py-6 gap-4 pb-12" showsVerticalScrollIndicator={false}>
+        {/* Quick actions */}
+        <View className="   py-2 gap-3">
+          <View className="flex-row items-center gap-3">
+            <Pressable
+              className="flex-row flex-1 items-center justify-center gap-1 border border-gray-200 rounded-md py-3"
+              android_ripple={{ color: "#f3f4f6" }}
+              onPress={() => router.push({ pathname: "/(shared)/explore/[vendorId]" as any, params: { vendorId: resolvedVendorId, fromEventId: resolvedEventId } })}
+            >
+              <MaterialIcons name="chat-bubble-outline" size={20} color="#4B5563" />
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">Message</Text>
+            </Pressable>
+
+            <Pressable
+              className="flex-row flex-1 items-center justify-center gap-1 bg-primary rounded-md py-3"
+              style={{ elevation: 4, shadowColor: "#ee2b8c", shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } }}
+              android_ripple={{ color: "#c4006e" }}
+            >
+              <MaterialIcons name="description" size={20} color="#fff" />
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-white">Review Contract</Text>
+            </Pressable>
+          </View>
+
           <Pressable
-            className="flex-1 items-center justify-center gap-1 border border-gray-200 rounded-xl py-3"
-            android_ripple={{ color: "#f3f4f6" }}
+            className="items-center justify-center gap-1 flex-row border border-gray-200 rounded-md py-3"
             onPress={() => router.push({ pathname: "/(shared)/explore/[vendorId]" as any, params: { vendorId: resolvedVendorId, fromEventId: resolvedEventId } })}
           >
-            <MaterialIcons name="chat-bubble-outline" size={20} color="#4B5563" />
-            <Text className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">Message</Text>
-          </Pressable>
-
-          <Pressable
-            className="flex-1 items-center justify-center gap-1 bg-primary rounded-xl py-3"
-            style={{ elevation: 4, shadowColor: "#ee2b8c", shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } }}
-            android_ripple={{ color: "#c4006e" }}
-          >
-            <MaterialIcons name="description" size={20} color="#fff" />
-            <Text className="text-[11px] font-semibold uppercase tracking-wide text-white">Review Contract</Text>
+            <MaterialIcons name="info-outline" size={20} color="#4B5563" />
+            <Text className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">Details</Text>
           </Pressable>
         </View>
-
-        <Pressable
-          className="items-center justify-center gap-1 flex-row border border-gray-200 rounded-xl py-3"
-          android_ripple={{ color: "#f3f4f6" }}
-          onPress={() => router.push({ pathname: "/(shared)/explore/[vendorId]" as any, params: { vendorId: resolvedVendorId, fromEventId: resolvedEventId } })}
-        >
-          <MaterialIcons name="info-outline" size={20} color="#4B5563" />
-          <Text className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">Details</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView className="flex-1" contentContainerClassName="px-4 py-6 gap-8 pb-12" showsVerticalScrollIndicator={false}>
         {/* Enquiry details card */}
-        <View className="bg-white rounded-2xl border border-gray-100 overflow-hidden" style={{ elevation: 2, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } }}>
+        <View className=" rounded-2xl border border-gray-100 overflow-hidden"
+          style={shadowStyle}
+        >
           <View className="p-5 border-b border-gray-100 flex-row items-center gap-3">
             <View className="h-14 w-14 rounded-full overflow-hidden bg-gray-100">
               <Image source={{ uri: avatarImage }} className="h-full w-full" resizeMode="cover" />
@@ -141,9 +143,8 @@ export default function EventVendorDetail() {
             <View className="flex-1">
               <Text className="text-[11px] font-semibold text-gray-400 uppercase mb-1.5">Current Status</Text>
               <View
-                className={`flex-row items-center gap-1.5 self-start px-2.5 py-1 rounded-md border ${
-                  isBooked ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"
-                }`}
+                className={`flex-row items-center gap-1.5 self-start px-2.5 py-1 rounded-md border ${isBooked ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"
+                  }`}
               >
                 <MaterialIcons
                   name={isBooked ? "check-circle-outline" : "hourglass-empty"}

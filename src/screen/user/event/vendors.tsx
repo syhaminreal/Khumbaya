@@ -190,15 +190,7 @@ export default function EventVendorsPage() {
         )}
       </ScrollView>
 
-      {/* FAB */}
-      <Pressable
-        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary items-center justify-center"
-        style={{ elevation: 8 }}
-        onPress={() => router.push("/(shared)/explore/explore")}
-        android_ripple={{ color: "#c4006e", radius: 28 }}
-      >
-        <Ionicons name="add" size={28} color="white" />
-      </Pressable>
+   
     </SafeAreaView>
   );
 }
