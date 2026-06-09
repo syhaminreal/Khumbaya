@@ -13,6 +13,7 @@ export default function OrganizerEventDetailLayout() {
       <Stack.Screen name="gallery" options={{ title: "Gallery" }} />
       <Stack.Screen name="guests" options={{ headerShown: false }} />
       <Stack.Screen name="vendor" options={{ title: "Vendors" }} />
+      <Stack.Screen name="vendor-detail/[vendorId]" options={{ headerShown: true }} />
       <Stack.Screen name="edit-event" options={{ headerShown: false }} />
       <Stack.Screen
         name="addeventmember"

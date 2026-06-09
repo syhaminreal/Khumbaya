@@ -80,7 +80,7 @@ export const deleteBusinessApi = async (id: number | string): Promise<void> => {
 export interface AddEventVendorPayload {
   vendorId: number;
   budget?: string;
-  guests?: string;
+  estimatedGuest?: number;
   notes?: string;
   status?: string;
 }

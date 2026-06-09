@@ -172,7 +172,7 @@ export default function BookingReqModal({
           vendorId,
           budget: data.budget,
           status: "draft",
-          guests: data.guests,
+          estimatedGuest: data.guests ? Number(data.guests) : undefined,
           notes: data.notes,
         },
       });
