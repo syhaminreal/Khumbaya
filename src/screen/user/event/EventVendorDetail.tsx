@@ -196,7 +196,12 @@ export default function EventVendorDetail() {
 
         {/* Available packages */}
         {!!businessId && (
-          <PackageList businessId={Number(businessId)} showActions={false} />
+          <PackageList
+            businessId={Number(businessId)}
+            showActions={false}
+            eventId={resolvedEventId}
+            vendorId={resolvedVendorId}
+          />
         )}
       </ScrollView>
     </View>

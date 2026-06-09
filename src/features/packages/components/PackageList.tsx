@@ -16,6 +16,8 @@ import { Package, PackageItem } from "../types";
 interface PackageListProps {
   businessId: number;
   showActions?: boolean;
+  eventId?: string;
+  vendorId?: string;
 }
 
 function parseNumber(value?: string | number): number {
@@ -137,6 +139,7 @@ function PackageCard({
   onEdit,
   onShare,
   onPress,
+  onSelect,
   isExpanded,
   showActions,
 }: {
@@ -144,6 +147,7 @@ function PackageCard({
   onEdit?: () => void;
   onShare?: () => void;
   onPress?: () => void;
+  onSelect?: () => void;
   isExpanded?: boolean;
   showActions?: boolean;
 }) {
@@ -176,6 +180,15 @@ function PackageCard({
               {packageItem.items?.length || 0} items included
             </Text>
           </View>
+          {!showActions && onSelect && (
+            <TouchableOpacity
+              onPress={onSelect}
+              activeOpacity={0.75}
+              className="px-3 py-1.5 rounded-full border border-primary"
+            >
+              <Text className="text-xs font-semibold text-primary">Select</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View className="mt-4">
@@ -340,10 +353,14 @@ function PackageGrid({
   packages,
   businessId,
   showActions,
+  eventId,
+  vendorId,
 }: {
   packages: Package[];
   businessId: number;
   showActions: boolean;
+  eventId?: string;
+  vendorId?: string;
 }) {
   const { push } = useThrottledRouter();
   const { width } = useWindowDimensions();
@@ -380,6 +397,18 @@ function PackageGrid({
   };
 
   const handleOpenDetails = (pkg: Package) => {
+    if (!showActions && eventId && vendorId) {
+      push({
+        pathname: "/(protected)/(client-stack)/events/[eventId]/(organizer)/vendor-detail/[vendorId]/package-builder" as any,
+        params: {
+          eventId,
+          vendorId,
+          packageId: String(pkg.id ?? ""),
+          businessId: String(businessId),
+        },
+      });
+      return;
+    }
     setExpandedId((prev) => (prev === pkg.id ? null : (pkg.id ?? null)));
   };
 
@@ -434,6 +463,7 @@ function PackageGrid({
               onPress={() => handleOpenDetails(item)}
               isExpanded={expandedId === (item.id ?? null)}
               showActions={showActions}
+              onSelect={!showActions ? () => handleOpenDetails(item) : undefined}
             />
           </View>
         )}
@@ -449,7 +479,7 @@ function PackageGrid({
   );
 }
 
-export function PackageList({ businessId, showActions = true }: PackageListProps) {
+export function PackageList({ businessId, showActions = true, eventId, vendorId }: PackageListProps) {
   const { data, isLoading, isError, error } = useGetPackage(businessId);
 
   // Handle loading state
@@ -474,6 +504,8 @@ export function PackageList({ businessId, showActions = true }: PackageListProps
       packages={packages}
       businessId={businessId}
       showActions={showActions}
+      eventId={eventId}
+      vendorId={vendorId}
     />
   );
 }
