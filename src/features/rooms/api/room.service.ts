@@ -54,3 +54,34 @@ export const duplicateRoom = async (roomId: number): Promise<Room> => {
   const res = await api.post(`/room/${roomId}/duplicate`);
   return unwrapData<Room>(res.data);
 };
+
+// NEW: Room assignment endpoints
+export interface AssignRoomPayload {
+  roomId: string | number;
+}
+
+// POST /invitation/:invitationId/assign-room
+export const assignGuestToRoom = async (
+  invitationId: number,
+  payload: AssignRoomPayload
+): Promise<any> => {
+  const res = await api.post(`/invitation/${invitationId}/assign-room`, payload);
+  return res.data?.data ?? res.data;
+};
+
+// PATCH /invitation/:invitationId/edit-room
+export const editGuestRoom = async (
+  invitationId: number,
+  payload: AssignRoomPayload
+): Promise<any> => {
+  const res = await api.patch(`/invitation/${invitationId}/edit-room`, payload);
+  return res.data?.data ?? res.data;
+};
+
+// DELETE /invitation/:invitationId/room
+export const removeGuestFromRoom = async (
+  invitationId: number
+): Promise<any> => {
+  const res = await api.delete(`/invitation/${invitationId}/room`);
+  return res.data?.data ?? res.data;
+};

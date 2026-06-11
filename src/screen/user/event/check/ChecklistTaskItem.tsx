@@ -37,7 +37,7 @@ const ChecklistTaskItem = ({
 const userId = user?.id ?? 0;
   const dueMeta = getChecklistDueMeta(taskDueDate);
   const isUrgent = Boolean(dueMeta);
-  const isCompleted = task.doneByuserIds?.includes(userId) 
+  const isCompleted = task.doneByuserIds?.includes(userId);
 
   return (
     <Pressable
