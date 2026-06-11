@@ -16,6 +16,11 @@ export interface CREATEEVENT {
   venueId?: number | null;
   role?: string;
   imageUrl?: string;
+  imageFile?: {
+    uri: string;
+    name: string;
+    type: string;
+  };
   rsvpDeadline?: string;
 }
 export interface MakeEventMemberType {
@@ -131,6 +136,31 @@ const mapInvitationToEvent = (item: InvitationItem): Event => {
 };
 
 export const createEventApi = async (data: CREATEEVENT) => {
+  if (data.imageFile) {
+    const { imageFile, ...payload } = data;
+    const formData = new FormData();
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (value instanceof Date) {
+        formData.append(key, value.toISOString());
+      } else if (typeof value === "object") {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    formData.append("file", imageFile as any);
+
+    const response = await api.post("/event", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  }
+
   const response = await api.post("/event", data);
   return response.data;
 };
@@ -243,6 +273,43 @@ export const getSubEventOfEvent = async (eventId: number) => {
   return response.data.data;
 };
 
+export const getEventGallery = async (eventId: string) => {
+  const response = await api.get(`/gallery/event/${eventId}`);
+  return response.data?.data ?? [];
+};
+
+export const uploadEventGalleryImage = async (
+  eventId: string,
+  file: {
+    uri: string;
+    name: string;
+    type: string;
+  }
+) => {
+  const data = new FormData();
+  data.append("file", {
+    uri: file.uri,
+    name: file.name,
+    type: file.type,
+  } as any);
+
+  const response = await api.post(`/gallery/event/${eventId}/upload`, data, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
+};
+
+export const deleteEventGalleryImage = async (
+  eventId: string,
+  imageId: string
+) => {
+  const response = await api.delete(`/gallery/event/${eventId}/${imageId}`);
+  return response.data;
+};
+
 export const makeEventMember = async (
   eventId: number | string,
   data: MakeEventMemberType
@@ -250,10 +317,10 @@ export const makeEventMember = async (
   const response = await api.post(`/event/${eventId}/member`, data);
   return response.data;
 };
-export const removeEventMember = async (eventId:number , userId:number) => {
+export const removeEventMember = async (eventId: number, userId: number) => {
   const response = await api.delete(`/event/${eventId}/member/${userId}`);
   return response.data;
-}
+};
 export const getEventCategory = async () => {
   const responce = await api.get("/general-category");
   return responce;

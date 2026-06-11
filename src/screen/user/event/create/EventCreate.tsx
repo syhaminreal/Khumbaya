@@ -5,6 +5,7 @@ import {
 } from "@/src/constants/event";
 import { CREATEEVENT } from "@/src/features/events/api/events.service";
 import { useCreateEvent } from "@/src/features/events/hooks/use-event";
+import { useImageUpload } from "@/src/hooks/useImageUpload";
 import { formatDate, formatTime } from "@/src/utils/helper";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
@@ -31,7 +32,6 @@ interface EventFormData {
   name: string;
   eventType: string;
   startdateTime: Date;
-  coverImage: string | null;
   endDateTime: Date;
 }
 
@@ -40,12 +40,17 @@ export default function EventCreate() {
   const { mutate: createEvent, isPending: isCreatingEvent } = useCreateEvent();
   const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
   const [selectedEndDateTime, setEndDateTime] = useState<Date>(new Date());
+  const {
+    imageUri: coverImage,
+    pickImage,
+    uploading,
+    setUploading,
+  } = useImageUpload();
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
     eventType: "Wedding" as EventType,
     startdateTime: selectedDateTime, // June 16, 2024
     endDateTime: selectedEndDateTime,
-    coverImage: null, // handle the image uplaoding logic
   });
 
   const scale = useSharedValue(1);
@@ -95,10 +100,7 @@ export default function EventCreate() {
     }
   };
 
-  const onEndChange = (
-    event: DateTimePickerEvent,
-    pickedDate?: Date
-  ) => {
+  const onEndChange = (event: DateTimePickerEvent, pickedDate?: Date) => {
     if (event.type === "dismissed") {
       setShowEndPicker(false);
       setPickerMode("date");
@@ -157,15 +159,36 @@ export default function EventCreate() {
       return;
     }
 
+    let imageFile: { uri: string; name: string; type: string } | undefined;
+
+    if (coverImage) {
+      setUploading(true);
+      const filename =
+        coverImage.split("/").pop() || `upload-${Date.now()}.jpg`;
+      const extension = filename.includes(".")
+        ? filename.split(".").pop()
+        : "jpg";
+      const fileType = `image/${extension}`;
+      imageFile = {
+        uri: coverImage,
+        name: filename,
+        type: fileType,
+      };
+      setUploading(false);
+    }
+
     const payload: CREATEEVENT = {
       title: formData.name.trim(),
       description: `${formData.eventType} event`,
       type: EVENT_TYPE_TO_BACKEND[formData.eventType as EventType],
-      rsvpDeadline: new Date(selectedDateTime.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day before event start
+      rsvpDeadline: new Date(
+        selectedDateTime.getTime() - 1 * 24 * 60 * 60 * 1000
+      ).toISOString(), // 1 day before event start
       startDateTime: selectedDateTime,
       endDateTime: selectedEndDateTime,
       parentId: undefined,
       role: "Organizer",
+      imageFile,
     };
 
     createEvent(payload, {
@@ -193,9 +216,6 @@ export default function EventCreate() {
     setFormData((prev) => ({ ...prev, eventType: type }));
   };
 
-  const handleCoverPress = () => {
-    // TODO: Backend Integration - Image picker
-  };
   return (
     <SafeAreaView className="flex-1 bg-[#f8f6f7]">
       <KeyboardAvoidingView
@@ -223,29 +243,40 @@ export default function EventCreate() {
           {/* Cover Image Upload , make the image uploading in the application*/}
           <View className="px-4 pt-3">
             <TouchableOpacity
-              onPress={handleCoverPress}
+              onPress={pickImage}
               className="w-full aspect-video rounded-2xl overflow-hidden border-2 border-dashed border-gray-200"
               activeOpacity={0.8}
             >
-              <Image
-                source={{
-                  uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuC4baplBpAzVE_Kbv7m5jmbgfKEsZdzJcLTblHvHyn_CNxgGJ-spHw_-lcr1J_eQJK_onSfJPDupULCeQLMZd-cLvKBMgzzViLvDItg2ng1UIiZVvbQ5CwFEo-lqmLVbH5gyK4fkgRNsiRz8-wcyZYDzkYCmyI3K2pgzYajYnxOThBEL1RbDkAhjz-hv9j9fNN8MKdGjJ7oqMlN1vqSDKRDlWWbxdNT1jniUPXUy5mcnJ7XsOCE2Qz6WO5pgIHRrOKlvu-5NrxRhU8",
-                }}
-                className="w-full h-full absolute"
-                resizeMode="cover"
-              />
+              {coverImage ? (
+                <Image
+                  source={{ uri: coverImage }}
+                  className="w-full h-full absolute"
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="w-full h-full bg-[#f3f4f6]" />
+              )}
               <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/20 items-center justify-center">
                 <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center mb-2">
                   <Ionicons name="camera" size={24} color="white" />
                 </View>
                 <Text className="font-plusjakartasans-medium text-base text-white">
-                  Add Event Cover
+                  {coverImage ? "Change Event Cover" : "Add Event Cover"}
                 </Text>
                 <Text className="font-plusjakartasans-regular text-xs text-white/70 mt-1">
                   High quality JPG or PNG
                 </Text>
               </View>
             </TouchableOpacity>
+            {uploading ? (
+              <Text className="mt-2 text-sm text-[#6b7280]">
+                Uploading image...
+              </Text>
+            ) : coverImage ? (
+              <Text className="mt-2 text-sm text-[#6b7280]">
+                Selected image will be uploaded to Cloudinary.
+              </Text>
+            ) : null}
           </View>
 
           {/* Event Name Input */}

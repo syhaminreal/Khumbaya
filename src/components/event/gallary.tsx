@@ -1,20 +1,9 @@
-// import { View, Text } from 'react-native'
-// import React from 'react'
-
-// const gallary = () => {
-//   return (
-//     <View>
-//       <Text>gallary</Text>
-//     </View>
-//   )
-// }
-
-// export default gallary
-import ImageUpload from "@/src/components/ui/ImageUpload";
+export { default } from "./gallery";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useState } from "react";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ImageUpload from "../ui/ImageUpload";
 
 interface GalleryImage {
   id: string;
@@ -22,7 +11,7 @@ interface GalleryImage {
   uploadedAt: string;
 }
 
-function GalleryImageCard({
+export function GalleryImageCard({
   image,
   onDelete,
 }: {
@@ -51,7 +40,7 @@ function GalleryImageCard({
   );
 }
 
-function EmptyGallery() {
+ export  function EmptyGallery() {
   return (
     <View className="py-8 items-center">
       <Ionicons name="images-outline" size={48} color="#D1D5DB" />
@@ -63,7 +52,7 @@ function EmptyGallery() {
   );
 }
 
-export default function GalleryScreen() {
+ function GalleryScreen() {
   const [images, setImages] = useState<GalleryImage[]>([]);
 
   const formatDate = useCallback((date: Date) => {
@@ -161,3 +150,5 @@ export default function GalleryScreen() {
     </SafeAreaView>
   );
 }
+
+
