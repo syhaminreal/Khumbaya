@@ -230,6 +230,15 @@ export default function HotelManagementScreen() {
     setRoomCheckInModal({ visible: true, room: item.room, guests: item.eachuser });
   }
 
+function navigateToRooms() {
+    if (!eventId) return;
+
+    router.push({
+      pathname: "/(protected)/(client-stack)/events/[eventId]/(shared)/room",
+      params: { eventId },
+    });
+  }
+
   function handleGuestStatusToggle(
     guest: GuestWithRoom,
     status: "check-in" | "check-out"
@@ -344,6 +353,14 @@ export default function HotelManagementScreen() {
                   className="h-9 w-9 rounded-lg border border-gray-200 bg-white items-center justify-center"
                 >
                   <Ionicons name="search-outline" size={16} color="#6B7280" />
+                </TouchableOpacity>
+              )}
+              {!isHeaderSearchActive && (
+                <TouchableOpacity
+                  onPress={navigateToRooms}
+                  className="h-9 w-9 rounded-lg border border-primary/30 bg-primary items-center justify-center"
+                >
+                  <Ionicons name="add" size={20} color="#fff" />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
