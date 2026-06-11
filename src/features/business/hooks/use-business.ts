@@ -10,6 +10,7 @@ import {
   getEventBusinessApi,
   getEventOfBusiness,
   getEventVendorApi,
+  getVendorEventsForMemberApi,
   getMyBusiness,
   getUserBusiness,
   ReviewPayload,
@@ -223,6 +224,16 @@ export const useGetEventVendor = (eventId: string | number, vendorId: string | n
     queryKey: ["event-vendor", eventId, vendorId],
     queryFn: () => getEventVendorApi(eventId, vendorId),
     enabled: !!eventId && !!vendorId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+};
+
+export const useGetVendorEventsForMember = (vendorId: string | number) => {
+  return useQuery({
+    queryKey: ["vendor-events-for-member", vendorId],
+    queryFn: () => getVendorEventsForMemberApi(vendorId),
+    enabled: !!vendorId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });

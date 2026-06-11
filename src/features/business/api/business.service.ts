@@ -157,3 +157,11 @@ export const submitVendorReviewApi = async (
   const response = await api.patch(`/business/${businessId}`, { reviews: [review] });
   return response.data.data;
 };
+
+export const getVendorEventsForMemberApi = async (
+  vendorId: string | number
+): Promise<any[]> => {
+  const response = await api.get(`/business/${vendorId}/my-events`);
+  const payload = response.data?.data;
+  return Array.isArray(payload) ? payload : (payload?.items ?? []);
+};
