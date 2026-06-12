@@ -1,8 +1,8 @@
 import {
-    useAssignGuestToRoom,
+    // useAssignGuestToRoom,
     useDeleteRoomById,
     useDuplicateRoom,
-    useEditGuestRoom,
+    // useEditGuestRoom,
     useGetRooms,
     useRemoveGuestFromRoom,
 } from "@/src/features/rooms/hooks/use-room";
@@ -14,7 +14,7 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
-    Modal,
+    // Modal,
     RefreshControl,
     Text,
     TouchableOpacity,
@@ -36,7 +36,7 @@ export default function RoomScreen() {
   } = useGetRooms(id);
 
   const { data: guestRooms = [] } = useGetGuestRoom(id);
-  const { data: invitations = [], isLoading: isLoadingGuests } = useGetInvitationsForEvent(id);
+  const { data: invitations = [] } = useGetInvitationsForEvent(id);
 
   const acceptedInvitations = useMemo(() => {
     return invitations.filter((inv: any) => {
@@ -47,8 +47,8 @@ export default function RoomScreen() {
 
   const deleteRoom = useDeleteRoomById(id);
   const duplicateRoom = useDuplicateRoom(id);
-  const assignGuestToRoom = useAssignGuestToRoom(id);
-  const editGuestRoom = useEditGuestRoom(id);
+  // const assignGuestToRoom = useAssignGuestToRoom(id);
+  /* const editGuestRoom = useEditGuestRoom(id); */
   const removeGuestFromRoom = useRemoveGuestFromRoom(id);
 
   const guestCountByRoom = useMemo(() => {
@@ -83,19 +83,11 @@ export default function RoomScreen() {
   );
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<{ id?: number; roomNumber: string } | null>(null);
+  const [selectedRoom] = useState<{ id?: number; roomNumber: string } | null>(null);
 
+  /*
   const [assignModalVisible, setAssignModalVisible] = useState(false);
   const [selectedRoomNumber, setSelectedRoomNumber] = useState("");
-
-  const openRoomMenu = useCallback((roomId: number, roomNumber: string) => {
-    setSelectedRoom({ id: roomId, roomNumber });
-    setMenuVisible(true);
-  }, []);
-
-  const closeRoomMenu = useCallback(() => {
-    setMenuVisible(false);
-  }, []);
 
   const openAssignModal = useCallback((roomId: number, roomNumber: string) => {
     setSelectedRoomNumber(roomNumber);
@@ -107,25 +99,31 @@ export default function RoomScreen() {
     setAssignModalVisible(false);
     setSelectedRoomNumber("");
   }, []);
+  */
 
-  const handleAssignGuest = useCallback(
-    (invitationId: number, roomNumber: string, roomId?: number) => {
-      assignGuestToRoom.mutate(
-        { invitationId, payload: { roomId: roomNumber } },
-        {
-          onSuccess: () => {
-            Alert.alert("Success", `Guest assigned to room ${roomNumber} successfully.`);
-            closeAssignModal();
-          },
-          onError: () => {
-            Alert.alert("Error", "Could not assign guest to room.");
-          },
-        }
-      );
-    },
-    [assignGuestToRoom, closeAssignModal]
-  );
+  const closeRoomMenu = useCallback(() => {
+    setMenuVisible(false);
+  }, []);
 
+  //const handleAssignGuest = useCallback(
+    //(invitationId: number, roomNumber: string, roomId?: number) => {
+      //assignGuestToRoom.mutate(
+        //{ invitationId, payload: { roomId: roomNumber } },
+        //{
+          //onSuccess: () => {
+            //Alert.alert("Success", `Guest assigned to room ${roomNumber} successfully.`);
+            //closeAssignModal();
+          //},
+          //onError: () => {
+            //Alert.alert("Error", "Could not assign guest to room.");
+          //},
+       // }
+      //);
+    //},
+    //[assignGuestToRoom, closeAssignModal]
+ // );
+
+  /*
   const handleEditGuestRoom = useCallback(
     (invitationId: number, roomNumber: string) => {
       editGuestRoom.mutate(
@@ -143,6 +141,7 @@ export default function RoomScreen() {
     },
     [editGuestRoom, closeAssignModal]
   );
+  */
 
   const handleRemoveGuestFromRoom = useCallback(
     (invitationId: number) => {
@@ -207,6 +206,7 @@ export default function RoomScreen() {
     [duplicateRoom, closeRoomMenu]
   );
 
+  /*
   const handleGuestPress = useCallback(
     (inv: any) => {
       const guestId = inv.eventGuest?.id ?? inv.id;
@@ -227,19 +227,20 @@ export default function RoomScreen() {
           );
           return;
         }
-        handleAssignGuest(guestId, selectedRoomNumber, roomId);
+        //handleAssignGuest(guestId, selectedRoomNumber, roomId);
       }
     },
     [
       selectedRoomNumber,
       guestRooms,
       handleEditGuestRoom,
-      handleAssignGuest,
+     // handleAssignGuest,
       guestCountByRoom,
       rooms,
       selectedRoom,
     ]
   );
+  */
 
   const handleManageRoom = useCallback(
     (roomId: number, roomNumber: string) => {
@@ -291,6 +292,10 @@ export default function RoomScreen() {
         </TouchableOpacity>
       </View>
     );
+  }
+
+  function openRoomMenu(arg0: number, roomNumber: string): void {
+    throw new Error("Function not implemented.");
   }
 
   return (
@@ -366,12 +371,6 @@ export default function RoomScreen() {
               ? acceptedInvitations.length > 0
                 ? [
                     {
-                      label: "Assign Guest",
-                      icon: "person-add-outline",
-                      onPress: () =>
-                        selectedRoom && openAssignModal(selectedRoom.id!, selectedRoom.roomNumber),
-                    },
-                    {
                       label: "Edit",
                       icon: "create-outline",
                       onPress: () => selectedRoom && navigateToEditRoom(selectedRoom.id!),
@@ -420,6 +419,7 @@ export default function RoomScreen() {
           }
       />
 
+      {/*
       <Modal
         visible={assignModalVisible}
         transparent
@@ -515,6 +515,7 @@ export default function RoomScreen() {
           </View>
         </View>
       </Modal>
+      */}
     </View>
   );
 }
