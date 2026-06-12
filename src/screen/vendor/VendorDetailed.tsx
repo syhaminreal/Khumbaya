@@ -1,11 +1,11 @@
 import { Text } from "@/src/components/ui/Text";
 import { AvailableSpacesSection } from "@/src/components/vendor/AvailableSpacesSection";
 import { ServiceInfoSection } from "@/src/components/vendor/ServiceInfoSection";
-import { useGetBusinessById, useGetEventVendor } from "@/src/features/business/hooks/use-business";
+import { useGetBusinessById, useGetVendorEventsForMember } from "@/src/features/business/hooks/use-business";
 
-import { ReviewSection } from "@/src/screen/vendor/review";
 import { BusinessCategory, OtherServiceAttribute } from "@/src/features/business/types";
 import { PackageList } from "@/src/features/packages/components/PackageList";
+import { ReviewSection } from "@/src/screen/vendor/review";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -64,10 +64,12 @@ export default function VendorDetailed() {
   const [showGallery, setShowGallery] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All Photos");
   const [locationText, setLocationText] = useState("—");
+  const [showAllEvents, setShowAllEvents] = useState(false);
 
   const businessId = Number(resolvedId);
 
   const { data: businessWithAttribute, isLoading, isError } = useGetBusinessById(resolvedId);
+  const { data: myEventsForVendor } = useGetVendorEventsForMember(resolvedId);
 
   useEffect(() => {
     const biz = businessWithAttribute?.businessInformation;
@@ -378,6 +380,72 @@ export default function VendorDetailed() {
         </View>
 
         <ReviewSection businessId={businessId} resolvedId={resolvedId} />
+
+        {/* Your events with this vendor */}
+        {myEventsForVendor && myEventsForVendor.length > 0 && (
+          <View className="bg-white px-4 pt-4 pb-5 mt-2">
+            <Pressable
+              className="flex-row items-center justify-between mb-3"
+              onPress={() => setShowAllEvents((prev) => !prev)}
+            >
+              <View className="flex-row items-center gap-2">
+                <View className="h-7 w-7 rounded-lg bg-primary/10 items-center justify-center">
+                  <MaterialIcons name="event-note" size={15} color="#ee2b8c" />
+                </View>
+                <Text className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Your Events With This Vendor
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Text className="text-xs font-semibold text-primary">
+                  {showAllEvents ? "Hide" : "View all"}
+                </Text>
+                <MaterialIcons
+                  name={showAllEvents ? "expand-less" : "expand-more"}
+                  size={18}
+                  color="#ee2b8c"
+                />
+              </View>
+            </Pressable>
+            {showAllEvents && (
+            <View className="gap-3">
+              {myEventsForVendor.map((evt: any) => (
+                <Pressable
+                  key={evt.id}
+                  className="flex-row items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(protected)/(client-stack)/events/[eventId]/(organizer)/vendor-detail/[vendorId]",
+                      params: { eventId: String(evt.id), vendorId: resolvedId },
+                    })
+                  }
+                >
+                  <View className="flex-1 pr-2">
+                    <Text className="text-sm font-semibold text-[#181114]" numberOfLines={1}>
+                      {evt.title}
+                    </Text>
+                    {evt.startDateTime ? (
+                      <Text className="text-xs text-gray-400 mt-0.5">
+                        {new Date(evt.startDateTime).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </Text>
+                    ) : null}
+                    {evt.enquiryStatus ? (
+                      <Text className="text-xs text-primary font-medium mt-0.5">
+                        {evt.enquiryStatus}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
+                </Pressable>
+              ))}
+            </View>
+            )}
+          </View>
+        )}
 
         {/* Enquiry CTA */}
         <View className="px-4 pt-4 pb-6">
