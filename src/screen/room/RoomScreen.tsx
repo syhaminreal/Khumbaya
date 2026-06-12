@@ -2,10 +2,10 @@ import {
   useDeleteRoomById,
   useDuplicateRoom,
   useGetRooms,
-  useRemoveGuestFromRoom,
 } from "@/src/features/rooms/hooks/use-room";
 import { useGetGuestRoom } from "@/src/features/guests/api/use-guests";
 import {
+  MenuAction,
   ThreeDotButton,
   BottomActionMenu,
 } from "@/src/components/event/guest/threedot";
@@ -39,7 +39,6 @@ export default function RoomScreen() {
 
   const deleteRoom = useDeleteRoomById(id);
   const duplicateRoom = useDuplicateRoom(id);
-  const removeGuestFromRoom = useRemoveGuestFromRoom(id);
 
   const guestCountByRoom = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -62,56 +61,26 @@ export default function RoomScreen() {
 
   const navigateToEditRoom = useCallback(
     (roomId: number) => {
-      if (!eventId) return;
+      if (!id) return;
 
       router.push({
         pathname:
           "/(protected)/(client-stack)/events/[eventId]/(shared)/room/add",
-        params: { eventId, roomId: String(roomId) },
+        params: { eventId: String(id), roomId: String(roomId) },
       });
     },
-    [eventId, router]
+    [id, router]
   );
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<{
-    id?: number;
+    id: number;
     roomNumber: string;
   } | null>(null);
 
   const closeRoomMenu = useCallback(() => {
     setMenuVisible(false);
   }, []);
-
-  const handleRemoveGuestFromRoom = useCallback(
-    (invitationId: number) => {
-      Alert.alert(
-        "Remove Guest",
-        "Remove this guest from their assigned room?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Remove",
-            style: "destructive",
-            onPress: () => {
-              removeGuestFromRoom.mutate(invitationId, {
-                onSuccess: () => {
-                  Alert.alert(
-                    "Success",
-                    "Guest removed from room successfully."
-                  );
-                },
-                onError: () => {
-                  Alert.alert("Error", "Could not remove guest from room.");
-                },
-              });
-            },
-          },
-        ]
-      );
-    },
-    [removeGuestFromRoom]
-  );
 
   const handleDelete = useCallback(
     (roomId: number, roomNumber: string) => {
@@ -153,27 +122,27 @@ export default function RoomScreen() {
     (roomId: number, roomNumber: string) => {
       router.push({
         pathname:
-          "/(protected)/(client-stack)/events/[eventId]/(shared)/room/manage",
-        params: { eventId: String(id), roomId: String(roomId), roomNumber },
+          "/(protected)/(client-stack)/events/[eventId]/(shared)/hotel",
+        params: { eventId: String(id) },
       });
     },
-    [eventId, id, router]
+    [id, router]
   );
 
-  const roomMenuItems = useMemo(() => {
+  const roomMenuItems = useMemo<MenuAction[]>(() => {
     if (!selectedRoom) return [];
 
     return [
       {
         label: "Edit",
         icon: "create-outline",
-        onPress: () => navigateToEditRoom(selectedRoom.id!),
+        onPress: () => navigateToEditRoom(selectedRoom.id),
       },
       {
         label: "Duplicate",
         icon: "copy-outline",
         onPress: () =>
-          handleDuplicate(selectedRoom.id!, selectedRoom.roomNumber),
+          handleDuplicate(selectedRoom.id, selectedRoom.roomNumber),
         loading: duplicateRoom.isPending,
       },
       {
@@ -181,7 +150,7 @@ export default function RoomScreen() {
         icon: "trash-outline",
         color: "#EF4444",
         iconBgClassName: "bg-red-100",
-        onPress: () => handleDelete(selectedRoom.id!, selectedRoom.roomNumber),
+        onPress: () => handleDelete(selectedRoom.id, selectedRoom.roomNumber),
         loading: deleteRoom.isPending,
       },
     ];

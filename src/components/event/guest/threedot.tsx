@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-type MenuAction = {
+export type MenuAction = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
