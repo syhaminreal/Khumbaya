@@ -7,6 +7,7 @@ export default function SharedStack() {
      <Stack.Screen name="(logistics)" options={{ headerShown:false }}/>
      <Stack.Screen name="catering" options={{ headerShown: false }} />
      <Stack.Screen name="hotel" options={{ headerShown: false }} />
+     <Stack.Screen name="room" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -7,10 +7,15 @@ import {
     KeyboardAvoidingView,
     Modal,
     Platform,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
+
+type AvailableRoom = {
+  roomNumber: string;
+  capacity: number;
+  occupied: number;
+};
 
 type RoomAssignmentState = {
   visible: boolean;
@@ -20,8 +25,9 @@ type RoomAssignmentState = {
 type AssignRoomModalProps = {
   roomAssignmentModal: RoomAssignmentState;
   setRoomAssignmentModal: Dispatch<SetStateAction<RoomAssignmentState>>;
-  newRoom: string;
-  setNewRoom: Dispatch<SetStateAction<string>>;
+  availableRooms: AvailableRoom[];
+  selectedRoomNumber: string;
+  setSelectedRoomNumber: Dispatch<SetStateAction<string>>;
   isPending: boolean;
   getInitials: (name: string) => string;
   onConfirmAssignment: () => void;
@@ -30,12 +36,21 @@ type AssignRoomModalProps = {
 export function AssignRoomModal({
   roomAssignmentModal,
   setRoomAssignmentModal,
-  newRoom,
-  setNewRoom,
+  availableRooms,
+  selectedRoomNumber,
+  setSelectedRoomNumber,
   isPending,
   getInitials,
   onConfirmAssignment,
 }: AssignRoomModalProps) {
+  const availableRoomsList = availableRooms.filter(
+    (room) => room.occupied < room.capacity
+  );
+
+  const handleRoomSelect = (roomNumber: string) => {
+    setSelectedRoomNumber(roomNumber);
+  };
+
   return (
     <Modal
       visible={roomAssignmentModal.visible}
@@ -53,7 +68,7 @@ export function AssignRoomModal({
             onPress={() => setRoomAssignmentModal({ visible: false, guest: null })}
             className="absolute inset-0"
           />
-          <View className="bg-white rounded-t-3xl px-5 pt-3 pb-10">
+          <View className="bg-white rounded-t-3xl px-5 pt-3 pb-10 max-h-[70%]">
             <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-4" />
 
             <View className="flex-row items-center justify-between mb-5">
@@ -64,7 +79,7 @@ export function AssignRoomModal({
                 <View>
                   <Text className="font-jakarta-bold text-base text-[#181114]">Assign Room</Text>
                   <Text className="font-jakarta text-[11px] text-gray-400">
-                    Set a room number for this guest
+                    Select an available room for this guest
                   </Text>
                 </View>
               </View>
@@ -98,24 +113,53 @@ export function AssignRoomModal({
 
                 <View className="mb-5">
                   <Text className="font-jakarta-semibold text-xs text-gray-600 mb-2">
-                    Room Number
+                    Available Rooms
                   </Text>
-                  <TextInput
-                    className="border border-gray-200 rounded-xl px-4 py-3.5 font-jakarta text-sm text-[#181114] bg-white"
-                    placeholder="e.g. 101, Suite A, Villa 3…"
-                    placeholderTextColor="#9CA3AF"
-                    value={newRoom}
-                    onChangeText={setNewRoom}
-                    autoFocus
-                  />
+                  {availableRoomsList.length === 0 ? (
+                    <View className="py-8 items-center">
+                      <Ionicons name="alert-circle-outline" size={32} color="#9CA3AF" />
+                      <Text className="font-jakarta text-xs text-gray-400 mt-2">
+                        No rooms available
+                      </Text>
+                    </View>
+                  ) : (
+                    <View className="gap-2 max-h-[200px]">
+                      {availableRoomsList.map((room) => (
+                        <TouchableOpacity
+                          key={room.roomNumber}
+                          onPress={() => handleRoomSelect(room.roomNumber)}
+                          className={`flex-row items-center justify-between p-3.5 rounded-xl border ${
+                            selectedRoomNumber === room.roomNumber
+                              ? "bg-primary/10 border-primary"
+                              : "bg-white border-gray-200"
+                          }`}
+                          activeOpacity={0.7}
+                        >
+                          <View className="flex-row items-center gap-3">
+                            <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+                              <Ionicons name="bed-outline" size={16} color="#ee2b8c" />
+                            </View>
+                            <Text className="font-jakarta-semibold text-sm text-[#181114]">
+                              Room {room.roomNumber}
+                            </Text>
+                          </View>
+                          <Text className="font-jakarta text-xs text-gray-500">
+                            {room.occupied}/{room.capacity} guests
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
 
                 <View className="gap-2.5">
                   <TouchableOpacity
-                    disabled={!newRoom.trim() || isPending}
+                    disabled={!selectedRoomNumber || isPending || availableRoomsList.length === 0}
                     onPress={onConfirmAssignment}
                     className={`rounded-xl py-3.5 items-center flex-row justify-center gap-2 ${
-                      !newRoom.trim() || isPending ? "bg-primary/40" : "bg-primary"
+                      !selectedRoomNumber || isPending || availableRoomsList.length === 0
+                        ? "bg-primary/40"
+                        : "bg-primary"
                     }`}
                   >
                     {isPending ? (
@@ -133,7 +177,7 @@ export function AssignRoomModal({
                   <TouchableOpacity
                     onPress={() => {
                       setRoomAssignmentModal({ visible: false, guest: null });
-                      setNewRoom("");
+                      setSelectedRoomNumber("");
                     }}
                     className="rounded-xl py-3.5 items-center border border-gray-200"
                   >

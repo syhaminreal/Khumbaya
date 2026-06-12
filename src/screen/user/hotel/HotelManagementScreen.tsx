@@ -5,6 +5,7 @@ import { CategoryModal } from "@/src/components/guest/hotel/CategoryModel";
 import { Text } from "@/src/components/ui/Text";
 import { useSubmitRsvpResponse } from "@/src/features/events/hooks/use-event";
 import { useGetGuestRoom } from "@/src/features/guests/api/use-guests";
+import { useGetRooms } from "@/src/features/rooms/hooks/use-room";
 import { GuestWithRoom, RoomData } from "@/src/features/hotel/types/hotel.types";
 import { cn } from "@/src/utils/cn";
 import { shadowStyle } from "@/src/utils/helper";
@@ -82,12 +83,12 @@ export default function HotelManagementScreen() {
   const [activeCheckinUserId, setActiveCheckinUserId] = useState<number | null>(null);
   const [activeCheckoutUserId, setActiveCheckoutUserId] = useState<number | null>(null);
 
-  const [roomAssignmentModal, setRoomAssignmentModal] = useState<{
-    visible: boolean;
-    guest: GuestWithRoom | null;
-  }>({ visible: false, guest: null });
+const [roomAssignmentModal, setRoomAssignmentModal] = useState<{
+     visible: boolean;
+     guest: GuestWithRoom | null;
+   }>({ visible: false, guest: null });
 
-  const [newRoom, setNewRoom] = useState("");
+   const [selectedRoomNumber, setSelectedRoomNumber] = useState("");
 
   const [activeTab, setActiveTab] = useState<"assign" | "roomList">("assign");
 
@@ -98,7 +99,7 @@ export default function HotelManagementScreen() {
     refetch,
   } = useGetGuestRoom(numericEventId);
 
-
+  const { data: eventRooms = [] } = useGetRooms(numericEventId ?? 0);
 
   const normalizedGuests = useMemo(() => {
     if (!Array.isArray(guestRooms)) return [];
@@ -183,6 +184,21 @@ export default function HotelManagementScreen() {
     () => filteredGuests.filter((g) => !g.room),
     [filteredGuests]
   );
+
+  const availableRooms = useMemo(() => {
+    const guestsByRoom = new Map<string, number>();
+    for (const guest of normalizedGuests) {
+      if (guest.room) {
+        guestsByRoom.set(guest.room, (guestsByRoom.get(guest.room) ?? 0) + 1);
+      }
+    }
+    return eventRooms.map((room) => ({
+      roomNumber: room.roomNumber,
+      capacity: room.capacity,
+      occupied: guestsByRoom.get(room.roomNumber) ?? 0,
+    }));
+  }, [eventRooms, normalizedGuests]);
+
   // Memoize keyExtractor
   const keyExtractor = useCallback(
     (item: any) => item.invitationId.toString(), []
@@ -230,6 +246,15 @@ export default function HotelManagementScreen() {
     setRoomCheckInModal({ visible: true, room: item.room, guests: item.eachuser });
   }
 
+function navigateToRooms() {
+    if (!eventId) return;
+
+    router.push({
+      pathname: "/(protected)/(client-stack)/events/[eventId]/(shared)/room",
+      params: { eventId },
+    });
+  }
+
   function handleGuestStatusToggle(
     guest: GuestWithRoom,
     status: "check-in" | "check-out"
@@ -256,7 +281,7 @@ export default function HotelManagementScreen() {
   }
 
   function handleConfirmAssignment() {
-    const roomValue = newRoom.trim();
+    const roomValue = selectedRoomNumber;
     if (!roomValue || !roomAssignmentModal.guest?.user?.id) return;
 
     submitRsvpResponse(
@@ -267,7 +292,7 @@ export default function HotelManagementScreen() {
       {
         onSuccess: () => {
           setRoomAssignmentModal({ visible: false, guest: null });
-          setNewRoom("");
+          setSelectedRoomNumber("");
           refetch();
         },
       }
@@ -291,7 +316,7 @@ export default function HotelManagementScreen() {
       isGuestView={isGuestView}
       onAssignRoom={(selectedGuest) => {
         setRoomAssignmentModal({ visible: true, guest: selectedGuest });
-        setNewRoom("");
+        setSelectedRoomNumber("");
       }}
       onDetailsPress={navigateToDetails}
     />
@@ -344,6 +369,14 @@ export default function HotelManagementScreen() {
                   className="h-9 w-9 rounded-lg border border-gray-200 bg-white items-center justify-center"
                 >
                   <Ionicons name="search-outline" size={16} color="#6B7280" />
+                </TouchableOpacity>
+              )}
+              {!isHeaderSearchActive && (
+                <TouchableOpacity
+                  onPress={navigateToRooms}
+                  className="h-9 w-9 rounded-lg border border-primary/30 bg-primary items-center justify-center"
+                >
+                  <Ionicons name="add" size={20} color="#fff" />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -686,8 +719,9 @@ export default function HotelManagementScreen() {
       <AssignRoomModal
         roomAssignmentModal={roomAssignmentModal}
         setRoomAssignmentModal={setRoomAssignmentModal}
-        newRoom={newRoom}
-        setNewRoom={setNewRoom}
+        availableRooms={availableRooms}
+        selectedRoomNumber={selectedRoomNumber}
+        setSelectedRoomNumber={setSelectedRoomNumber}
         isPending={isPending}
         getInitials={getInitials}
         onConfirmAssignment={handleConfirmAssignment}
